@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "build": "npx vite build",
+    "build": "chmod +x ./node_modules/.bin/vite && vite build",
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx"
