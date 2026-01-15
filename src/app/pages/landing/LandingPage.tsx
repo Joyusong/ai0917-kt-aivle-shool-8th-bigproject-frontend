@@ -8,48 +8,46 @@ import {
   X,
   Sun,
   Moon,
-} from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { useState, useEffect } from "react";
+} from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 interface LandingPageProps {
   onSignInClick: () => void;
 }
 
-export function LandingPage({
-  onSignInClick,
-}: LandingPageProps) {
+export function LandingPage({ onSignInClick }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     // Check system preference or localStorage
-    const darkMode = localStorage.getItem('darkMode') === 'true' || 
-      (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const darkMode =
+      localStorage.getItem('darkMode') === 'true' ||
+      (!('darkMode' in localStorage) &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
     setIsDark(darkMode);
     if (darkMode) {
       document.documentElement.classList.add('dark');
     }
 
     // cors 테스트 ---------------------------------------------------
-    const apiUrl = 'http://localhost:8080/api/test';
-
-    axios.get(apiUrl, {
-      withCredentials: true, // 쿠키 전송 활성화
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer your_token_here'
-      }
-    })
-    .then(response => {
-      console.log('Success:', response.data);
-    })
-    .catch(error => {
-      console.error('Error:', error);
-    });
+    axios
+      .get(`${import.meta.env.VITE_BACKEND_URL}/hello`, {
+        withCredentials: true, // 쿠키 전송 활성화
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer your_token_here',
+        },
+      })
+      .then((response) => {
+        console.log('Success:', response.data);
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
     // cors 테스트 ---------------------------------------------------
-
   }, []);
 
   const toggleDarkMode = () => {
@@ -163,12 +161,16 @@ export function LandingPage({
                     {isDark ? (
                       <>
                         <Sun className="w-4 h-4 text-foreground" />
-                        <span className="text-sm text-foreground">Light Mode</span>
+                        <span className="text-sm text-foreground">
+                          Light Mode
+                        </span>
                       </>
                     ) : (
                       <>
                         <Moon className="w-4 h-4 text-foreground" />
-                        <span className="text-sm text-foreground">Dark Mode</span>
+                        <span className="text-sm text-foreground">
+                          Dark Mode
+                        </span>
                       </>
                     )}
                   </button>
@@ -199,8 +201,8 @@ export function LandingPage({
               증명하세요
             </h1>
             <p className="text-muted-foreground leading-relaxed mb-8 text-lg md:text-xl">
-              AI 기반 설정집 자동 추출과 IP 확장 시뮬레이션으로
-              창작물의 가치를 체계적으로 관리하고 증명합니다.
+              AI 기반 설정집 자동 추출과 IP 확장 시뮬레이션으로 창작물의 가치를
+              체계적으로 관리하고 증명합니다.
             </p>
             <div className="flex items-center gap-4">
               <Button
@@ -264,10 +266,7 @@ export function LandingPage({
       </section>
 
       {/* Feature Grid */}
-      <section
-        id="features"
-        className="max-w-[1200px] mx-auto px-6 py-24"
-      >
+      <section id="features" className="max-w-[1200px] mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-foreground mb-4">
             핵심 기능
@@ -283,12 +282,10 @@ export function LandingPage({
             <div className="w-12 h-12 border border-border rounded-lg flex items-center justify-center mb-6">
               <Users className="w-6 h-6 text-foreground" />
             </div>
-            <h3 className="text-xl text-foreground mb-3">
-              인물 설정 자동화
-            </h3>
+            <h3 className="text-xl text-foreground mb-3">인물 설정 자동화</h3>
             <p className="text-muted-foreground leading-[1.6]">
-              캐릭터 프로필, 관계도, 핵심 욕망을 AI가 자동으로
-              추출하고 체계화합니다.
+              캐릭터 프로필, 관계도, 핵심 욕망을 AI가 자동으로 추출하고
+              체계화합니다.
             </p>
           </div>
 
@@ -297,12 +294,10 @@ export function LandingPage({
             <div className="w-12 h-12 border border-border rounded-lg flex items-center justify-center mb-6">
               <Globe className="w-6 h-6 text-foreground" />
             </div>
-            <h3 className="text-xl text-foreground mb-3">
-              세계관 동기화
-            </h3>
+            <h3 className="text-xl text-foreground mb-3">세계관 동기화</h3>
             <p className="text-muted-foreground leading-[1.6]">
-              시간, 공간, 시스템 규칙을 명확하게 정의하고 설정
-              간 충돌을 실시간으로 감지합니다.
+              시간, 공간, 시스템 규칙을 명확하게 정의하고 설정 간 충돌을
+              실시간으로 감지합니다.
             </p>
           </div>
 
@@ -315,8 +310,8 @@ export function LandingPage({
               2차 창작 시뮬레이션
             </h3>
             <p className="text-muted-foreground leading-[1.6]">
-              영화, 드라마, 웹툰 등 다양한 매체로의 확장
-              가능성을 AI가 분석하고 제안합니다.
+              영화, 드라마, 웹툰 등 다양한 매체로의 확장 가능성을 AI가 분석하고
+              제안합니다.
             </p>
           </div>
         </div>
@@ -347,10 +342,7 @@ export function LandingPage({
       </section>
 
       {/* Pricing Section */}
-      <section
-        id="pricing"
-        className="max-w-[1200px] mx-auto px-6 py-24"
-      >
+      <section id="pricing" className="max-w-[1200px] mx-auto px-6 py-24">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-foreground mb-4">
             합리적인 가격
@@ -364,18 +356,12 @@ export function LandingPage({
           {/* Free Plan */}
           <div className="bg-card border border-border rounded-lg p-8">
             <div className="mb-8">
-              <h3 className="text-2xl text-foreground mb-2">
-                Just IPSUM
-              </h3>
+              <h3 className="text-2xl text-foreground mb-2">Just IPSUM</h3>
               <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl md:text-5xl text-foreground">
-                  ₩0
-                </span>
+                <span className="text-4xl md:text-5xl text-foreground">₩0</span>
                 <span className="text-muted-foreground">/월</span>
               </div>
-              <p className="text-muted-foreground">
-                시작하는 창작자를 위한
-              </p>
+              <p className="text-muted-foreground">시작하는 창작자를 위한</p>
             </div>
 
             <ul className="space-y-4 mb-8">
@@ -383,25 +369,19 @@ export function LandingPage({
                 <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 bg-foreground rounded-full"></div>
                 </div>
-                <span className="text-foreground">
-                  월 10,000 토큰
-                </span>
+                <span className="text-foreground">월 10,000 토큰</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 bg-foreground rounded-full"></div>
                 </div>
-                <span className="text-foreground">
-                  최대 3개 작품
-                </span>
+                <span className="text-foreground">최대 3개 작품</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 bg-foreground rounded-full"></div>
                 </div>
-                <span className="text-foreground">
-                  기본 템플릿
-                </span>
+                <span className="text-foreground">기본 템플릿</span>
               </li>
             </ul>
 
@@ -452,25 +432,19 @@ export function LandingPage({
                 <div className="w-5 h-5 rounded-full bg-primary-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 bg-primary-foreground rounded-full"></div>
                 </div>
-                <span className="text-primary-foreground">
-                  프리미엄 템플릿
-                </span>
+                <span className="text-primary-foreground">프리미엄 템플릿</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-primary-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 bg-primary-foreground rounded-full"></div>
                 </div>
-                <span className="text-primary-foreground">
-                  설정 충돌 감지
-                </span>
+                <span className="text-primary-foreground">설정 충돌 감지</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-5 h-5 rounded-full bg-primary-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <div className="w-2 h-2 bg-primary-foreground rounded-full"></div>
                 </div>
-                <span className="text-primary-foreground">
-                  AI 분석 리포트
-                </span>
+                <span className="text-primary-foreground">AI 분석 리포트</span>
               </li>
             </ul>
 
@@ -498,22 +472,13 @@ export function LandingPage({
             </div>
 
             <div className="flex items-center gap-8 text-sm text-muted-foreground">
-              <a
-                href="#"
-                className="hover:text-foreground transition-colors"
-              >
+              <a href="#" className="hover:text-foreground transition-colors">
                 이용약관
               </a>
-              <a
-                href="#"
-                className="hover:text-foreground transition-colors"
-              >
+              <a href="#" className="hover:text-foreground transition-colors">
                 개인정보처리방침
               </a>
-              <a
-                href="#"
-                className="hover:text-foreground transition-colors"
-              >
+              <a href="#" className="hover:text-foreground transition-colors">
                 고객센터
               </a>
             </div>

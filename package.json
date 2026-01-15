@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "prebuild": "chmod +x node_modules/.bin/vite",
     "build": "vite build",
     "dev": "vite",
     "typecheck": "tsc --noEmit",

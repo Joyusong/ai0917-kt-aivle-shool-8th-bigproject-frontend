@@ -4,7 +4,6 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
 import { useState } from 'react';
-import axios from 'axios';
 import NaverLogin from '../../components/NaverLogin/NaverLoginButton';
 
 interface LoginPageProps {
@@ -24,30 +23,6 @@ export function LoginPage({ onLogin, onBack, onSignup }: LoginPageProps) {
   const handleAdminLogin = (e: React.MouseEvent) => {
     e.preventDefault();
     onLogin('admin');
-  };
-
-  const handleNaverLogin = async () => {
-    try {
-      const res = await axios.get('/api/v1/auth/naver/login', {
-        withCredentials: true,
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = res?.data as any;
-      if (data?.redirectUrl) {
-        window.location.href = data.redirectUrl as string;
-        return;
-      }
-      const userRole = data?.user_role as
-        | 'manager'
-        | 'author'
-        | 'admin'
-        | undefined;
-      if (userRole) {
-        onLogin(userRole);
-      }
-    } catch (error) {
-      console.error(error);
-    }
   };
 
   return (

@@ -3,31 +3,57 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { useState } from 'react';
+import axios from 'axios';
 
 interface SignupPageProps {
   onSignupComplete: () => void;
   onBack: () => void;
+  initialData?: Partial<{
+    username: string;
+    name: string;
+    email: string;
+    nickname: string;
+    naverId: string;
+    provider: 'naver';
+  }>;
 }
 
-export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
+export function SignupPage({
+  onSignupComplete,
+  onBack,
+  initialData,
+}: SignupPageProps) {
   const [formData, setFormData] = useState({
-    username: '',
+    username: initialData?.username ?? '',
     password: '',
     passwordConfirm: '',
-    name: '',
-    email: '',
-    nickname: '',
+    name: initialData?.name ?? '',
+    email: initialData?.email ?? '',
+    nickname: initialData?.nickname ?? '',
+    naverId: initialData?.naverId ?? '',
+    provider: initialData?.provider ?? 'naver',
   });
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 회원가입 로직 처리
-    console.log('회원가입 데이터:', formData);
-    onSignupComplete();
+    try {
+      await axios.post(
+        'http://localhost:8080/auth/naver/complete-signup',
+        formData,
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      );
+      onSignupComplete();
+    } catch (err) {
+      console.error(err);
+      alert('회원가입 처리 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -105,7 +131,9 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
                   placeholder="비밀번호를 다시 입력하세요"
                   className="pl-10 h-12 bg-input-background border-border text-foreground placeholder:text-muted-foreground rounded-md focus:border-primary focus:ring-1 focus:ring-ring"
                   value={formData.passwordConfirm}
-                  onChange={(e) => handleChange('passwordConfirm', e.target.value)}
+                  onChange={(e) =>
+                    handleChange('passwordConfirm', e.target.value)
+                  }
                   required
                 />
               </div>
