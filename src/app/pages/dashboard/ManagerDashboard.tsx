@@ -48,6 +48,14 @@ import { Input } from "../../components/ui/input";
 import { Badge } from "../../components/ui/badge";
 import { useState } from "react";
 import { ThemeToggle } from "../../components/ui/theme-toggle";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
 
 interface ManagerDashboardProps {
   onLogout: () => void;
@@ -394,83 +402,83 @@ export function ManagerDashboard({
 
                 {showActivityDropdown && (
                   <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[32rem] bg-card border border-border rounded-lg shadow-xl py-2 z-50">
-                    <div className="px-4 py-3 border-b border-border">
-                      <h3 className="text-sm font-semibold text-foreground">
+                    <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border">
+                      <h3 className="text-xs sm:text-sm font-semibold text-foreground">
                         최근 활동
                       </h3>
                     </div>
                     <div className="max-h-[60vh] overflow-auto">
-                      <div className="p-3 hover:bg-accent cursor-pointer transition-colors">
+                      <div className="p-2.5 sm:p-3 hover:bg-accent cursor-pointer transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <Database className="w-4 h-4 text-white" />
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-foreground">
+                            <div className="text-xs sm:text-sm text-foreground">
                               새 설정집 등록
                             </div>
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-[11px] sm:text-xs text-muted-foreground truncate">
                               "암흑의 영역 연대기" - 김민지 작가
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             5분 전
                           </div>
                         </div>
                       </div>
 
-                      <div className="p-3 hover:bg-accent cursor-pointer transition-colors">
+                      <div className="p-2.5 sm:p-3 hover:bg-accent cursor-pointer transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 text-white" />
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                            <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-foreground">
+                            <div className="text-xs sm:text-sm text-foreground">
                               스핀오프 초안 생성 완료
                             </div>
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-[11px] sm:text-xs text-muted-foreground truncate">
                               "별빛 아카데미: 사이드 스토리"
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             15분 전
                           </div>
                         </div>
                       </div>
 
-                      <div className="p-3 hover:bg-accent cursor-pointer transition-colors">
+                      <div className="p-2.5 sm:p-3 hover:bg-accent cursor-pointer transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                            <Film className="w-4 h-4 text-white" />
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                            <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-foreground">
+                            <div className="text-xs sm:text-sm text-foreground">
                               영화 각색 제안 승인
                             </div>
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-[11px] sm:text-xs text-muted-foreground truncate">
                               "운명의 검" 극장용 각색
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             1시간 전
                           </div>
                         </div>
                       </div>
 
-                      <div className="p-3 hover:bg-accent cursor-pointer transition-colors">
+                      <div className="p-2.5 sm:p-3 hover:bg-accent cursor-pointer transition-colors">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
-                            <Users className="w-4 h-4 text-white" />
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                            <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm text-foreground">
+                            <div className="text-xs sm:text-sm text-foreground">
                               새 작가 등록
                             </div>
-                            <div className="text-xs text-muted-foreground truncate">
+                            <div className="text-[11px] sm:text-xs text-muted-foreground truncate">
                               이재원 작가 가입 승인
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             2시간 전
                           </div>
                         </div>
@@ -826,18 +834,18 @@ function WorkAnalysisScreen() {
 
       {/* Grid View */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {works.map((work) => (
             <Card
               key={work.id}
               className="border-slate-200 hover:shadow-lg transition-all cursor-pointer group"
               onClick={() => setSelectedWork(work)}
             >
-              <CardContent className="p-4">
+              <CardContent className="p-3">
                 <div
-                  className={`aspect-[3/4] bg-gradient-to-br ${work.gradient} rounded-lg mb-3 flex items-center justify-center`}
+                  className={`aspect-[4/3] bg-gradient-to-br ${work.gradient} rounded-lg mb-2 flex items-center justify-center`}
                 >
-                  <FileText className="w-10 h-10 text-white opacity-80" />
+                  <FileText className="w-8 h-8 text-white opacity-80" />
                 </div>
                 <div className="text-sm text-slate-900 mb-1 truncate">
                   {work.title}
@@ -1395,9 +1403,9 @@ function IPExpansionScreen() {
       {/* Grid View */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer">
-          <CardContent className="p-4">
-            <div className="aspect-[3/4] bg-gradient-to-br from-red-500 to-red-600 rounded-lg mb-3 flex items-center justify-center">
-              <Film className="w-10 h-10 text-white" />
+          <CardContent className="p-3">
+            <div className="aspect-[4/3] bg-gradient-to-br from-red-500 to-red-600 rounded-lg mb-2 flex items-center justify-center">
+              <Film className="w-8 h-8 text-white" />
             </div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-6 h-6 bg-red-500 rounded flex items-center justify-center">
@@ -1417,9 +1425,9 @@ function IPExpansionScreen() {
         </Card>
 
         <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer">
-          <CardContent className="p-4">
-            <div className="aspect-[3/4] bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg mb-3 flex items-center justify-center">
-              <Tv className="w-10 h-10 text-white" />
+          <CardContent className="p-3">
+            <div className="aspect-[4/3] bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg mb-2 flex items-center justify-center">
+              <Tv className="w-8 h-8 text-white" />
             </div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-6 h-6 bg-yellow-500 rounded flex items-center justify-center">
@@ -1439,9 +1447,9 @@ function IPExpansionScreen() {
         </Card>
 
         <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer">
-          <CardContent className="p-4">
-            <div className="aspect-[3/4] bg-gradient-to-br from-green-500 to-green-600 rounded-lg mb-3 flex items-center justify-center">
-              <Play className="w-10 h-10 text-white" />
+          <CardContent className="p-3">
+            <div className="aspect-[4/3] bg-gradient-to-br from-green-500 to-green-600 rounded-lg mb-2 flex items-center justify-center">
+              <Play className="w-8 h-8 text-white" />
             </div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-6 h-6 bg-green-500 rounded flex items-center justify-center">
@@ -1461,9 +1469,9 @@ function IPExpansionScreen() {
         </Card>
 
         <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer">
-          <CardContent className="p-4">
-            <div className="aspect-[3/4] bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg mb-3 flex items-center justify-center">
-              <Sparkles className="w-10 h-10 text-white" />
+          <CardContent className="p-3">
+            <div className="aspect-[4/3] bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg mb-2 flex items-center justify-center">
+              <Sparkles className="w-8 h-8 text-white" />
             </div>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-6 h-6 bg-purple-500 rounded flex items-center justify-center">
@@ -1484,7 +1492,7 @@ function IPExpansionScreen() {
 
         <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer">
           <CardContent className="p-4">
-            <div className="aspect-[3/4] bg-gradient-to-br from-red-500 to-red-600 rounded-lg mb-3 flex items-center justify-center">
+            <div className="aspect-[4/3] bg-gradient-to-br from-red-500 to-red-600 rounded-lg mb-3 flex items-center justify-center">
               <Film className="w-10 h-10 text-white" />
             </div>
             <div className="flex items-center gap-2 mb-2">
@@ -2124,7 +2132,7 @@ function AuthorManagementScreen() {
 
       {/* Grid View */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {[
             "김민지",
             "이재원",
@@ -2137,10 +2145,10 @@ function AuthorManagementScreen() {
           ].map((name, idx) => (
             <Card
               key={name}
-              className="border-slate-200 hover:shadow-lg transition-all cursor-pointer"
+              className="border-slate-200 hover:shadow-lg transition-all cursor-pointer overflow-hidden"
             >
-              <CardContent className="p-6 text-center">
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center text-white text-2xl">
+              <CardContent className="p-3 sm:p-4 text-center">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-2 sm:mb-3 flex items-center justify-center text-white text-lg sm:text-xl">
                   {name[0]}
                 </div>
                 <div className="text-sm text-slate-900 mb-2">
@@ -2327,11 +2335,11 @@ function ThreeDAssetsScreen() {
 
       {/* Grid View */}
       {viewMode === "grid" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="aspect-video bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg mb-3 flex items-center justify-center">
-                <Grid3x3 className="w-12 h-12 text-white opacity-50" />
+            <CardContent className="p-3">
+              <div className="aspect-[4/3] bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg mb-2 flex items-center justify-center">
+                <Grid3x3 className="w-8 h-8 text-white opacity-50" />
               </div>
               <div className="text-sm text-slate-900 mb-1 truncate">
                 판타지 성 내부
@@ -2351,9 +2359,9 @@ function ThreeDAssetsScreen() {
           </Card>
 
           <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="aspect-video bg-gradient-to-br from-blue-700 to-blue-900 rounded-lg mb-3 flex items-center justify-center">
-                <Grid3x3 className="w-12 h-12 text-white opacity-50" />
+            <CardContent className="p-3">
+              <div className="aspect-[4/3] bg-gradient-to-br from-blue-700 to-blue-900 rounded-lg mb-2 flex items-center justify-center">
+                <Grid3x3 className="w-8 h-8 text-white opacity-50" />
               </div>
               <div className="text-sm text-slate-900 mb-1 truncate">
                 현대 도시 거리
@@ -2373,9 +2381,9 @@ function ThreeDAssetsScreen() {
           </Card>
 
           <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="aspect-video bg-gradient-to-br from-purple-700 to-purple-900 rounded-lg mb-3 flex items-center justify-center">
-                <Grid3x3 className="w-12 h-12 text-white opacity-50" />
+            <CardContent className="p-3">
+              <div className="aspect-[4/3] bg-gradient-to-br from-purple-700 to-purple-900 rounded-lg mb-2 flex items-center justify-center">
+                <Grid3x3 className="w-8 h-8 text-white opacity-50" />
               </div>
               <div className="text-sm text-slate-900 mb-1 truncate">
                 마법 학원 교실
@@ -2395,9 +2403,9 @@ function ThreeDAssetsScreen() {
           </Card>
 
           <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="aspect-video bg-gradient-to-br from-green-700 to-green-900 rounded-lg mb-3 flex items-center justify-center">
-                <Grid3x3 className="w-12 h-12 text-white opacity-50" />
+            <CardContent className="p-3">
+              <div className="aspect-[4/3] bg-gradient-to-br from-green-700 to-green-900 rounded-lg mb-2 flex items-center justify-center">
+                <Grid3x3 className="w-8 h-8 text-white opacity-50" />
               </div>
               <div className="text-sm text-slate-900 mb-1 truncate">
                 중세 마을 광장
@@ -2417,9 +2425,9 @@ function ThreeDAssetsScreen() {
           </Card>
 
           <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="aspect-video bg-gradient-to-br from-orange-700 to-orange-900 rounded-lg mb-3 flex items-center justify-center">
-                <Grid3x3 className="w-12 h-12 text-white opacity-50" />
+            <CardContent className="p-3">
+              <div className="aspect-[4/3] bg-gradient-to-br from-orange-700 to-orange-900 rounded-lg mb-2 flex items-center justify-center">
+                <Grid3x3 className="w-8 h-8 text-white opacity-50" />
               </div>
               <div className="text-sm text-slate-900 mb-1 truncate">
                 미래 도시 전경
@@ -2439,9 +2447,9 @@ function ThreeDAssetsScreen() {
           </Card>
 
           <Card className="border-slate-200 hover:shadow-lg transition-all cursor-pointer group">
-            <CardContent className="p-4">
-              <div className="aspect-video bg-gradient-to-br from-red-700 to-red-900 rounded-lg mb-3 flex items-center justify-center">
-                <Grid3x3 className="w-12 h-12 text-white opacity-50" />
+            <CardContent className="p-3">
+              <div className="aspect-[4/3] bg-gradient-to-br from-red-700 to-red-900 rounded-lg mb-2 flex items-center justify-center">
+                <Grid3x3 className="w-8 h-8 text-white opacity-50" />
               </div>
               <div className="text-sm text-slate-900 mb-1 truncate">
                 고급 레스토랑
@@ -2803,13 +2811,10 @@ function ContestTemplatesScreen() {
                   <td className="px-6 py-4">
                     <Button
                       size="sm"
-                      className={`${selectedContest === contest.id ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-400"} text-white`}
-                      disabled={selectedContest !== contest.id}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (selectedContest === contest.id) {
-                          // AI 템플릿 생성 로직
-                        }
+                        setSelectedContest(contest.id);
                       }}
                     >
                       <Sparkles className="w-4 h-4 mr-1" />
@@ -2823,35 +2828,28 @@ function ContestTemplatesScreen() {
         </CardContent>
       </Card>
 
-      {selectedContest && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader className="border-b border-blue-200">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-slate-900">
-                선택된 공모전
-              </CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedContest(null)}
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-6">
-            {contests.find((c) => c.id === selectedContest) && (
-              <div className="space-y-3">
+      <Dialog
+        open={!!selectedContest}
+        onOpenChange={(open) => {
+          if (!open) setSelectedContest(null);
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          {selectedContest && (
+            <>
+              <DialogHeader>
+                <DialogTitle>선택된 공모전</DialogTitle>
+                <DialogDescription>
+                  공모전 정보를 확인하고 AI 템플릿을 생성하세요.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
                   <div className="text-sm text-slate-500 mb-1">
                     공모전명
                   </div>
                   <div className="text-base text-slate-900 font-semibold">
-                    {
-                      contests.find(
-                        (c) => c.id === selectedContest,
-                      )?.title
-                    }
+                    {contests.find((c) => c.id === selectedContest)?.title}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2860,11 +2858,7 @@ function ContestTemplatesScreen() {
                       주최기관
                     </div>
                     <div className="text-sm text-slate-900">
-                      {
-                        contests.find(
-                          (c) => c.id === selectedContest,
-                        )?.organizer
-                      }
+                      {contests.find((c) => c.id === selectedContest)?.organizer}
                     </div>
                   </div>
                   <div>
@@ -2872,11 +2866,7 @@ function ContestTemplatesScreen() {
                       장르
                     </div>
                     <div className="text-sm text-slate-900">
-                      {
-                        contests.find(
-                          (c) => c.id === selectedContest,
-                        )?.category
-                      }
+                      {contests.find((c) => c.id === selectedContest)?.category}
                     </div>
                   </div>
                   <div>
@@ -2884,11 +2874,7 @@ function ContestTemplatesScreen() {
                       마감일
                     </div>
                     <div className="text-sm text-slate-900">
-                      {
-                        contests.find(
-                          (c) => c.id === selectedContest,
-                        )?.deadline
-                      }
+                      {contests.find((c) => c.id === selectedContest)?.deadline}
                     </div>
                   </div>
                   <div>
@@ -2896,27 +2882,31 @@ function ContestTemplatesScreen() {
                       상금
                     </div>
                     <div className="text-sm text-slate-900 font-semibold">
-                      {
-                        contests.find(
-                          (c) => c.id === selectedContest,
-                        )?.prize
-                      }
+                      {contests.find((c) => c.id === selectedContest)?.prize}
                     </div>
                   </div>
                 </div>
-                <div className="pt-3 border-t border-blue-200">
-                  <p className="text-sm text-slate-600">
-                    AI 템플릿 생성 버튼을 클릭하면, 이 공모전에
-                    최적화된 설정집 템플릿이 자동으로
-                    생성됩니다. 생성된 템플릿은 작가들이
-                    공모전에 참여할 때 참고할 수 있습니다.
-                  </p>
-                </div>
+                <p className="text-sm text-slate-600">
+                  이 공모전에 맞는 설정집 템플릿을 AI가 자동으로 생성합니다.
+                  생성된 템플릿은 작가들이 공모전에 참여할 때 참고용으로 사용할 수 있습니다.
+                </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <DialogFooter className="mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedContest(null)}
+                >
+                  닫기
+                </Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI 템플릿 생성
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
