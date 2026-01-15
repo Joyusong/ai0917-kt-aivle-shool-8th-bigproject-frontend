@@ -268,52 +268,51 @@ export function AdminDashboard({
                   <Bell className="w-4 h-4" />
                 </Button>
 
-                {/* Activity Dropdown */}
                 {showActivityDropdown && (
                   <div className="absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[32rem] bg-card border border-border rounded-lg shadow-lg z-50">
-                    <div className="p-4 border-b border-border">
-                      <h3 className="text-sm font-semibold text-foreground">
+                    <div className="p-3 sm:p-4 border-b border-border">
+                      <h3 className="text-xs sm:text-sm font-semibold text-foreground">
                         시스템 알림
                       </h3>
                     </div>
-                    <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-[60vh] overflow-y-auto">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600 dark:text-green-400" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm text-foreground mb-0.5 sm:mb-1">
                             서버 상태 정상
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             5분 전
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm text-foreground mb-0.5 sm:mb-1">
                             신규 사용자 5명 가입
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             1시간 전
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600 dark:text-yellow-400" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm text-foreground mb-0.5 sm:mb-1">
                             데이터베이스 백업 필요
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             3시간 전
                           </div>
                         </div>
@@ -793,54 +792,208 @@ function NoticesTab() {
 }
 
 // Permissions Tab Component
+interface PermissionEditModalProps {
+  user: any;
+  onClose: () => void;
+  onSave: (user: any) => void;
+}
+
+function PermissionEditModal({
+  user,
+  onClose,
+  onSave,
+}: PermissionEditModalProps) {
+  const [role, setRole] = useState(user.role);
+  const [status, setStatus] = useState(user.status);
+
+  const handleSave = () => {
+    onSave({ ...user, role, status });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="w-full max-w-md bg-card border border-border rounded-lg shadow-lg">
+        <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground">
+            권한 수정
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <CloseIcon className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 bg-gradient-to-br ${user.initialGradient} rounded-full flex items-center justify-center text-white text-sm font-semibold`}>
+              {user.initial}
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm sm:text-base font-medium text-foreground truncate">
+                {user.name}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground break-all">
+                {user.email}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="space-y-1">
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                역할
+              </div>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm text-foreground"
+              >
+                <option value="운영자">운영자</option>
+                <option value="작가">작가</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <div className="text-xs sm:text-sm text-muted-foreground">
+                상태
+              </div>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm text-foreground"
+              >
+                <option value="활성">활성</option>
+                <option value="휴면">휴면</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-xs sm:text-sm text-muted-foreground">
+              가입일
+            </div>
+            <div className="text-sm text-foreground">
+              {user.date}
+            </div>
+          </div>
+        </div>
+        <div className="p-4 sm:p-5 border-t border-border flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="px-3 sm:px-4 text-sm"
+          >
+            취소
+          </Button>
+          <Button
+            onClick={handleSave}
+            className="px-3 sm:px-4 text-sm bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            수정 완료
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const initialUsers = [
+  {
+    name: "시스템 관리자",
+    email: "admin@example.com",
+    role: "관리자",
+    roleBadge: "bg-red-500 text-white",
+    status: "활성",
+    statusBadge: "bg-green-500 text-white",
+    date: "2023.01.15",
+    initial: "관",
+    initialGradient: "from-red-500 to-pink-600",
+  },
+  {
+    name: "박지영",
+    email: "operator1@example.com",
+    role: "운영자",
+    roleBadge: "bg-blue-500 text-white",
+    status: "활성",
+    statusBadge: "bg-green-500 text-white",
+    date: "2024.05.22",
+    initial: "박",
+    initialGradient: "from-blue-500 to-purple-600",
+  },
+  {
+    name: "김민지",
+    email: "author1@example.com",
+    role: "작가",
+    roleBadge: "bg-green-500 text-white",
+    status: "활성",
+    statusBadge: "bg-green-500 text-white",
+    date: "2025.11.03",
+    initial: "김",
+    initialGradient: "from-green-500 to-teal-600",
+  },
+  {
+    name: "이서준",
+    email: "author2@example.com",
+    role: "작가",
+    roleBadge: "bg-green-500 text-white",
+    status: "휴면",
+    statusBadge: "border-border text-muted-foreground",
+    statusVariant: "outline",
+    date: "2025.08.14",
+    initial: "이",
+    initialGradient: "from-yellow-500 to-orange-600",
+  },
+];
+
 function PermissionsTab() {
-  const users = [
-    {
-      name: "시스템 관리자",
-      email: "admin@example.com",
-      role: "관리자",
-      roleBadge: "bg-red-500 text-white",
-      status: "활성",
-      statusBadge: "bg-green-500 text-white",
-      date: "2023.01.15",
-      initial: "관",
-      initialGradient: "from-red-500 to-pink-600",
-    },
-    {
-      name: "박지영",
-      email: "operator1@example.com",
-      role: "운영자",
-      roleBadge: "bg-blue-500 text-white",
-      status: "활성",
-      statusBadge: "bg-green-500 text-white",
-      date: "2024.05.22",
-      initial: "박",
-      initialGradient: "from-blue-500 to-purple-600",
-    },
-    {
-      name: "김민지",
-      email: "author1@example.com",
-      role: "작가",
-      roleBadge: "bg-green-500 text-white",
-      status: "활성",
-      statusBadge: "bg-green-500 text-white",
-      date: "2025.11.03",
-      initial: "김",
-      initialGradient: "from-green-500 to-teal-600",
-    },
-    {
-      name: "이서준",
-      email: "author2@example.com",
-      role: "작가",
-      roleBadge: "bg-green-500 text-white",
-      status: "휴면",
-      statusBadge: "border-border text-muted-foreground",
-      statusVariant: "outline",
-      date: "2025.08.14",
-      initial: "이",
-      initialGradient: "from-yellow-500 to-orange-600",
-    },
-  ];
+  const [users, setUsers] = useState(initialUsers);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const applyRoleStatusStyles = (user: any) => {
+    let roleBadge = user.roleBadge;
+    let statusBadge = user.statusBadge;
+    let statusVariant = user.statusVariant;
+
+    if (user.role === "관리자") {
+      roleBadge = "bg-red-500 text-white";
+    } else if (user.role === "운영자") {
+      roleBadge = "bg-blue-500 text-white";
+    } else {
+      roleBadge = "bg-green-500 text-white";
+    }
+
+    if (user.status === "휴면") {
+      statusVariant = "outline";
+      statusBadge = "border-border text-muted-foreground";
+    } else {
+      statusVariant = undefined;
+      statusBadge = "bg-green-500 text-white";
+    }
+
+    return {
+      ...user,
+      roleBadge,
+      statusBadge,
+      statusVariant,
+    };
+  };
+
+  const handleEditClick = (user: any) => {
+    if (user.role === "관리자") {
+      return;
+    }
+    setSelectedUser(user);
+    setShowEditModal(true);
+  };
+
+  const handleSavePermission = (updatedUser: any) => {
+    const styledUser = applyRoleStatusStyles(updatedUser);
+    setUsers((prev) =>
+      prev.map((user) =>
+        user.email === styledUser.email ? styledUser : user
+      )
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -993,6 +1146,8 @@ function PermissionsTab() {
                         size="sm"
                         variant="outline"
                         className="border-border"
+                        onClick={() => handleEditClick(user)}
+                        disabled={user.role === "관리자"}
                       >
                         수정
                       </Button>
@@ -1014,10 +1169,18 @@ function PermissionsTab() {
                     </div>
                     <div>
                       <div className="font-medium text-foreground">{user.name}</div>
-                      <div className="text-sm text-muted-foreground">{user.email}</div>
+                      <div className="text-sm text-muted-foreground break-all">{user.email}</div>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" className="border-border">수정</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-border"
+                    onClick={() => handleEditClick(user)}
+                    disabled={user.role === "관리자"}
+                  >
+                    수정
+                  </Button>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">역할</span>
@@ -1036,6 +1199,13 @@ function PermissionsTab() {
           </div>
         </CardContent>
       </Card>
+      {showEditModal && selectedUser && (
+        <PermissionEditModal
+          user={selectedUser}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleSavePermission}
+        />
+      )}
     </div>
   );
 }

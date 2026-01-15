@@ -377,55 +377,54 @@ export function AuthorDashboard({
                   <Bell className="w-4 h-4" />
                 </Button>
 
-                {/* Notification Dropdown */}
                 {showNotificationDropdown && (
-                  <div className="absolute top-full right-0 mt-2 w-96 bg-card border border-border rounded-lg shadow-lg z-50">
-                    <div className="p-4 border-b border-border">
-                      <h3 className="text-sm font-semibold text-foreground">
+                  <div className="absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[32rem] bg-card border border-border rounded-lg shadow-lg z-50">
+                    <div className="p-3 sm:p-4 border-b border-border">
+                      <h3 className="text-xs sm:text-sm font-semibold text-foreground">
                         최근 활동
                       </h3>
                     </div>
-                    <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-5 h-5 text-white" />
+                    <div className="p-3 sm:p-4 space-y-3 sm:space-y-4 max-h-96 overflow-y-auto">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-10 h-14 sm:w-12 sm:h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm text-foreground mb-0.5 sm:mb-1 truncate">
                             암흑의 영역 연대기 - 47화
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             2시간 전 업로드됨
                           </div>
                         </div>
-                        <Badge className="bg-green-500 text-white text-xs">
+                        <Badge className="bg-green-500 text-white text-[10px] sm:text-xs flex-shrink-0">
                           활성
                         </Badge>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded flex items-center justify-center flex-shrink-0">
-                          <FileText className="w-5 h-5 text-white" />
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-10 h-14 sm:w-12 sm:h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded flex items-center justify-center flex-shrink-0">
+                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm text-foreground mb-0.5 sm:mb-1 truncate">
                             암흑의 영역 연대기 - 46화
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             1일 전 업로드됨
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded flex items-center justify-center flex-shrink-0">
-                          <Database className="w-5 h-5 text-white" />
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-10 h-14 sm:w-12 sm:h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded flex items-center justify-center flex-shrink-0">
+                          <Database className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-sm text-foreground mb-1">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm text-foreground mb-0.5 sm:mb-1 truncate">
                             설정집 자동 생성 완료
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-[11px] sm:text-xs text-muted-foreground">
                             2일 전
                           </div>
                         </div>
@@ -625,11 +624,11 @@ function ManuscriptsTab() {
       <div className="mb-6"></div>
 
       {/* File Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {/* Active Novel */}
         <div className="group cursor-pointer">
-          <div className="bg-card border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4 hover:shadow-md transition-all">
-            <div className="aspect-[3/4] bg-gradient-to-br from-slate-700 to-slate-900 rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border-2 border-blue-200 dark:border-blue-800 rounded-lg p-3 hover:shadow-md transition-all">
+            <div className="aspect-[4/3] bg-gradient-to-br from-slate-700 to-slate-900 rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-white" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -646,8 +645,8 @@ function ManuscriptsTab() {
 
         {/* Completed Novel 1 */}
         <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[3/4] bg-gradient-to-br from-purple-700 to-purple-900 rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="aspect-[4/3] bg-gradient-to-br from-purple-700 to-purple-900 rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-white" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -667,8 +666,8 @@ function ManuscriptsTab() {
 
         {/* Completed Novel 2 */}
         <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[3/4] bg-gradient-to-br from-blue-700 to-blue-900 rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="aspect-[4/3] bg-gradient-to-br from-blue-700 to-blue-900 rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-white" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -688,8 +687,8 @@ function ManuscriptsTab() {
 
         {/* Chapter Files */}
         <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[3/4] bg-muted rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-muted-foreground" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -702,8 +701,8 @@ function ManuscriptsTab() {
         </div>
 
         <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[3/4] bg-muted rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-muted-foreground" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -714,8 +713,8 @@ function ManuscriptsTab() {
         </div>
 
         <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[3/4] bg-muted rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-muted-foreground" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -726,8 +725,8 @@ function ManuscriptsTab() {
         </div>
 
         <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[3/4] bg-muted rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-muted-foreground" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -738,8 +737,8 @@ function ManuscriptsTab() {
         </div>
 
         <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[3/4] bg-muted rounded mb-3 flex items-center justify-center">
+          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
+            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
               <FileText className="w-8 h-8 text-muted-foreground" />
             </div>
             <div className="text-xs text-foreground truncate mb-1">
@@ -842,8 +841,8 @@ function SettingsTab({
             value={settingsCategory}
             onValueChange={setSettingsCategory}
           >
-            <div className="border-b border-border px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <TabsList className="bg-transparent flex flex-wrap gap-2">
+            <div className="border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-2 sm:gap-3">
+              <TabsList className="bg-transparent flex flex-wrap gap-1 sm:gap-2">
                 <TabsTrigger
                   value="characters"
                   className="data-[state=active]:bg-blue-50 dark:data-[state=active]:bg-blue-900/20 data-[state=active]:text-blue-700 dark:data-[state=active]:text-blue-400 px-6"
@@ -866,12 +865,14 @@ function SettingsTab({
                   서사
                 </TabsTrigger>
               </TabsList>
-              <Button
-                size="sm"
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="w-4 h-4 mr-2" />새 항목 추가
-              </Button>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />새 항목 추가
+                </Button>
+              </div>
             </div>
 
             <div className="p-6">
@@ -918,24 +919,25 @@ function CharactersContent() {
         </div>
       </div>
 
-      {/* Character Cards */}
       <div className="space-y-4">
         <Card className="border-border hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex gap-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white text-3xl flex-shrink-0">
-                👤
+          <CardContent className="p-5">
+            <div className="flex gap-4">
+              <div className="flex flex-col items-center gap-2 flex-shrink-0 w-20">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center text-white text-3xl overflow-hidden">
+                  👤
+                </div>
+                <Badge className="bg-blue-600 text-white text-[11px] sm:text-xs px-2 py-0.5">
+                  주인공
+                </Badge>
               </div>
 
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <h4 className="text-lg text-foreground">
+                    <h4 className="text-sm sm:text-base text-foreground">
                       엘레나 쉐도우본
                     </h4>
-                    <Badge className="bg-blue-600 text-white">
-                      주인공
-                    </Badge>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="ghost">
@@ -987,9 +989,8 @@ function CharactersContent() {
                 </div>
 
                 <div className="text-sm text-muted-foreground">
-                  냉정하고 과묵하지만 내면에는 따뜻함이 있다.
-                  그림자 조작 마법에 능숙하며, 점차 자신의
-                  소속과 정체성에 대해 고민하기 시작한다.
+                  그림자 조작 마법에 능숙하며, 점차 자신의 소속과
+                  정체성에 대해 고민하기 시작한다.
                 </div>
               </div>
             </div>
@@ -997,24 +998,26 @@ function CharactersContent() {
         </Card>
 
         <Card className="border-border hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
-            <div className="flex gap-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center text-white text-3xl flex-shrink-0">
-                🧙
+          <CardContent className="p-5">
+            <div className="flex gap-4">
+              <div className="flex flex-col items-center gap-2 flex-shrink-0 w-20">
+                <div className="w-20 h-20 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center text-white text-3xl overflow-hidden">
+                  🧙
+                </div>
+                <Badge
+                  variant="outline"
+                  className="border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 text-[11px] sm:text-xs px-2 py-0.5"
+                >
+                  멘토
+                </Badge>
               </div>
 
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <h4 className="text-lg text-foreground">
+                    <h4 className="text-sm sm:text-base text-foreground">
                       마스터 루미나스
                     </h4>
-                    <Badge
-                      variant="outline"
-                      className="border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400"
-                    >
-                      멘토
-                    </Badge>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="ghost">
