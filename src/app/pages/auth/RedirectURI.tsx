@@ -23,6 +23,7 @@ const RedirectURI: React.FC<RedirectURIProps> = ({
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
     const state = params.get('state');
+    console.log(`code: ${code}, state: ${state}`);
 
     const authenticateUser = async () => {
       // 인증 코드는 1회용이므로 중복 요청 방지
@@ -41,6 +42,7 @@ const RedirectURI: React.FC<RedirectURIProps> = ({
 
         // 3. 백엔드 응답 결과에 따른 분기 처리
         const { role, isNewMember, accessToken } = response.data;
+        console.log(role, isNewMember, accessToken);
 
         if (!isNewMember) {
           if (accessToken) localStorage.setItem('accessToken', accessToken);

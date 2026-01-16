@@ -9,6 +9,7 @@ const NaverLogin: React.FC = () => {
   const STATE = Math.random().toString(36).substring(2, 11);
 
   const NAVER_AUTH_URL = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${CLIENT_ID}&state=${STATE}&redirect_uri=${CALLBACK_URL}`;
+  console.log(NAVER_AUTH_URL);
 
   const handleLogin = (): void => {
     window.location.href = NAVER_AUTH_URL;
