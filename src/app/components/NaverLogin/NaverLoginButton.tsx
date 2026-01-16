@@ -11,7 +11,7 @@ const NaverLogin: React.FC = () => {
   const NAVER_AUTH_URL = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${CLIENT_ID}&state=${STATE}&redirect_uri=${CALLBACK_URL}`;
 
   const handleLogin = (): void => {
-    console.log(NAVER_AUTH_URL);
+    alert(NAVER_AUTH_URL);
     window.location.href = NAVER_AUTH_URL;
   };
 
