@@ -24,6 +24,11 @@ export function LoginPage({ onLogin, onBack, onSignup }: LoginPageProps) {
     e.preventDefault();
     onLogin('admin');
   };
+  
+  const handleAuthorTemp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onLogin('author');
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
@@ -108,6 +113,7 @@ export function LoginPage({ onLogin, onBack, onSignup }: LoginPageProps) {
                 <a
                   href="#"
                   className="text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={handleAuthorTemp}
                 >
                   비밀번호 찾기
                 </a>

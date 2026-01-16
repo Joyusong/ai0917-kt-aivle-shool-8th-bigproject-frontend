@@ -94,6 +94,7 @@ export function SignupPage({
                   className="pl-10 h-12 bg-input-background border-border text-foreground placeholder:text-muted-foreground rounded-md focus:border-primary focus:ring-1 focus:ring-ring"
                   value={formData.username}
                   onChange={(e) => handleChange('username', e.target.value)}
+                  readOnly={Boolean(initialData?.username)}
                   required
                 />
               </div>
@@ -134,6 +135,66 @@ export function SignupPage({
                   onChange={(e) =>
                     handleChange('passwordConfirm', e.target.value)
                   }
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Name Input */}
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-foreground">
+                이름
+              </Label>
+              <div className="relative">
+                <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  className="pl-10 h-12 bg-input-background border-border text-foreground placeholder:text-muted-foreground rounded-md focus:border-primary focus:ring-1 focus:ring-ring"
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  readOnly={Boolean(initialData?.name)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Email Input */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-foreground">
+                이메일
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="이메일을 입력하세요"
+                  className="pl-10 h-12 bg-input-background border-border text-foreground placeholder:text-muted-foreground rounded-md focus:border-primary focus:ring-1 focus:ring-ring"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  readOnly={Boolean(initialData?.email)}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Nickname Input */}
+            <div className="space-y-2">
+              <Label htmlFor="nickname" className="text-foreground">
+                닉네임
+              </Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="nickname"
+                  type="text"
+                  placeholder="닉네임을 입력하세요"
+                  className="pl-10 h-12 bg-input-background border-border text-foreground placeholder:text-muted-foreground rounded-md focus:border-primary focus:ring-1 focus:ring-ring"
+                  value={formData.nickname}
+                  onChange={(e) => handleChange('nickname', e.target.value)}
+                  readOnly={Boolean(initialData?.nickname)}
                   required
                 />
               </div>

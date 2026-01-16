@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { LandingPage } from './pages/landing/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage as SignupPage2 } from './pages/auth/SignupPage2';
 import { ManagerDashboard } from './pages/dashboard/ManagerDashboard';
 import { AuthorDashboard } from './pages/dashboard/AuthorDashboard';
 import { AdminDashboard } from './pages/dashboard/AdminDashboard';
-import { Routes, Route, useLocation } from 'react-router-dom'; // useLocation 추가
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import RedirectURI from './pages/auth/RedirectURI';
 
 type Screen = 'landing' | 'login' | 'signup' | 'dashboard';
@@ -19,89 +19,88 @@ export default function App() {
     any
   > | null>(null);
 
-  const location = useLocation(); // 현재 URL 경로를 파악하기 위함
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // 핸들러 함수들 (기존과 동일)
-  const handleSignInClick = () => setCurrentScreen('login');
-  const handleSignupClick = () => setCurrentScreen('signup');
-  const handleGoHome = () => setCurrentScreen('landing');
+  const handleSignInClick = () => navigate('/login');
+  const handleSignupClick = () => navigate('/signup2');
+  const handleGoHome = () => navigate('/');
   const handleLogout = () => {
     setUserType(null);
-    setCurrentScreen('landing');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('accessToken');
+    navigate('/login');
   };
 
   const handleSignupComplete = () => {
     setPendingSignupData(null);
-    setCurrentScreen('login');
+    navigate('/login');
   };
 
-  // 로그인 성공 시 호출 (기존 회원)
   const handleLogin = (type: 'manager' | 'author' | 'admin') => {
     setUserType(type);
-    setCurrentScreen('dashboard');
+    localStorage.setItem('userRole', type);
+    navigate('/');
   };
 
-  // 신규 회원일 때 호출 (RedirectURI에서 호출함)
   const handleRequireSignup = (profile: Record<string, any>) => {
     setPendingSignupData(profile);
-    setCurrentScreen('signup');
+    navigate('/signup2');
   };
 
-  // 현재 네이버 콜백 페이지인지 확인
-  const isNaverCallback = location.pathname === '/auth/naver/callback';
+  useEffect(() => {
+    const role = localStorage.getItem('userRole') as UserType | null;
+    setUserType(role);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* 1. 네이버 콜백 페이지가 아닐 때만 기존 화면들을 렌더링 (교체 방식) */}
-      {!isNaverCallback ? (
-        <>
-          {currentScreen === 'landing' && (
-            <LandingPage onSignInClick={handleSignInClick} />
-          )}
-
-          {currentScreen === 'login' && (
+      <Routes>
+        <Route
+          path="/"
+          element={
+            userType === 'manager' ? (
+              <ManagerDashboard onLogout={handleLogout} onHome={handleGoHome} />
+            ) : userType === 'author' ? (
+              <AuthorDashboard onLogout={handleLogout} onHome={handleGoHome} />
+            ) : userType === 'admin' ? (
+              <AdminDashboard onLogout={handleLogout} onHome={handleGoHome} />
+            ) : (
+              <LandingPage onSignInClick={handleSignInClick} />
+            )
+          }
+        />
+        <Route
+          path="/login"
+          element={
             <LoginPage
               onLogin={handleLogin}
               onBack={handleGoHome}
               onSignup={handleSignupClick}
             />
-          )}
-
-          {currentScreen === 'signup' && (
+          }
+        />
+        <Route
+          path="/signup2"
+          element={
             <SignupPage2
               initialData={pendingSignupData || undefined}
               onSignupComplete={handleSignupComplete}
-              onBack={() => setCurrentScreen('login')}
+              onBack={() => navigate('/login')}
             />
-          )}
-
-          {currentScreen === 'dashboard' && userType === 'manager' && (
-            <ManagerDashboard onLogout={handleLogout} onHome={handleGoHome} />
-          )}
-
-          {currentScreen === 'dashboard' && userType === 'author' && (
-            <AuthorDashboard onLogout={handleLogout} onHome={handleGoHome} />
-          )}
-
-          {currentScreen === 'dashboard' && userType === 'admin' && (
-            <AdminDashboard onLogout={handleLogout} onHome={handleGoHome} />
-          )}
-        </>
-      ) : (
-        /* 2. 네이버 콜백 경로일 때는 오직 이 라우터만 작동 (화면 겹침 방지) */
-        <Routes>
-          <Route
-            path="/auth/naver/callback"
-            element={
-              <RedirectURI
-                onLoginSuccess={handleLogin}
-                onRequireSignup={handleRequireSignup}
-                onFail={() => setCurrentScreen('login')}
-              />
-            }
-          />
-        </Routes>
-      )}
+          }
+        />
+        <Route
+          path="/auth/naver/callback"
+          element={
+            <RedirectURI
+              onLoginSuccess={handleLogin}
+              onRequireSignup={handleRequireSignup}
+              onFail={() => navigate('/login')}
+            />
+          }
+        />
+      </Routes>
     </div>
   );
 }

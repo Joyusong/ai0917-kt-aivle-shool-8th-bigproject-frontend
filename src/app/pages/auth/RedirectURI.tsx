@@ -41,22 +41,18 @@ const RedirectURI: React.FC<RedirectURIProps> = ({
 
         // 3. 백엔드 응답 결과에 따른 분기 처리
         const { role, isNewMember, accessToken } = response.data;
-        alert(response.data);
 
         if (!isNewMember) {
-          // [CASE 1] 기존 회원: 토큰 저장 및 대시보드 이동
           if (accessToken) localStorage.setItem('accessToken', accessToken);
+          if (role) localStorage.setItem('userRole', role);
           onLoginSuccess(role);
           navigate('/');
         } else if (isNewMember) {
-          // [CASE 2] 신규 회원: 네이버 정보를 App 상태에 저장하고 회원가입으로 이동
-          alert('가입 정보가 없습니다. 회원가입 페이지로 이동합니다.');
           onRequireSignup(response.data);
-          navigate('/'); // App.tsx의 currentScreen 상태가 'signup'으로 바뀌어 출력됨
+          navigate('/signup2');
         }
       } catch (error) {
         console.error('네이버 로그인 인증 실패:', error);
-        alert('로그인 처리 중 오류가 발생했습니다.');
         navigate('/');
         onFail();
       }
