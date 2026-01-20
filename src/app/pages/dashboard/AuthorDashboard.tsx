@@ -13,36 +13,29 @@ import {
   Home,
   Menu,
   ChevronsLeft,
-} from "lucide-react";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { useState } from "react";
-import { ThemeToggle } from "../../components/ui/theme-toggle";
-import { AuthorHome } from "./author/AuthorHome";
-import { AuthorManuscripts } from "./author/AuthorManuscripts";
-import { AuthorSettings } from "./author/AuthorSettings";
-import { AuthorNotice } from "./author/AuthorNotice";
-import { AuthorMyPage } from "./author/AuthorMyPage";
-import { AuthorAccount } from "./author/AuthorAccount";
+} from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
+import { useState } from 'react';
+import { ThemeToggle } from '../../components/ui/theme-toggle';
+import { AuthorHome } from './author/AuthorHome';
+import { AuthorManuscripts } from './author/AuthorManuscripts';
+import { AuthorSettings } from './author/AuthorSettings';
+import { AuthorNotice } from './author/AuthorNotice';
+import { AuthorMyPage } from './author/AuthorMyPage';
+import { AuthorAccount } from './author/AuthorAccount';
 
 interface AuthorDashboardProps {
   onLogout: () => void;
   onHome?: () => void;
 }
 
-export function AuthorDashboard({
-  onLogout,
-  onHome,
-}: AuthorDashboardProps) {
-  const [activeMenu, setActiveMenu] = useState("home");
-  const [settingsCategory, setSettingsCategory] =
-    useState("characters");
-  const [showProfileDropdown, setShowProfileDropdown] =
+export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
+  const [activeMenu, setActiveMenu] = useState('home');
+  const [settingsCategory, setSettingsCategory] = useState('characters');
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [showNotificationDropdown, setShowNotificationDropdown] =
     useState(false);
-  const [
-    showNotificationDropdown,
-    setShowNotificationDropdown,
-  ] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleMenuClick = (menu: string) => {
@@ -54,10 +47,7 @@ export function AuthorDashboard({
   };
 
   return (
-    <div
-      className="flex h-screen bg-background"
-      data-role="author"
-    >
+    <div className="flex h-screen bg-background" data-role="author">
       {/* Sidebar Open Button (when closed) */}
       {!sidebarOpen && (
         <Button
@@ -71,7 +61,7 @@ export function AuthorDashboard({
 
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? "w-full md:w-64" : "w-0"} bg-sidebar border-r border-sidebar-border flex flex-col overflow-hidden fixed md:relative h-full z-40`}
+        className={`${sidebarOpen ? 'w-full md:w-64' : 'w-0'} bg-sidebar border-r border-sidebar-border flex flex-col overflow-hidden fixed md:relative h-full z-40`}
       >
         {/* Toggle Button */}
         {sidebarOpen && (
@@ -94,7 +84,7 @@ export function AuthorDashboard({
           >
             <div
               className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: "var(--role-primary)" }}
+              style={{ backgroundColor: 'var(--role-primary)' }}
             >
               <Brain className="w-6 h-6 text-white" />
             </div>
@@ -104,7 +94,7 @@ export function AuthorDashboard({
               </div>
               <div
                 className="text-xs font-medium"
-                style={{ color: "var(--role-primary)" }}
+                style={{ color: 'var(--role-primary)' }}
               >
                 작가 스튜디오
               </div>
@@ -116,15 +106,15 @@ export function AuthorDashboard({
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           {/* Home - Hidden on mobile */}
           <button
-            onClick={() => handleMenuClick("home")}
+            onClick={() => handleMenuClick('home')}
             className={`w-full hidden md:flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeMenu === "home"
-                ? "text-white dark:text-black"
-                : "text-sidebar-foreground hover:bg-sidebar-accent"
+              activeMenu === 'home'
+                ? 'text-white dark:text-black'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
-              activeMenu === "home"
-                ? { backgroundColor: "var(--role-primary)" }
+              activeMenu === 'home'
+                ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
           >
@@ -133,15 +123,15 @@ export function AuthorDashboard({
           </button>
 
           <button
-            onClick={() => handleMenuClick("manuscripts")}
+            onClick={() => handleMenuClick('manuscripts')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeMenu === "manuscripts"
-                ? "text-white"
-                : "text-sidebar-foreground hover:bg-sidebar-accent"
+              activeMenu === 'manuscripts'
+                ? 'text-white'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
-              activeMenu === "manuscripts"
-                ? { backgroundColor: "var(--role-primary)" }
+              activeMenu === 'manuscripts'
+                ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
           >
@@ -150,15 +140,15 @@ export function AuthorDashboard({
           </button>
 
           <button
-            onClick={() => handleMenuClick("settings")}
+            onClick={() => handleMenuClick('settings')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeMenu === "settings"
-                ? "text-white dark:text-black"
-                : "text-sidebar-foreground hover:bg-sidebar-accent"
+              activeMenu === 'settings'
+                ? 'text-white dark:text-black'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
-              activeMenu === "settings"
-                ? { backgroundColor: "var(--role-primary)" }
+              activeMenu === 'settings'
+                ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
           >
@@ -167,22 +157,20 @@ export function AuthorDashboard({
           </button>
 
           <button
-            onClick={() => handleMenuClick("notice")}
+            onClick={() => handleMenuClick('notice')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeMenu === "notice"
-                ? "text-white dark:text-black"
-                : "text-sidebar-foreground hover:bg-sidebar-accent"
+              activeMenu === 'notice'
+                ? 'text-white dark:text-black'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
-              activeMenu === "notice"
-                ? { backgroundColor: "var(--role-primary)" }
+              activeMenu === 'notice'
+                ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
           >
             <Megaphone className="w-5 h-5" />
-            <span className="text-sm font-medium">
-              공지사항
-            </span>
+            <span className="text-sm font-medium">공지사항</span>
           </button>
         </nav>
 
@@ -191,15 +179,13 @@ export function AuthorDashboard({
           {/* Desktop: Dropdown style */}
           <div className="hidden md:block relative">
             <button
-              onClick={() =>
-                setShowProfileDropdown(!showProfileDropdown)
-              }
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
               className="w-full flex items-center gap-3 p-3 bg-sidebar-accent rounded-lg hover:bg-muted transition-colors"
             >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white dark:text-black text-sm font-semibold"
                 style={{
-                  backgroundColor: "var(--role-primary)",
+                  backgroundColor: 'var(--role-primary)',
                 }}
               >
                 김
@@ -208,12 +194,10 @@ export function AuthorDashboard({
                 <div className="text-sm font-medium text-sidebar-foreground">
                   김민지
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  작가
-                </div>
+                <div className="text-xs text-muted-foreground">작가</div>
               </div>
               <ChevronDown
-                className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileDropdown ? "rotate-180" : ""}`}
+                className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`}
               />
             </button>
 
@@ -222,7 +206,7 @@ export function AuthorDashboard({
               <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-lg shadow-lg py-1">
                 <button
                   onClick={() => {
-                    handleMenuClick("mypage");
+                    handleMenuClick('mypage');
                     setShowProfileDropdown(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
@@ -232,7 +216,7 @@ export function AuthorDashboard({
                 </button>
                 <button
                   onClick={() => {
-                    handleMenuClick("account-settings");
+                    handleMenuClick('account-settings');
                     setShowProfileDropdown(false);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
@@ -261,7 +245,7 @@ export function AuthorDashboard({
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white dark:text-black text-sm font-semibold"
                 style={{
-                  backgroundColor: "var(--role-primary)",
+                  backgroundColor: 'var(--role-primary)',
                 }}
               >
                 김
@@ -270,23 +254,19 @@ export function AuthorDashboard({
                 <div className="text-sm text-sidebar-foreground font-medium">
                   김민지
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  작가
-                </div>
+                <div className="text-xs text-muted-foreground">작가</div>
               </div>
             </div>
 
             <button
-              onClick={() => handleMenuClick("mypage")}
+              onClick={() => handleMenuClick('mypage')}
               className="w-full flex items-center gap-3 px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors"
             >
               <User className="w-4 h-4" />
               <span className="text-sm">마이페이지</span>
             </button>
             <button
-              onClick={() =>
-                handleMenuClick("account-settings")
-              }
+              onClick={() => handleMenuClick('account-settings')}
               className="w-full flex items-center gap-3 px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors"
             >
               <Settings className="w-4 h-4" />
@@ -317,21 +297,20 @@ export function AuthorDashboard({
         {/* Header */}
         <header className="bg-card border-b border-border px-4 md:px-8 py-4">
           <div
-            className={`flex items-center justify-between ${!sidebarOpen ? "ml-16" : ""}`}
+            className={`flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
           >
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">홈</span>
-              {activeMenu !== "home" && (
+              {activeMenu !== 'home' && (
                 <>
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                   <span className="text-foreground">
-                    {activeMenu === "manuscripts" && "원문"}
-                    {activeMenu === "settings" && "설정집"}
-                    {activeMenu === "notice" && "공지사항"}
-                    {activeMenu === "mypage" && "마이페이지"}
-                    {activeMenu === "account-settings" &&
-                      "설정"}
+                    {activeMenu === 'manuscripts' && '원문'}
+                    {activeMenu === 'settings' && '설정집'}
+                    {activeMenu === 'notice' && '공지사항'}
+                    {activeMenu === 'mypage' && '마이페이지'}
+                    {activeMenu === 'account-settings' && '설정'}
                   </span>
                 </>
               )}
@@ -345,9 +324,7 @@ export function AuthorDashboard({
                   variant="ghost"
                   className="border-border"
                   onClick={() =>
-                    setShowNotificationDropdown(
-                      !showNotificationDropdown,
-                    )
+                    setShowNotificationDropdown(!showNotificationDropdown)
                   }
                 >
                   <Bell className="w-4 h-4" />
@@ -415,19 +392,17 @@ export function AuthorDashboard({
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-4 md:p-8">
-          {activeMenu === "home" && <AuthorHome />}
-          {activeMenu === "manuscripts" && <AuthorManuscripts />}
-          {activeMenu === "settings" && (
+          {activeMenu === 'home' && <AuthorHome />}
+          {activeMenu === 'manuscripts' && <AuthorManuscripts />}
+          {activeMenu === 'settings' && (
             <AuthorSettings
               settingsCategory={settingsCategory}
               setSettingsCategory={setSettingsCategory}
             />
           )}
-          {activeMenu === "notice" && <AuthorNotice />}
-          {activeMenu === "mypage" && <AuthorMyPage />}
-          {activeMenu === "account-settings" && (
-            <AuthorAccount />
-          )}
+          {activeMenu === 'notice' && <AuthorNotice />}
+          {activeMenu === 'mypage' && <AuthorMyPage />}
+          {activeMenu === 'account-settings' && <AuthorAccount />}
         </main>
       </div>
     </div>
