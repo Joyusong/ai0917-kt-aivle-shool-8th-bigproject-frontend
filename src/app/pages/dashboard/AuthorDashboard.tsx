@@ -46,8 +46,17 @@ import {
   TabsList,
   TabsTrigger,
 } from "../../components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import { Textarea } from "../../components/ui/textarea";
 import { useState } from "react";
 import { ThemeToggle } from "../../components/ui/theme-toggle";
+import axios from "axios";
 
 interface AuthorDashboardProps {
   onLogout: () => void;
@@ -584,6 +593,71 @@ function HomeTab() {
 
 // Manuscripts Tab Component (파일 탐색기 스타일)
 function ManuscriptsTab() {
+  const [searchTitle, setSearchTitle] = useState("");
+  const [openCreate, setOpenCreate] = useState(false);
+  const [writer, setWriter] = useState("");
+  const [newTitle, setNewTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [episode, setEpisode] = useState<string>("");
+  const [txt, setTxt] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [originals, setOriginals] = useState<
+    { writer: string; title: string; subtitle?: string; episode?: number; updatedAt?: string; files?: { name: string; url: string; type: string }[] }[]
+  >([
+    { writer: "김작가", title: "암흑의 영역 연대기", subtitle: "서막", episode: 47, updatedAt: "2시간 전" },
+    { writer: "이작가", title: "운명의 검", subtitle: "결말", episode: 120, updatedAt: "1일 전" },
+    { writer: "박작가", title: "별빛 아카데미", subtitle: "입학식", episode: 85, updatedAt: "3일 전" },
+  ]);
+  const [createFiles, setCreateFiles] = useState<{ name: string; url: string; type: string }[]>([]);
+  const [openView, setOpenView] = useState(false);
+  const [selectedOriginal, setSelectedOriginal] = useState<typeof originals[number] | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editWriter, setEditWriter] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editSubtitle, setEditSubtitle] = useState("");
+  const [editEpisode, setEditEpisode] = useState<string>("");
+  const [editFiles, setEditFiles] = useState<{ name: string; url: string; type: string }[]>([]);
+  const filteredOriginals = searchTitle.trim()
+    ? originals.filter((o) => o.title.toLowerCase().includes(searchTitle.trim().toLowerCase()))
+    : originals;
+  const filtered = searchTitle.trim()
+  const onConfirmCreate = async () => {
+    if (!newTitle.trim() || !writer.trim()) return;
+    if (submitting) return;
+    setSubmitting(true);
+    const ep = episode ? Number(episode) : undefined;
+    const vectorDbData = { txt, episode: ep, subtitle, check: {}, title: newTitle, writer };
+    let sent = false;
+    try {
+      const aiEndpoint = "https://louise-wadeable-celine.ngrok-free.dev/novel";
+      if (aiEndpoint && txt.trim()) {
+        await axios.post(aiEndpoint, vectorDbData, {
+          headers: {
+            "ngrok-skip-browser-warning": "true",
+            "Content-Type": "application/json",
+          },
+        });
+        alert("AI 서버로 전송되었습니다.");
+        sent = true;
+      }
+    } catch (e) {
+      console.error(e);
+      alert("전송 중 오류가 발생했습니다.");
+    }
+    if (sent) {
+      setOriginals([{ writer, title: newTitle, subtitle, episode: ep, updatedAt: "방금 전", files: createFiles }, ...originals]);
+    }
+    setOpenCreate(false);
+    setWriter("");
+    setNewTitle("");
+    setSubtitle("");
+    setEpisode("");
+    setTxt("");
+    setCreateFiles([]);
+    setSubmitting(false);
+  };
+
   return (
     <>
       {/* Upload Info */}
@@ -613,141 +687,299 @@ function ManuscriptsTab() {
 
       <div className="flex items-center justify-between mb-6">
         <Input
-          placeholder="파일 검색..."
+          placeholder="원문 검색..."
+          value={searchTitle}
+          onChange={(e) => setSearchTitle(e.target.value)}
           className="max-w-md"
         />
-        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-          <Upload className="w-4 h-4 mr-2" />새 파일 업로드
+        <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setOpenCreate(true)}>
+          <Upload className="w-4 h-4 mr-2" />
+          새 원문 업로드
         </Button>
       </div>
 
-      <div className="mb-6"></div>
-
-      {/* File Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {/* Active Novel */}
-        <div className="group cursor-pointer">
-          <div className="bg-card border-2 border-blue-200 dark:border-blue-800 rounded-lg p-3 hover:shadow-md transition-all">
-            <div className="aspect-[4/3] bg-gradient-to-br from-slate-700 to-slate-900 rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-white" />
-            </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              암흑의 영역 연대기
-            </div>
-            <div className="text-xs text-muted-foreground">
-              47화 • 2시간 전
-            </div>
-            <Badge className="bg-green-500 text-white text-xs mt-2">
-              활성
-            </Badge>
+      {filteredOriginals.length > 0 && (
+        <div className="mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {filteredOriginals.map((orig, idx) => (
+              <div
+                key={idx}
+                className="group cursor-pointer"
+                onClick={() => {
+                  setSelectedOriginal(orig);
+                  setSelectedIndex(originals.findIndex((o) => o === orig));
+                  setIsEditing(false);
+                  setEditWriter(orig.writer || "");
+                  setEditTitle(orig.title || "");
+                  setEditSubtitle(orig.subtitle || "");
+                  setEditEpisode(orig.episode !== undefined ? String(orig.episode) : "");
+                  setEditFiles(orig.files || []);
+                  setOpenView(true);
+                }}
+              >
+                <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all">
+                  <div className="aspect-[4/3] rounded mb-3 flex items-center justify-center overflow-hidden">
+                    {orig.files && orig.files.find((f) => f.type.startsWith("image")) ? (
+                      <img
+                        src={orig.files.find((f) => f.type.startsWith("image"))!.url}
+                        alt={orig.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <FileText className="w-8 h-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="text-xs text-foreground truncate mb-1">{orig.title}</div>
+                  {orig.updatedAt && <div className="text-xs text-muted-foreground">{orig.updatedAt}</div>}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+      )}
 
-        {/* Completed Novel 1 */}
-        <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[4/3] bg-gradient-to-br from-purple-700 to-purple-900 rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-white" />
-            </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              운명의 검
-            </div>
-            <div className="text-xs text-muted-foreground">
-              완결 • 120화
-            </div>
-            <Badge
-              variant="outline"
-              className="border-border text-muted-foreground text-xs mt-2"
-            >
-              완결
-            </Badge>
-          </div>
-        </div>
+      {/* 추가 그리드 제거됨 */}
 
-        {/* Completed Novel 2 */}
-        <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[4/3] bg-gradient-to-br from-blue-700 to-blue-900 rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-white" />
+      <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>새 원문 업로드</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+            <div>
+              <div className="text-xs text-muted-foreground">writer(작가명)</div>
+              <Input value={writer} onChange={(e) => setWriter(e.target.value)} />
             </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              별빛 아카데미
+            <div>
+              <div className="text-xs text-muted-foreground">txt(원문 내용)</div>
+              <Textarea value={txt} onChange={(e) => setTxt(e.target.value)} className="min-h-32" />
             </div>
-            <div className="text-xs text-muted-foreground">
-              완결 • 85화
+            <div>
+              <div className="text-xs text-muted-foreground">title(제목)</div>
+              <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
             </div>
-            <Badge
-              variant="outline"
-              className="border-border text-muted-foreground text-xs mt-2"
-            >
-              완결
-            </Badge>
+            <div>
+              <div className="text-xs text-muted-foreground">subtitle(소제목)</div>
+              <Input value={subtitle} onChange={(e) => setSubtitle(e.target.value)} />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">episode(회차)</div>
+              <Input value={episode} onChange={(e) => setEpisode(e.target.value)} placeholder="숫자" />
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">원문 파일</div>
+              <Input
+                type="file"
+                accept="*/*"
+                multiple
+                onChange={(e) => {
+                  const selected = Array.from(e.target.files || []);
+                  const mapped = selected.map((f) => ({ file: f, name: f.name, url: URL.createObjectURL(f), type: f.type }));
+                  setCreateFiles((prev) => [...prev, ...mapped]);
+                }}
+              />
+              {createFiles.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {createFiles.map((f, i) =>
+                    f.type.startsWith("image") ? (
+                      <div key={`${f.name}-${i}`} className="bg-card border border-border rounded-lg p-3">
+                        <img src={f.url} alt={f.name} className="w-full aspect-[4/3] object-contain rounded mb-2 border border-border" />
+                        <div className="text-xs text-foreground truncate mb-1">{f.name}</div>
+                        <a href={f.url} download={f.name} className="text-xs text-blue-600 underline">
+                          다운로드
+                        </a>
+                      </div>
+                    ) : (
+                      <div key={`${f.name}-${i}`} className="flex items-center justify-between bg-card border border-border rounded p-2">
+                        <div className="text-xs text-foreground truncate">{f.name}</div>
+                        <a href={f.url} download={f.name} className="text-xs text-blue-600 underline ml-2">
+                          다운로드
+                        </a>
+                      </div>
+                    ),
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Chapter Files */}
-        <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-muted-foreground" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenCreate(false)}>
+              취소
+            </Button>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={onConfirmCreate} disabled={submitting}>
+              {submitting ? "처리 중..." : "확인"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={openView} onOpenChange={setOpenView}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? "원문 수정" : selectedOriginal?.title}</DialogTitle>
+          </DialogHeader>
+          {isEditing ? (
+            <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
+              <div>
+                <div className="text-xs text-muted-foreground">writer(작가명)</div>
+                <Input value={editWriter} onChange={(e) => setEditWriter(e.target.value)} />
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">title(제목)</div>
+                <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">subtitle(소제목)</div>
+                <Input value={editSubtitle} onChange={(e) => setEditSubtitle(e.target.value)} />
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">episode(회차)</div>
+                <Input value={editEpisode} onChange={(e) => setEditEpisode(e.target.value)} placeholder="숫자" />
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">첨부 파일</div>
+                <Input
+                  type="file"
+                  accept="*/*"
+                  multiple
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.files || []);
+                    const mapped = selected.map((f) => ({ name: f.name, url: URL.createObjectURL(f), type: f.type }));
+                    setEditFiles((prev) => [...prev, ...mapped]);
+                  }}
+                />
+                {editFiles.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {editFiles.map((f, i) =>
+                      f.type.startsWith("image") ? (
+                        <div key={`${f.name}-${i}`} className="bg-card border border-border rounded-lg p-3">
+                          <img src={f.url} alt={f.name} className="w-full aspect-[4/3] object-contain rounded mb-2 border border-border" />
+                          <div className="text-xs text-foreground truncate mb-1">{f.name}</div>
+                          <div className="flex items-center gap-2">
+                            <a href={f.url} download={f.name} className="text-xs text-blue-600 underline">
+                              다운로드
+                            </a>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-6"
+                              onClick={() => setEditFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                            >
+                              제거
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div key={`${f.name}-${i}`} className="flex items-center justify-between bg-card border border-border rounded p-2">
+                          <div className="text-xs text-foreground truncate">{f.name}</div>
+                          <div className="flex items-center gap-2">
+                            <a href={f.url} download={f.name} className="text-xs text-blue-600 underline">
+                              다운로드
+                            </a>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-6"
+                              onClick={() => setEditFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                            >
+                              제거
+                            </Button>
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  취소
+                </Button>
+                <Button
+                  className="bg-blue-600 text-white hover:bg-blue-700"
+                  onClick={() => {
+                    if (selectedIndex === null) return;
+                    const epNum = editEpisode ? Number(editEpisode) : undefined;
+                    const updated = {
+                      writer: editWriter,
+                      title: editTitle,
+                      subtitle: editSubtitle,
+                      episode: epNum,
+                      updatedAt: "방금 전",
+                      files: editFiles,
+                    };
+                    setOriginals((prev) =>
+                      prev.map((o, i) => (i === selectedIndex ? updated : o)),
+                    );
+                    setSelectedOriginal(updated);
+                    setIsEditing(false);
+                  }}
+                >
+                  적용
+                </Button>
+              </DialogFooter>
             </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              47화 - 선택의 순간
-            </div>
-            <div className="text-xs text-muted-foreground">
-              2시간 전
-            </div>
-          </div>
-        </div>
-
-        <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              46화 - 진실의 파편
-            </div>
-            <div className="text-xs text-muted-foreground">1일 전</div>
-          </div>
-        </div>
-
-        <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              45화 - 어둠 속의 빛
-            </div>
-            <div className="text-xs text-muted-foreground">2일 전</div>
-          </div>
-        </div>
-
-        <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              44화 - 배신자
-            </div>
-            <div className="text-xs text-muted-foreground">3일 전</div>
-          </div>
-        </div>
-
-        <div className="group cursor-pointer">
-          <div className="bg-card border border-border rounded-lg p-3 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-700">
-            <div className="aspect-[4/3] bg-muted rounded mb-3 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-muted-foreground" />
-            </div>
-            <div className="text-xs text-foreground truncate mb-1">
-              43화 - 그림자의 속삭임
-            </div>
-            <div className="text-xs text-muted-foreground">4일 전</div>
-          </div>
-        </div>
-      </div>
+          ) : (
+            <>
+              <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-2">
+                {selectedOriginal?.writer && (
+                  <div className="text-sm text-muted-foreground">작가: {selectedOriginal.writer}</div>
+                )}
+                {selectedOriginal?.subtitle && (
+                  <div className="text-sm text-muted-foreground">소제목: {selectedOriginal.subtitle}</div>
+                )}
+                {selectedOriginal?.episode !== undefined && (
+                  <div className="text-sm text-muted-foreground">회차: {selectedOriginal.episode}</div>
+                )}
+                {selectedOriginal?.updatedAt && (
+                  <div className="text-sm text-muted-foreground">업데이트: {selectedOriginal.updatedAt}</div>
+                )}
+                {selectedOriginal?.files && selectedOriginal.files.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    {selectedOriginal.files.map((f, i) =>
+                      f.type.startsWith("image") ? (
+                        <div key={`${f.name}-${i}`} className="bg-card border border-border rounded-lg p-3">
+                          <img src={f.url} alt={f.name} className="w-full aspect-[4/3] object-contain rounded mb-2 border border-border" />
+                          <div className="text-xs text-foreground truncate mb-1">{f.name}</div>
+                          <a href={f.url} download={f.name} className="text-xs text-blue-600 underline">
+                            다운로드
+                          </a>
+                        </div>
+                      ) : (
+                        <div key={`${f.name}-${i}`} className="flex items-center justify-between bg-card border border-border rounded p-2">
+                          <div className="text-xs text-foreground truncate">{f.name}</div>
+                          <a href={f.url} download={f.name} className="text-xs text-blue-600 underline ml-2">
+                            다운로드
+                          </a>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setOpenView(false)}>
+                  닫기
+                </Button>
+                <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => setIsEditing(true)}>
+                  수정
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (selectedIndex === null) return;
+                    setOriginals((prev) => prev.filter((_, i) => i !== selectedIndex));
+                    setOpenView(false);
+                    setSelectedOriginal(null);
+                    setSelectedIndex(null);
+                  }}
+                >
+                  삭제
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

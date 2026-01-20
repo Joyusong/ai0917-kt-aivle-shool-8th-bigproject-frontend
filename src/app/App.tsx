@@ -18,14 +18,16 @@ import TermsPage from './pages/legal/TermsPage';
 type UserType = 'Manager' | 'Author' | 'Admin' | null;
 
 export default function App() {
-  const [userType, setUserType] = useState<UserType>(null);
+  const [userType, setUserType] = useState<UserType>(() => {
+    const role = localStorage.getItem('userRole') as UserType;
+    const token = localStorage.getItem('accessToken');
+    return role && token ? role : null;
+  });
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const role = localStorage.getItem('userRole') as UserType;
-    const token = localStorage.getItem('accessToken');
-    if (role && token) setUserType(role);
+    // Keep redirect behavior tied to route changes if needed
   }, [location.pathname]);
 
   const handleLogin = (type: UserType, token: string) => {
