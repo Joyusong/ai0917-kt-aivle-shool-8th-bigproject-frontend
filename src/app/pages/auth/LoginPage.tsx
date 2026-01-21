@@ -1,10 +1,17 @@
-import { Brain, Lock, Mail, ArrowLeft, ShieldCheck } from 'lucide-react';
+import {
+  Brain,
+  Lock,
+  Mail,
+  ArrowLeft,
+  ShieldCheck,
+  Loader2,
+} from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import NaverLogin from '../../components/NaverLogin/NaverLoginButton';
-
 import apiClient from '../../api/axios';
 
 interface LoginPageProps {
@@ -16,25 +23,57 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
+  /**
+   * 1. 자동 로그인 및 리다이렉트 처리
+   * 백엔드 네이버 콜백 성공 시 /auth/callback으로 리다이렉트되는데,
+   * 이곳에서 현재 세션의 Role을 확인하고 메인으로 진입시킵니다.
+   */
+  useEffect(() => {
+    const checkSession = async () => {
+      // URL이 /auth/callback 이거나 페이지 진입 시 세션 확인
+      if (
+        location.pathname === '/auth/callback' ||
+        location.pathname === '/login'
+      ) {
+        try {
+          // 백엔드에 현재 쿠키를 기반으로 내 정보 조회
+          const res = await apiClient.get('/api/v1/auth/me');
+          if (res.data.role) {
+            onLogin(res.data.role);
+          }
+        } catch (err) {
+          // 세션이 없으면 로그인 페이지 유지
+          console.log('No active session found');
+        }
+      }
+    };
+    checkSession();
+  }, [location.pathname]);
+
+  // 이메일 로그인 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     setIsLoading(true);
     try {
-      // HttpOnly 쿠키 방식 로그인 요청
-      const res = await apiClient.post('/api/v1/auth/me', {
+      // 백엔드 AuthController 구조에 맞춘 로그인 요청
+      const res = await apiClient.post('/api/v1/auth/login', {
         email,
         password,
       });
 
-      // 로그인 성공 시 역할 정보가 응답에 포함되어 있다고 가정
-      // 예: { message: "Success", role: "Author" }
-      const userRole = res.data.role as 'Manager' | 'Author' | 'Admin';
-
-      onLogin(userRole);
-    } catch (error) {
-      console.error('Login failed:', error);
-      alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+      // 백엔드 응답에서 Role 추출 (HttpOnly 쿠키는 헤더에 저장됨)
+      const userRole = res.data.role;
+      if (userRole) {
+        onLogin(userRole);
+      }
+    } catch (error: any) {
+      const message = error.response?.data?.message || '로그인에 실패했습니다.';
+      alert(message);
     } finally {
       setIsLoading(false);
     }
@@ -43,7 +82,6 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
   return (
     <div className="min-h-screen bg-slate-50/40 flex flex-col items-center justify-center p-6 text-slate-900 font-sans antialiased">
       <div className="w-full max-w-[360px] flex flex-col gap-6">
-        {/* [Top] Navigation & Branding */}
         <header className="flex flex-col items-center gap-8">
           <div className="w-full flex justify-start">
             <button
@@ -59,15 +97,12 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
             <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] bg-primary shadow-xl shadow-primary/20 ring-1 ring-primary/10">
               <Brain className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight drop-shadow-sm">
-              반가워요!
-            </h1>
+            <h1 className="text-2xl font-black tracking-tight">반가워요!</h1>
           </div>
         </header>
 
-        {/* [Main] Authentication Card */}
-        <main className="bg-white border border-slate-200/80 rounded-[2rem] shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
-          {/* Section: Signup (Social) */}
+        <main className="bg-white border border-slate-200/80 rounded-[2rem] shadow-sm overflow-hidden">
+          {/* 네이버 로그인: 백엔드 Controller의 /api/v1/auth/naver/login 호출 */}
           <section className="p-8 pb-7 space-y-5">
             <div className="flex justify-start">
               <span className="text-[11px] font-extrabold text-primary bg-primary/5 px-2.5 py-1 rounded-full tracking-tighter">
@@ -80,7 +115,6 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
             </p>
           </section>
 
-          {/* Divider */}
           <div className="flex items-center px-8 py-1">
             <div className="flex-1 border-t border-slate-100" />
             <span className="px-4 text-[10px] font-black text-slate-200 tracking-[0.2em] uppercase">
@@ -89,7 +123,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
             <div className="flex-1 border-t border-slate-100" />
           </div>
 
-          {/* Section: Login (Email) */}
+          {/* 이메일 로그인 */}
           <section className="p-8 pt-7 bg-slate-50/40 border-t border-slate-100/50">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -105,7 +139,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     id="email"
                     type="email"
                     placeholder="name@example.com"
-                    className="pl-11 h-12 bg-white border-slate-200 rounded-xl focus-visible:ring-primary/10 text-[14px] font-medium transition-all"
+                    className="pl-11 h-12 bg-white border-slate-200 rounded-xl focus-visible:ring-primary/10 text-[14px]"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -116,7 +150,6 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
               <div className="space-y-2">
                 <Label
                   htmlFor="password"
-                  title="비밀번호"
                   className="text-[11px] font-black text-slate-400 ml-1 uppercase tracking-wider"
                 >
                   비밀번호
@@ -127,7 +160,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     id="password"
                     type="password"
                     placeholder="••••••••"
-                    className="pl-11 h-12 bg-white border-slate-200 rounded-xl focus-visible:ring-primary/10 text-[14px] font-medium transition-all"
+                    className="pl-11 h-12 bg-white border-slate-200 rounded-xl focus-visible:ring-primary/10 text-[14px]"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -140,31 +173,16 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                 className="w-full h-12 rounded-xl font-bold text-[14px] shadow-lg shadow-primary/10 transition-all active:scale-[0.97] mt-2"
                 disabled={isLoading}
               >
-                {isLoading ? '확인 중...' : '로그인'}
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  '로그인'
+                )}
               </Button>
             </form>
-
-            <footer className="mt-8 flex justify-center items-center gap-4 text-[11px] text-slate-400 font-bold border-t border-slate-100/80 pt-6">
-              <button
-                type="button"
-                className="hover:text-primary transition-colors"
-                onClick={() => onLogin('Author')}
-              >
-                아이디 찾기
-              </button>
-              <div className="w-px h-3 bg-slate-200" />
-              <button
-                type="button"
-                className="hover:text-slate-900 transition-colors"
-                onClick={() => onLogin('Admin')}
-              >
-                비밀번호 찾기
-              </button>
-            </footer>
           </section>
         </main>
 
-        {/* [Bottom] Approval Notice */}
         <div className="w-full bg-slate-200/40 border border-slate-200/50 rounded-2xl p-4 flex items-center justify-center gap-3 shadow-sm">
           <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
           <p className="text-[11px] text-slate-500 font-bold leading-tight tracking-tight">

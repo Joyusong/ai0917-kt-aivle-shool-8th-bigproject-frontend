@@ -5,9 +5,9 @@ import {
   Check,
   X,
   ShieldCheck,
-  Mail,
-  Lock,
-  Smartphone,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -30,6 +30,10 @@ export function SignupPage({
   const [emailCode, setEmailCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // 비밀번호 표시 상태
+  const [showPwd, setShowPwd] = useState(false);
 
   const [formData, setFormData] = useState({
     siteEmail: '',
@@ -46,6 +50,19 @@ export function SignupPage({
     match:
       formData.sitePwd !== '' && formData.sitePwd === formData.sitePwdConfirm,
   };
+
+  // 비밀번호 강도 계산 (0-4)
+  const getStrengthScore = (pwd: string) => {
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++; // 대문자
+    if (/[0-9]/.test(pwd)) score++; // 숫자
+    if (/[!@#$%^&*(),.?":{}|<> ]/.test(pwd)) score++; // 특수문자
+    return score;
+  };
+
+  const strengthScore = getStrengthScore(formData.sitePwd);
 
   useEffect(() => {
     if (!token) {
@@ -127,7 +144,7 @@ export function SignupPage({
         <header className="space-y-4">
           <button
             onClick={onBack}
-            className="p-0 h-auto text-slate-400 hover:text-slate-900 transition-colors"
+            className="text-slate-400 hover:text-slate-900 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -161,19 +178,24 @@ export function SignupPage({
                     setFormData({ ...formData, siteEmail: e.target.value })
                   }
                   disabled={isEmailVerified}
-                  className="h-11 rounded-md border-slate-200 focus-visible:ring-slate-400"
+                  className={`h-12 rounded-xl border-slate-200 ${
+                    isEmailVerified ? 'bg-slate-50 text-slate-400' : ''
+                  }`}
                 />
-                {!isEmailVerified && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleRequestEmailCode}
-                    className="h-11 px-4 text-xs font-semibold border-slate-200"
-                  >
-                    {isCodeSent ? '재요청' : '인증'}
-                  </Button>
+                {isEmailVerified && (
+                  <Check className="absolute right-3 top-3.5 w-5 h-5 text-blue-500" />
                 )}
               </div>
+              {!isEmailVerified && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRequestEmailCode}
+                  className="h-12 px-4 font-bold rounded-xl border-slate-200 hover:bg-slate-50 transition-colors"
+                >
+                  {isCodeSent ? '재발송' : '인증요청'}
+                </Button>
+              )}
             </div>
 
             {isCodeSent && !isEmailVerified && (
@@ -187,34 +209,90 @@ export function SignupPage({
                 <Button
                   type="button"
                   onClick={handleVerifyEmailCode}
-                  className="h-11 px-6 font-bold bg-slate-900 text-white"
+                  disabled={isVerifying || emailCode.length < 4}
+                  className="h-12 px-6 font-bold bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
                 >
                   확인
                 </Button>
               </div>
             )}
             {isEmailVerified && (
-              <p className="text-[12px] text-blue-600 font-medium flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5" /> 이메일 인증이 완료되었습니다.
+              <p className="text-[11px] text-blue-600 font-bold flex items-center gap-1.5 ml-1 animate-in fade-in duration-300">
+                <ShieldCheck className="w-3.5 h-3.5" /> 이메일 인증이 성공적으로
+                완료되었습니다.
               </p>
             )}
           </div>
 
-          {/* Section 2: Password with Validation */}
+          {/* Password Section */}
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-[13px] font-medium text-slate-700">
+            <div className="flex items-center justify-between ml-1">
+              <Label className="text-[13px] font-semibold text-slate-700">
                 비밀번호 설정
               </Label>
-              <Input
-                type="password"
-                placeholder="비밀번호 입력"
-                value={formData.sitePwd}
-                onChange={(e) =>
-                  setFormData({ ...formData, sitePwd: e.target.value })
-                }
-                className="h-11 border-slate-200 focus-visible:ring-slate-400"
-              />
+              {formData.sitePwd.length > 0 && (
+                <span
+                  className={`text-[11px] font-bold ${
+                    strengthScore <= 2
+                      ? 'text-red-500'
+                      : strengthScore === 3
+                        ? 'text-orange-500'
+                        : 'text-green-500'
+                  }`}
+                >
+                  {strengthScore <= 2
+                    ? '사용불가'
+                    : strengthScore === 3
+                      ? '보통'
+                      : '안전함'}
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="relative">
+                <Input
+                  type={showPwd ? 'text' : 'password'}
+                  placeholder="비밀번호 (8자 이상, 특수문자 포함)"
+                  value={formData.sitePwd}
+                  onChange={(e) =>
+                    setFormData({ ...formData, sitePwd: e.target.value })
+                  }
+                  className="h-12 border-slate-200 rounded-xl focus:ring-slate-400 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd(!showPwd)}
+                  className="absolute right-3 top-3.5 text-slate-400 hover:text-slate-600"
+                >
+                  {showPwd ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+
+              {/* Strength Meter Bar */}
+              {formData.sitePwd.length > 0 && (
+                <div className="flex gap-1 h-1 mt-1 px-1">
+                  {[1, 2, 3, 4].map((step) => (
+                    <div
+                      key={step}
+                      className={`flex-1 rounded-full transition-colors duration-300 ${
+                        step <= strengthScore
+                          ? strengthScore <= 2
+                            ? 'bg-red-400'
+                            : strengthScore === 3
+                              ? 'bg-orange-400'
+                              : 'bg-green-500'
+                          : 'bg-slate-100'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
               <Input
                 type="password"
                 placeholder="비밀번호 재입력"
@@ -222,12 +300,15 @@ export function SignupPage({
                 onChange={(e) =>
                   setFormData({ ...formData, sitePwdConfirm: e.target.value })
                 }
-                className="h-11 border-slate-200 focus-visible:ring-slate-400"
+                className={`h-12 border-slate-200 rounded-xl focus:ring-slate-400 ${
+                  pwdValidation.match && formData.sitePwdConfirm
+                    ? 'bg-blue-50/30 border-blue-200'
+                    : ''
+                }`}
               />
             </div>
 
-            {/* Password Checklist */}
-            <div className="grid grid-cols-2 gap-y-2 px-1">
+            <div className="flex gap-3 px-1">
               <ValidationItem isValid={pwdValidation.length} text="8자 이상" />
               <ValidationItem
                 isValid={pwdValidation.special}
@@ -248,12 +329,31 @@ export function SignupPage({
                 {formData.name}
               </span>
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-400 font-medium">휴대폰 번호</span>
-              <span className="text-slate-900 font-semibold">
-                {formData.mobile}
-              </span>
+            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+              <Check className="w-4 h-4 text-slate-500" />
             </div>
+          </div>
+
+          {/* Agreements (iframe modal) */}
+          <div className="space-y-3 pt-2">
+            <AgreementRow
+              id="terms"
+              label="서비스 이용약관 동의 (필수)"
+              checked={agreements.terms}
+              onCheckedChange={(v: any) =>
+                setAgreements({ ...agreements, terms: !!v })
+              }
+              url="/terms"
+            />
+            <AgreementRow
+              id="privacy"
+              label="개인정보 처리방침 동의 (필수)"
+              checked={agreements.privacy}
+              onCheckedChange={(v: any) =>
+                setAgreements({ ...agreements, privacy: !!v })
+              }
+              url="/privacy"
+            />
           </div>
 
           <Button
@@ -265,7 +365,7 @@ export function SignupPage({
               !pwdValidation.special ||
               isSubmitting
             }
-            className="w-full h-12 bg-slate-900 text-white hover:bg-slate-800 rounded-md font-semibold transition-all active:scale-[0.98]"
+            className="w-full h-14 bg-slate-900 text-white rounded-[18px] font-bold text-base shadow-xl shadow-slate-100 disabled:bg-slate-200 disabled:shadow-none disabled:text-slate-400 transition-all active:scale-[0.98] hover:bg-slate-800"
           >
             {isSubmitting ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -288,18 +388,64 @@ export function SignupPage({
   );
 }
 
-// 비밀번호 검증 아이템 컴포넌트
+// 헬퍼 컴포넌트들
 function ValidationItem({ isValid, text }: { isValid: boolean; text: string }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-[12px] font-medium transition-colors ${isValid ? 'text-blue-600' : 'text-slate-300'}`}
+      className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${
+        isValid ? 'text-blue-600' : 'text-slate-300'
+      }`}
     >
-      {isValid ? (
-        <Check className="w-3.5 h-3.5" />
-      ) : (
-        <X className="w-3.5 h-3.5" />
-      )}
+      <div
+        className={`w-3.5 h-3.5 rounded-full flex items-center justify-center border ${
+          isValid ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-300'
+        }`}
+      >
+        <Check
+          className={`w-2.5 h-2.5 text-white ${
+            isValid ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      </div>
       {text}
+    </div>
+  );
+}
+
+function AgreementRow({ id, label, checked, onCheckedChange, url }: any) {
+  return (
+    <div className="flex items-center justify-between group p-1 hover:bg-slate-50 rounded-lg transition-colors -mx-1 px-1">
+      <div className="flex items-center gap-3">
+        <Checkbox
+          id={id}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          className="w-5 h-5 border-slate-200 rounded-md data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+        />
+        <Label
+          htmlFor={id}
+          className="text-[13px] text-slate-600 font-bold cursor-pointer group-hover:text-slate-900"
+        >
+          {label}
+        </Label>
+      </div>
+      <Dialog>
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className="text-[11px] font-bold text-slate-300 hover:text-slate-900 underline underline-offset-4 px-2 py-1"
+          >
+            보기
+          </button>
+        </DialogTrigger>
+        <DialogContent className="w-[90vw] max-w-[480px] h-[70vh] p-0 rounded-[24px] overflow-hidden">
+          <iframe
+            src={url}
+            className="w-full h-full border-none bg-white"
+            title={label}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
