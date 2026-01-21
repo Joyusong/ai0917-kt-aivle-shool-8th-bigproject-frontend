@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 <<<<<<< HEAD
+<<<<<<< HEAD
 import { Brain, ArrowLeft, Loader2 } from 'lucide-react'; // 로딩 아이콘 추가
 =======
 import { Brain, ArrowLeft } from 'lucide-react';
 >>>>>>> jsh
+=======
+import { Brain, ArrowLeft } from 'lucide-react';
+>>>>>>> dcd977f2e06e7a209a76633384f34b365222eef0
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -54,9 +58,12 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
   useEffect(() => {
     const loadPending = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/api/v1/signup/naver/pending`, {
-          withCredentials: true, // ⭐ pendingSignup 쿠키 보내기
-        });
+        const res = await axios.get(
+          `${backendUrl}/api/v1/signup/naver/pending`,
+          {
+            withCredentials: true, // ⭐ pendingSignup 쿠키 보내기
+          },
+        );
 
         const p: PendingProfile = res.data;
 
@@ -70,7 +77,9 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
         }));
       } catch (err) {
         console.error(err);
-        alert('네이버 인증 정보(pending)가 없습니다. 네이버 로그인을 다시 진행해주세요.');
+        alert(
+          '네이버 인증 정보(pending)가 없습니다. 네이버 로그인을 다시 진행해주세요.',
+        );
         navigate('/login', { replace: true });
       } finally {
         setIsLoading(false);
@@ -114,7 +123,7 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
         },
         {
           withCredentials: true, // ⭐ pendingSignup 쿠키 포함
-        }
+        },
       );
 
       if (res.status === 200 || res.status === 201) {
@@ -123,10 +132,13 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
       }
     } catch (err) {
       console.error(err);
-      alert('회원가입 처리 중 오류가 발생했습니다. (이메일 인증 여부/중복 이메일 등을 확인)');
+      alert(
+        '회원가입 처리 중 오류가 발생했습니다. (이메일 인증 여부/중복 이메일 등을 확인)',
+      );
     }
   };
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   // 로딩 중일 때 표시할 화면
   if (isLoading) {
@@ -140,6 +152,10 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
   if (isLoading) return null; // 로딩중 깜빡임 방지
   if (!pending) return null;
 >>>>>>> jsh
+=======
+  if (isLoading) return null; // 로딩중 깜빡임 방지
+  if (!pending) return null;
+>>>>>>> dcd977f2e06e7a209a76633384f34b365222eef0
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10 md:px-6 md:py-12">
@@ -156,14 +172,21 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg mb-6">
             <Brain className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">프로필 완성</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            프로필 완성
+          </h1>
           <p className="text-muted-foreground text-sm">
+<<<<<<< HEAD
 <<<<<<< HEAD
             네이버 인증이 완료되었습니다. <br /> 추가 정보를 입력하여 가입을
             완료하세요.
 =======
             네이버 인증이 완료되었습니다. <br /> 추가 정보를 입력하여 작가 가입을 완료하세요.
 >>>>>>> jsh
+=======
+            네이버 인증이 완료되었습니다. <br /> 추가 정보를 입력하여 작가
+            가입을 완료하세요.
+>>>>>>> dcd977f2e06e7a209a76633384f34b365222eef0
           </p>
         </div>
 
@@ -171,9 +194,13 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
               {/* ✅ 사이트 이메일 입력 */}
 >>>>>>> jsh
+=======
+              {/* ✅ 사이트 이메일 입력 */}
+>>>>>>> dcd977f2e06e7a209a76633384f34b365222eef0
               <div className="space-y-2">
                 <Label className="text-xs font-bold ml-1">이메일</Label>
                 <Input
@@ -186,6 +213,7 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
               </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-xs font-bold ml-1">
                   비밀번호 설정
@@ -195,6 +223,11 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
               <div className="space-y-2">
                 <Label className="text-xs font-bold ml-1">비밀번호 설정</Label>
 >>>>>>> jsh
+=======
+              {/* ✅ 비밀번호 설정 */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold ml-1">비밀번호 설정</Label>
+>>>>>>> dcd977f2e06e7a209a76633384f34b365222eef0
                 <Input
                   type="password"
                   placeholder="8자 이상 입력하세요"
@@ -210,7 +243,9 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
                 <Input
                   type="password"
                   value={formData.sitePwdConfirm}
-                  onChange={(e) => handleChange('sitePwdConfirm', e.target.value)}
+                  onChange={(e) =>
+                    handleChange('sitePwdConfirm', e.target.value)
+                  }
                   className="h-12"
                   required
                 />
@@ -222,6 +257,7 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
             {/* ✅ 네이버에서 온 값 (읽기용) */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+<<<<<<< HEAD
 <<<<<<< HEAD
                 <Label htmlFor="name" className="text-xs font-bold ml-1">
                   이름
@@ -236,6 +272,14 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
                 <Label className="text-xs font-bold ml-1">이름</Label>
                 <Input value={formData.name} readOnly className="h-12 bg-muted cursor-not-allowed" />
 >>>>>>> jsh
+=======
+                <Label className="text-xs font-bold ml-1">이름</Label>
+                <Input
+                  value={formData.name}
+                  readOnly
+                  className="h-12 bg-muted cursor-not-allowed"
+                />
+>>>>>>> dcd977f2e06e7a209a76633384f34b365222eef0
               </div>
               <div className="space-y-2">
                 <Label className="text-xs font-bold ml-1">연락처</Label>
@@ -255,10 +299,16 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
                   checked={termsAgree}
                   onCheckedChange={(v) => setTermsAgree(Boolean(v))}
                 />
-                <label htmlFor="terms" className="text-[13px] text-muted-foreground flex-1 cursor-pointer">
+                <label
+                  htmlFor="terms"
+                  className="text-[13px] text-muted-foreground flex-1 cursor-pointer"
+                >
                   서비스 이용약관 동의 (필수)
                 </label>
-                <Link to="/terms" className="text-xs text-primary hover:underline font-medium">
+                <Link
+                  to="/terms"
+                  className="text-xs text-primary hover:underline font-medium"
+                >
                   보기
                 </Link>
               </div>
@@ -268,10 +318,16 @@ export function SignupPage({ onSignupComplete, onBack }: SignupPageProps) {
                   checked={privacyAgree}
                   onCheckedChange={(v) => setPrivacyAgree(Boolean(v))}
                 />
-                <label htmlFor="privacy" className="text-[13px] text-muted-foreground flex-1 cursor-pointer">
+                <label
+                  htmlFor="privacy"
+                  className="text-[13px] text-muted-foreground flex-1 cursor-pointer"
+                >
                   개인정보처리방침 동의 (필수)
                 </label>
-                <Link to="/privacy" className="text-xs text-primary hover:underline font-medium">
+                <Link
+                  to="/privacy"
+                  className="text-xs text-primary hover:underline font-medium"
+                >
                   보기
                 </Link>
               </div>
