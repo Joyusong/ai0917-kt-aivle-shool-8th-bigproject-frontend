@@ -8,9 +8,8 @@ import {
   BookMarked,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 interface LandingPageProps {
@@ -19,26 +18,6 @@ interface LandingPageProps {
 
 export function LandingPage({ onSignInClick }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    // cors 테스트 ---------------------------------------------------
-    axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/api/v1/hello`, {
-        withCredentials: true, // 쿠키 전송 활성화
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer your_token_here',
-        },
-      })
-      .then((response) => {
-        console.log('Success:', response.data);
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
-    // cors 테스트 ---------------------------------------------------
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="bg-background min-h-screen transition-colors duration-300">

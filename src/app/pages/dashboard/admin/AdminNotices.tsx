@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import apiClient from '../../../api/axios';
 import {
   Megaphone,
   X as CloseIcon,
@@ -39,9 +38,6 @@ interface PageResponse {
 }
 
 export function AdminNotices() {
-  const navigate = useNavigate();
-
-  // 상태 관리
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -54,44 +50,15 @@ export function AdminNotices() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // Axios 인스턴스 최적화
-  const authAxios = useMemo(() => {
-    const instance = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL || '',
-    });
-
-    instance.interceptors.request.use((config) => {
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-
-    instance.interceptors.response.use(
-      (res) => res,
-      (err) => {
-        if (err.response?.status === 403) {
-          alert('관리자 권한이 없습니다.');
-          navigate('/');
-        }
-        return Promise.reject(err);
-      },
-    );
-    return instance;
-  }, [navigate]);
+  const [existingFileName, setExistingFileName] = useState<string | null>(null);
 
   // 1. 목록 조회
   const fetchNotices = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await authAxios.get<PageResponse>(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/notice`,
-        {
-          params: { keyword, page, size: 10 },
-        },
-      );
+      const res = await apiClient.get<PageResponse>('/api/v1/admin/notice', {
+        params: { keyword, page, size: 10 },
+      });
       setNotices(res.data.content);
       setTotalElements(res.data.totalElements);
     } catch (error) {
@@ -99,7 +66,7 @@ export function AdminNotices() {
     } finally {
       setLoading(false);
     }
-  }, [authAxios, keyword, page]);
+  }, [keyword, page]);
 
   useEffect(() => {
     fetchNotices();
@@ -115,15 +82,9 @@ export function AdminNotices() {
 
     try {
       if (editingId) {
-        await authAxios.patch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/notice/${editingId}`,
-          formData,
-        );
+        await apiClient.patch(`/api/v1/admin/notice/${editingId}`, formData);
       } else {
-        await authAxios.post(
-          `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/notice`,
-          formData,
-        );
+        await apiClient.post('/api/v1/admin/notice', formData);
       }
       closeModal();
       fetchNotices();
@@ -136,24 +97,31 @@ export function AdminNotices() {
   const handleDelete = async (id: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
     try {
-      await authAxios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/notice/${id}`,
-      );
+      await apiClient.delete(`/api/v1/admin/notice/${id}`);
       fetchNotices();
     } catch (e) {
       alert('삭제 실패');
     }
   };
 
-  // 4. 다운로드
+  // [추가] 기존 첨부파일만 별도 삭제 기능
+  const handleDeleteFile = async () => {
+    if (!editingId || !confirm('첨부파일을 삭제하시겠습니까?')) return;
+    try {
+      await apiClient.delete(`/api/v1/admin/notice/${editingId}/file`);
+      setExistingFileName(null);
+      alert('파일이 삭제되었습니다.');
+      fetchNotices();
+    } catch (e) {
+      alert('파일 삭제 실패');
+    }
+  };
+
   const handleDownload = async (id: number, filename: string) => {
     try {
-      const res = await authAxios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/notice/${id}/download`,
-        {
-          responseType: 'blob',
-        },
-      );
+      const res = await apiClient.get(`/api/v1/admin/notice/${id}/download`, {
+        responseType: 'blob',
+      });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;

@@ -5,6 +5,8 @@ import { Label } from '../../components/ui/label';
 import { useState } from 'react';
 import NaverLogin from '../../components/NaverLogin/NaverLoginButton';
 
+import apiClient from '../../api/axios';
+
 interface LoginPageProps {
   onLogin: (userType: 'Manager' | 'Author' | 'Admin') => void;
   onBack: () => void;
@@ -15,13 +17,27 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      onLogin('Manager');
+    try {
+      // HttpOnly 쿠키 방식 로그인 요청
+      const res = await apiClient.post('/api/v1/auth/me', {
+        email,
+        password,
+      });
+
+      // 로그인 성공 시 역할 정보가 응답에 포함되어 있다고 가정
+      // 예: { message: "Success", role: "Author" }
+      const userRole = res.data.role as 'Manager' | 'Author' | 'Admin';
+
+      onLogin(userRole);
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
