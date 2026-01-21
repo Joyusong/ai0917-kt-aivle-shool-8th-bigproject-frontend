@@ -9,6 +9,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
+
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -46,7 +47,11 @@ export function SignupPage({
     mobile: '',
   });
 
-  // 비밀번호 검증 상태
+  const [agreements, setAgreements] = useState({
+    terms: false,
+    privacy: false,
+  });
+
   const pwdValidation = {
     length: formData.sitePwd.length >= 8,
     special: /[!@#$%^&*(),.?":{}|<> ]/.test(formData.sitePwd),
@@ -160,15 +165,14 @@ export function SignupPage({
 
   if (isLoading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="w-6 h-6 animate-spin text-slate-200" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-slate-200" />
       </div>
     );
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-12 antialiased text-slate-900">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6 py-12 text-slate-900">
       <div className="w-full max-w-[380px] space-y-10">
-        {/* Header */}
         <header className="space-y-4">
           <button
             onClick={onBack}
@@ -177,28 +181,22 @@ export function SignupPage({
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              계정 만들기
-            </h1>
-            <p className="text-sm text-slate-500">
-              네이버 인증이 확인되었습니다. 나머지 정보를 입력해주세요.
+            <h1 className="text-2xl font-bold tracking-tight">계정 만들기</h1>
+            <p className="text-sm text-slate-500 font-medium">
+              거의 다 왔습니다! 이메일 인증을 진행해주세요.
             </p>
           </div>
         </header>
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Section 1: Email Verification */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="text-[13px] font-medium text-slate-700"
-              >
-                이메일 주소
-              </Label>
-              <div className="flex gap-2">
+          {/* Email Verification Group */}
+          <div className="space-y-3">
+            <Label className="text-[13px] font-semibold text-slate-700 ml-1">
+              이메일 주소
+            </Label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
                 <Input
-                  id="email"
                   type="email"
                   placeholder="name@example.com"
                   value={formData.siteEmail}
@@ -233,13 +231,14 @@ export function SignupPage({
               )}
             </div>
 
+            {/* 인증번호 입력창 (발송 후에만 등장) */}
             {isCodeSent && !isEmailVerified && (
-              <div className="flex gap-2 animate-in fade-in slide-in-from-top-1">
+              <div className="flex gap-2 mt-2 animate-in slide-in-from-top-2 duration-300">
                 <Input
-                  placeholder="인증코드 6자리"
+                  placeholder="인증번호 6자리"
                   value={emailCode}
                   onChange={(e) => setEmailCode(e.target.value)}
-                  className="h-11 border-slate-200"
+                  className="h-12 rounded-xl border-slate-200 flex-1"
                 />
                 <Button
                   type="button"
@@ -257,6 +256,7 @@ export function SignupPage({
                 </Button>
               </div>
             )}
+
             {isEmailVerified && (
               <p className="text-[11px] text-blue-600 font-bold flex items-center gap-1.5 ml-1 animate-in fade-in duration-300">
                 <ShieldCheck className="w-3.5 h-3.5" /> 이메일 인증이 성공적으로
@@ -336,7 +336,7 @@ export function SignupPage({
 
               <Input
                 type="password"
-                placeholder="비밀번호 재입력"
+                placeholder="비밀번호 재확인"
                 value={formData.sitePwdConfirm}
                 onChange={(e) =>
                   setFormData({ ...formData, sitePwdConfirm: e.target.value })
@@ -351,24 +351,18 @@ export function SignupPage({
 
             <div className="flex gap-3 px-1">
               <ValidationItem isValid={pwdValidation.length} text="8자 이상" />
-              <ValidationItem
-                isValid={pwdValidation.special}
-                text="특수문자 포함"
-              />
-              <ValidationItem
-                isValid={pwdValidation.match}
-                text="비밀번호 일치"
-              />
+              <ValidationItem isValid={pwdValidation.special} text="특수문자" />
+              <ValidationItem isValid={pwdValidation.match} text="일치 확인" />
             </div>
           </div>
 
-          {/* Section 3: Identity (ReadOnly) */}
-          <div className="pt-2 border-t border-slate-100 space-y-4">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-400 font-medium">이름</span>
-              <span className="text-slate-900 font-semibold">
-                {formData.name}
-              </span>
+          {/* Identity (ReadOnly) */}
+          <div className="p-4 bg-slate-50/70 rounded-2xl border border-slate-100 flex justify-between items-center text-sm">
+            <div className="space-y-1">
+              <p className="text-slate-400 text-xs">본인 인증 정보</p>
+              <p className="font-bold">
+                {formData.name} · {formData.mobile}
+              </p>
             </div>
             <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
               <Check className="w-4 h-4 text-slate-500" />
@@ -413,19 +407,10 @@ export function SignupPage({
             {completeSignupMutation.isPending ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              '가입 완료하기'
+              '회원가입 완료'
             )}
           </Button>
         </form>
-
-        <footer className="text-center">
-          <p className="text-[12px] text-slate-400 font-medium">
-            가입 시 서비스{' '}
-            <span className="underline cursor-pointer">이용약관</span> 및{' '}
-            <span className="underline cursor-pointer">개인정보처리방침</span>에
-            동의하게 됩니다.
-          </p>
-        </footer>
       </div>
     </div>
   );

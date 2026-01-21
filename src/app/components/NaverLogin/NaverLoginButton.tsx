@@ -3,8 +3,10 @@ import React from 'react';
 import { Button } from '../ui/button';
 
 const NaverLogin = () => {
-  // Spring Boot 서버가 설정한 네이버 인증 URL
-  const naverLoginUrl = `${import.meta.env.VITE_BACKEND_URL}/api/v1/auth/naver/login`;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, '');
+
+  // ✅ 백엔드 컨트롤러: /api/v1/auth/naver/login
+  const naverLoginUrl = `${backendUrl}/api/v1/auth/naver/login`;
 
   const handleNaverLogin = () => {
     window.location.href = naverLoginUrl;

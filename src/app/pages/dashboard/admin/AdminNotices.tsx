@@ -23,6 +23,7 @@ import {
 } from '../../../components/ui/card';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
+import { Badge } from '../../../components/ui/badge';
 
 // --- 인터페이스 ---
 interface Notice {
@@ -61,7 +62,6 @@ export function AdminNotices() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [existingFileName, setExistingFileName] = useState<string | null>(null);
 
-  // 1. 목록 조회
   // 1. 목록 조회
   const fetchNotices = useCallback(async () => {
     setLoading(true);
