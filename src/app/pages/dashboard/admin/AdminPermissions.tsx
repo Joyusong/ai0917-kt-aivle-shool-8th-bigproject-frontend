@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Shield, Users, FileText, X as CloseIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Shield, Users, FileText, X as CloseIcon, Search, Trash2, Plus } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import {
   Card,
@@ -9,59 +9,29 @@ import {
 } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { Input } from "../../../components/ui/input";
+import axios from "axios";
 
-const initialUsers = [
-  {
-    name: "시스템 관리자",
-    email: "admin@example.com",
-    role: "관리자",
-    roleBadge: "bg-red-500 text-white",
-    status: "활성",
-    statusBadge: "bg-green-500 text-white",
-    date: "2023.01.15",
-    initial: "관",
-    initialGradient: "from-red-500 to-pink-600",
-  },
-  {
-    name: "박지영",
-    email: "operator1@example.com",
-    role: "운영자",
-    roleBadge: "bg-blue-500 text-white",
-    status: "활성",
-    statusBadge: "bg-green-500 text-white",
-    date: "2024.05.22",
-    initial: "박",
-    initialGradient: "from-blue-500 to-purple-600",
-  },
-  {
-    name: "김민지",
-    email: "author1@example.com",
-    role: "작가",
-    roleBadge: "bg-green-500 text-white",
-    status: "활성",
-    statusBadge: "bg-green-500 text-white",
-    date: "2025.11.03",
-    initial: "김",
-    initialGradient: "from-green-500 to-teal-600",
-  },
-  {
-    name: "이서준",
-    email: "author2@example.com",
-    role: "작가",
-    roleBadge: "bg-green-500 text-white",
-    status: "휴면",
-    statusBadge: "border-border text-muted-foreground",
-    statusVariant: "outline",
-    date: "2025.08.14",
-    initial: "이",
-    initialGradient: "from-yellow-500 to-orange-600",
-  },
-];
+type Role = "관리자" | "운영자" | "작가";
+type Status = "활성" | "휴면";
+
+interface AccessUser {
+  id: number;
+  name: string;
+  email: string;
+  role: Role;
+  status: Status;
+  date: string;
+  initial: string;
+  initialGradient?: string;
+  roleBadge?: string;
+  statusBadge?: string;
+  statusVariant?: "outline";
+}
 
 interface PermissionEditModalProps {
-  user: any;
+  user: AccessUser;
   onClose: () => void;
-  onSave: (user: any) => void;
+  onSave: (user: AccessUser) => void;
 }
 
 function PermissionEditModal({
@@ -112,7 +82,7 @@ function PermissionEditModal({
               </div>
               <select
                 value={role}
-                onChange={(e) => setRole(e.target.value)}
+                onChange={(e) => setRole(e.target.value as Role)}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm text-foreground"
               >
                 <option value="운영자">운영자</option>
@@ -125,7 +95,7 @@ function PermissionEditModal({
               </div>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => setStatus(e.target.value as Status)}
                 className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm text-foreground"
               >
                 <option value="활성">활성</option>
@@ -162,12 +132,36 @@ function PermissionEditModal({
   );
 }
 
-export function AdminPermissions() {
-  const [users, setUsers] = useState(initialUsers);
-  const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
+console.log("환경 변수 체크:", import.meta.env.VITE_BACKEND_URL);
 
-  const applyRoleStatusStyles = (user: any) => {
+export function AdminPermissions() {
+  const [users, setUsers] = useState<AccessUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<AccessUser | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [roleFilter, setRoleFilter] = useState<Role | "">("");
+  const [page, setPage] = useState(0);
+  const [summary, setSummary] = useState<{ admin: number; operator: number; author: number } | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState<Role>("운영자");
+
+  const authAxios = useMemo(() => {
+    const instance = axios.create({
+      baseURL: import.meta.env.VITE_BACKEND_URL || "",
+    });
+    instance.interceptors.request.use((config) => {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+    return instance;
+  }, []);
+
+  const applyRoleStatusStyles = (user: AccessUser) => {
     let roleBadge = user.roleBadge;
     let statusBadge = user.statusBadge;
     let statusVariant = user.statusVariant;
@@ -196,21 +190,151 @@ export function AdminPermissions() {
     };
   };
 
-  const handleEditClick = (user: any) => {
+  const fetchSummary = useCallback(async () => {
+    try {
+      //const res = await authAxios.get(`${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/access/summary`);
+      const res = await authAxios.get('/api/v1/admin/access/summary');
+      setSummary({
+        admin: res.data.admin ?? 0,
+        operator: res.data.operator ?? 0,
+        author: res.data.author ?? 0,
+      });
+    } catch {
+      setSummary({ admin: 0, operator: 0, author: 0 });
+    }
+  }, [authAxios]);
+
+  const fetchUsers = useCallback(async () => {
+    const params: any = { page, size: 10 };
+    if (keyword) params.keyword = keyword;
+    if (roleFilter) params.role = roleFilter;
+    try {
+      // const res = await authAxios.get(`${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/access/users`, {
+      //   params,
+      // });
+      const res = await authAxios.get('/api/v1/admin/access/users', { params });
+      const content: any[] = res.data.content || [];
+      setUsers(
+        content.map((u) =>
+          applyRoleStatusStyles({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            status: u.status,
+            date: u.date,
+            initial: u.name?.slice(0, 1) || "?",
+            initialGradient:
+              u.role === "관리자"
+                ? "from-red-500 to-pink-600"
+                : u.role === "운영자"
+                ? "from-blue-500 to-purple-600"
+                : "from-green-500 to-teal-600",
+          })
+        )
+      );
+    } catch {
+      setUsers([]);
+    }
+  }, [authAxios, keyword, roleFilter, page]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetchSummary();
+    }, 0);
+  }, [fetchSummary]);
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetchUsers();
+    }, 0);
+  }, [fetchUsers]);
+
+  const handleEditClick = async (user: AccessUser) => {
     if (user.role === "관리자") {
       return;
     }
-    setSelectedUser(user);
+    try {
+      // const res = await authAxios.get(
+      //   `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/access/users/${user.id}`
+      // );
+      const res = await authAxios.get(`/api/v1/admin/access/users/${user.id}`);
+      const u = res.data;
+      setSelectedUser(
+        applyRoleStatusStyles({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          status: u.status,
+          date: u.date,
+          initial: u.name?.slice(0, 1) || "?",
+        })
+      );
+    } catch {
+      setSelectedUser(user);
+    }
     setShowEditModal(true);
   };
 
-  const handleSavePermission = (updatedUser: any) => {
+  const handleSavePermission = async (updatedUser: AccessUser) => {
+    try {
+      // await authAxios.patch(
+      //   `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/access/users/${updatedUser.id}`,
+      //   { role: updatedUser.role, status: updatedUser.status }
+      // );
+      await authAxios.patch(`/api/v1/admin/access/users/${updatedUser.id}`, { role: updatedUser.role, status: updatedUser.status });
+    } catch {
+      alert("수정 실패");
+    }
     const styledUser = applyRoleStatusStyles(updatedUser);
     setUsers((prev) =>
       prev.map((user) =>
         user.email === styledUser.email ? styledUser : user
       )
     );
+  };
+
+  const handleDelete = async (user: AccessUser) => {
+    if (!confirm("정말 삭제/회수하시겠습니까?")) return;
+    try {
+      await authAxios.delete(`/api/v1/admin/access/users/${user.id}`);
+    } catch {
+      alert("삭제 실패");
+    }
+    setUsers((prev) => prev.filter((u) => u.id !== user.id));
+  };
+
+  const handleCreate = async () => {
+    if (!newName.trim() || !newEmail.trim()) return;
+    try {
+      // const res = await authAxios.post(
+      //   `${import.meta.env.VITE_BACKEND_URL}/api/v1/admin/access/users`,
+      //   { name: newName, email: newEmail, role: newRole }
+      // );
+      const res = await authAxios.post('/api/v1/admin/access/users', { 
+      name: newName, 
+      email: newEmail, 
+      role: newRole 
+    });
+      const u = res.data;
+      const created: AccessUser = applyRoleStatusStyles({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        status: u.status ?? "활성",
+        date: u.date ?? new Date().toISOString().slice(0, 10),
+        initial: u.name?.slice(0, 1) || "?",
+      });
+      setUsers((prev) => [created, ...prev]);
+      setShowCreate(false);
+      setNewName("");
+      setNewEmail("");
+      setNewRole("운영자");
+    } catch {
+      alert("생성 실패");
+    }
   };
 
   return (
@@ -226,7 +350,7 @@ export function AdminPermissions() {
             </h2>
           </div>
         </div>
-        <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white">
+        <Button className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white" onClick={() => setShowCreate(true)}>
           <Users className="w-4 h-4 mr-2" />새 사용자 추가
         </Button>
       </div>
@@ -241,7 +365,7 @@ export function AdminPermissions() {
               </div>
               <div>
                 <div className="text-2xl text-foreground font-bold">
-                  3
+                  {summary?.admin ?? 0}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   관리자
@@ -259,7 +383,7 @@ export function AdminPermissions() {
               </div>
               <div>
                 <div className="text-2xl text-foreground font-bold">
-                  12
+                  {summary?.operator ?? 0}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   운영자
@@ -277,7 +401,7 @@ export function AdminPermissions() {
               </div>
               <div>
                 <div className="text-2xl text-foreground font-bold">
-                  1,232
+                  {summary?.author ?? 0}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   작가
@@ -295,10 +419,33 @@ export function AdminPermissions() {
             <CardTitle className="text-foreground">
               사용자 목록
             </CardTitle>
-            <Input
-              placeholder="사용자 검색..."
-              className="w-full md:max-w-sm"
-            />
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="relative flex-1 md:flex-initial">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="사용자 검색..."
+                  className="pl-9 w-full md:w-64"
+                  value={keyword}
+                  onChange={(e) => {
+                    setKeyword(e.target.value);
+                    setPage(0);
+                  }}
+                />
+              </div>
+              <select
+                value={roleFilter}
+                onChange={(e) => {
+                  setRoleFilter(e.target.value as Role | "");
+                  setPage(0);
+                }}
+                className="px-3 py-2 rounded-md border border-border bg-background text-sm text-foreground"
+              >
+                <option value="">전체</option>
+                <option value="관리자">관리자</option>
+                <option value="운영자">운영자</option>
+                <option value="작가">작가</option>
+              </select>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -328,8 +475,8 @@ export function AdminPermissions() {
                 </tr>
               </thead>
               <tbody className="bg-card divide-y divide-border">
-                {users.map((user, idx) => (
-                  <tr key={idx} className="hover:bg-muted/50">
+                {users.map((user) => (
+                  <tr key={user.id} className="hover:bg-muted/50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 bg-gradient-to-br ${user.initialGradient} rounded-full flex items-center justify-center text-white text-xs font-semibold`}>
@@ -369,6 +516,15 @@ export function AdminPermissions() {
                       >
                         수정
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={() => handleDelete(user)}
+                        disabled={user.role === "관리자"}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -378,8 +534,8 @@ export function AdminPermissions() {
 
           {/* Mobile Card View */}
           <div className="md:hidden divide-y divide-border">
-            {users.map((user, idx) => (
-              <div key={idx} className="p-4 space-y-3">
+            {users.map((user) => (
+              <div key={user.id} className="p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 bg-gradient-to-br ${user.initialGradient} rounded-full flex items-center justify-center text-white text-sm font-semibold`}>
@@ -412,6 +568,18 @@ export function AdminPermissions() {
                   <span className="text-muted-foreground">가입일</span>
                   <span className="text-foreground">{user.date}</span>
                 </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => handleDelete(user)}
+                    disabled={user.role === "관리자"}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    삭제
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -423,6 +591,49 @@ export function AdminPermissions() {
           onClose={() => setShowEditModal(false)}
           onSave={handleSavePermission}
         />
+      )}
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md bg-card border border-border rounded-lg shadow-lg">
+            <div className="p-4 sm:p-5 border-b border-border flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-semibold text-foreground">새 사용자 추가</h3>
+              <button
+                onClick={() => setShowCreate(false)}
+                className="p-1 rounded-md text-muted-foreground hover:bg-muted transition-colors"
+              >
+                <CloseIcon className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 sm:p-5 space-y-4">
+              <div className="space-y-2">
+                <div className="text-xs sm:text-sm text-muted-foreground">이름</div>
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="홍길동" />
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs sm:text-sm text-muted-foreground">이메일</div>
+                <Input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="user@example.com" />
+              </div>
+              <div className="space-y-2">
+                <div className="text-xs sm:text-sm text-muted-foreground">역할</div>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value as Role)}
+                  className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm text-foreground"
+                >
+                  <option value="운영자">운영자</option>
+                  <option value="작가">작가</option>
+                </select>
+              </div>
+            </div>
+            <div className="p-4 sm:p-5 border-t border-border flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreate(false)}>취소</Button>
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                추가
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
