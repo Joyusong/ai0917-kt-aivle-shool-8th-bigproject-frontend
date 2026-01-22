@@ -1,30 +1,100 @@
 import apiClient from '../api/axios';
-import { 
-  AccessSummaryResponseDto, 
-  UserCreateRequestDto, 
-  UserDetailResponseDto, 
-  UserListResponseDto, 
-  UserUpdateRequestDto 
+import {
+  AccessSummaryResponseDto,
+  DashboardSummaryResponseDto,
+  DauResponseDto,
+  ResourceUsageResponseDto,
+  SystemLogsResponseDto,
+  DeploymentInfoResponseDto,
+  SystemNoticeResponseDto,
+  UserCreateRequestDto,
+  UserDetailResponseDto,
+  UserListResponseDto,
+  UserUpdateRequestDto,
 } from '../types/admin';
 import { PageResponse, UserRole } from '../types/common';
 
 export const adminService = {
-  getSummary: async () => {
-    const response = await apiClient.get<AccessSummaryResponseDto>('/api/v1/admin/access/summary');
+  // Dashboard
+  getDashboardSummary: async () => {
+    const response = await apiClient.get<DashboardSummaryResponseDto>(
+      '/api/v1/admin/dashboard/summary',
+    );
     return response.data;
   },
 
-  getUsers: async (page: number, size: number, keyword?: string, role?: UserRole | '') => {
+  getDashboardDau: async () => {
+    const response = await apiClient.get<DauResponseDto>(
+      '/api/v1/admin/dashboard/dau',
+    );
+    return response.data;
+  },
+
+  getDashboardResources: async () => {
+    const response = await apiClient.get<ResourceUsageResponseDto>(
+      '/api/v1/admin/dashboard/resources',
+    );
+    return response.data;
+  },
+
+  getDashboardLogs: async (limit: number = 50) => {
+    const response = await apiClient.get<SystemLogsResponseDto>(
+      '/api/v1/admin/dashboard/logs',
+      {
+        params: { limit },
+      },
+    );
+    return response.data;
+  },
+
+  getDashboardDeployment: async () => {
+    const response = await apiClient.get<DeploymentInfoResponseDto>(
+      '/api/v1/admin/dashboard/deployment',
+    );
+    return response.data;
+  },
+
+  // System Notices
+  getSystemNotices: async () => {
+    const response = await apiClient.get<SystemNoticeResponseDto>(
+      '/api/v1/admin/sysnotice',
+    );
+    return response.data;
+  },
+
+  markSystemNoticeAsRead: async (source: string, id: number) => {
+    await apiClient.patch(`/api/v1/admin/sysnotice/${source}/${id}/read`);
+  },
+
+  // Access Management
+  getSummary: async () => {
+    const response = await apiClient.get<AccessSummaryResponseDto>(
+      '/api/v1/admin/access/summary',
+    );
+    return response.data;
+  },
+
+  getUsers: async (
+    page: number,
+    size: number,
+    keyword?: string,
+    role?: UserRole | '',
+  ) => {
     const params: any = { page, size };
     if (keyword) params.keyword = keyword;
     if (role) params.role = role;
-    
-    const response = await apiClient.get<PageResponse<UserListResponseDto>>('/api/v1/admin/access/users', { params });
+
+    const response = await apiClient.get<PageResponse<UserListResponseDto>>(
+      '/api/v1/admin/access/users',
+      { params },
+    );
     return response.data;
   },
 
   getUserDetail: async (id: number) => {
-    const response = await apiClient.get<UserDetailResponseDto>(`/api/v1/admin/access/users/${id}`);
+    const response = await apiClient.get<UserDetailResponseDto>(
+      `/api/v1/admin/access/users/${id}`,
+    );
     return response.data;
   },
 
@@ -35,12 +105,15 @@ export const adminService = {
 
   updateUserRole: async (id: number, role: UserRole) => {
     const data: UserUpdateRequestDto = { role };
-    const response = await apiClient.patch(`/api/v1/admin/access/users/${id}`, data);
+    const response = await apiClient.patch(
+      `/api/v1/admin/access/users/${id}`,
+      data,
+    );
     return response.data;
   },
 
   deleteUser: async (id: number) => {
     const response = await apiClient.delete(`/api/v1/admin/access/users/${id}`);
     return response.data;
-  }
+  },
 };

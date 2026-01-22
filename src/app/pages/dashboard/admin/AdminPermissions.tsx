@@ -25,6 +25,7 @@ import {
   UserCreateRequestDto,
   UserListResponseDto,
 } from '../../../types/admin';
+import { maskName } from '../../../utils/format';
 
 // Role Labels and Helpers
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -259,7 +260,9 @@ export function AdminPermissions() {
                         >
                           {user.name[0]}
                         </div>
-                        <span className="font-medium">{user.name}</span>
+                        <span className="font-medium">
+                          {maskName(user.name)}
+                        </span>
                       </td>
                       <td className="p-4 text-muted-foreground">
                         {user.email}
@@ -323,7 +326,7 @@ export function AdminPermissions() {
                       </div>
                       <div>
                         <div className="font-medium text-foreground">
-                          {user.name}
+                          {maskName(user.name)}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {user.email}
@@ -459,7 +462,9 @@ export function AdminPermissions() {
                   {selectedUser.name[0]}
                 </div>
                 <div>
-                  <div className="font-medium">{selectedUser.name}</div>
+                  <div className="font-medium">
+                    {maskName(selectedUser.name)}
+                  </div>
                   <div className="text-sm text-muted-foreground">
                     {selectedUser.email}
                   </div>
