@@ -17,9 +17,12 @@ import {
   Settings,
   User,
 } from 'lucide-react';
+import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
 import { useState } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
+import { useQuery } from '@tanstack/react-query';
+import { authService } from '../../services/authService';
 
 import { ManagerHome } from './manager/ManagerHome';
 import { ManagerWorkAnalysis } from './manager/ManagerWorkAnalysis';
@@ -42,6 +45,16 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
+
+  // Fetch User Profile
+  const { data: userData } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: authService.me,
+  });
+
+  const userName =
+    userData && 'name' in userData ? (userData.name as string) : '매니저님';
+  const userInitial = userName.charAt(0);
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
@@ -83,7 +96,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
         <div className="p-6 border-b border-sidebar-border">
           <button
             onClick={onHome}
-            className="flex items-center gap-3 w-full text-left hover:bg-sidebar-accent rounded-lg p-2 transition-colors"
+            className="flex items-center gap-3 w-full text-left rounded-lg p-2 transition-colors"
             aria-label="홈으로 이동"
           >
             <div
@@ -108,7 +121,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
           {/* Home - Hidden on mobile */}
           <button
             onClick={() => handleMenuClick('home')}
-            className={`w-full hidden md:flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               activeMenu === 'home'
                 ? 'text-white dark:text-black'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent'
@@ -259,7 +272,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
               </div>
               <div className="flex-1 min-w-0 text-left">
                 <div className="text-sm text-sidebar-foreground truncate">
-                  매니저님
+                  {maskName(userName)}
                 </div>
                 <div className="text-xs text-muted-foreground">Manager</div>
               </div>
@@ -316,7 +329,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-sidebar-foreground font-medium">
-                  김민수
+                  {maskName('김민수')}
                 </div>
                 <div className="text-xs text-muted-foreground">PD</div>
               </div>
@@ -366,20 +379,28 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
             <div>
               {/* Breadcrumb */}
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">홈</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                <span className="text-foreground">
-                  {activeMenu === 'home' && '대시보드'}
-                  {activeMenu === 'work-analysis' && '작품 분석'}
-                  {activeMenu === '3d-assets' && '3D 배경 에셋'}
-                  {activeMenu === 'ip-trend-analysis' && 'IP 트렌드 분석'}
-                  {activeMenu === 'ip-expansion' && 'IP 확장'}
-                  {activeMenu === 'author-management' && '작가'}
-                  {activeMenu === 'contest-templates' && '공모전 템플릿'}
-                  {activeMenu === 'notice' && '공지사항'}
-                  {activeMenu === 'mypage' && '마이페이지'}
-                  {activeMenu === 'settings' && '설정'}
-                </span>
+                <button
+                  onClick={() => handleMenuClick('home')}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  홈
+                </button>
+                {activeMenu !== 'home' && (
+                  <>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-foreground">
+                      {activeMenu === 'work-analysis' && '작품 분석'}
+                      {activeMenu === '3d-assets' && '3D 배경 에셋'}
+                      {activeMenu === 'ip-trend-analysis' && 'IP 트렌드 분석'}
+                      {activeMenu === 'ip-expansion' && 'IP 확장'}
+                      {activeMenu === 'author-management' && '작가'}
+                      {activeMenu === 'contest-templates' && '공모전 템플릿'}
+                      {activeMenu === 'notice' && '공지사항'}
+                      {activeMenu === 'mypage' && '마이페이지'}
+                      {activeMenu === 'settings' && '설정'}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -414,7 +435,9 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-4 md:p-8">
-          {activeMenu === 'home' && <ManagerHome onNavigate={handleMenuClick} />}
+          {activeMenu === 'home' && (
+            <ManagerHome onNavigate={handleMenuClick} />
+          )}
           {activeMenu === 'work-analysis' && <ManagerWorkAnalysis />}
           {activeMenu === '3d-assets' && <Manager3DAssets />}
           {activeMenu === 'notice' && <ManagerNotice />}

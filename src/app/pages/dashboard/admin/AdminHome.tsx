@@ -7,6 +7,9 @@ import {
   Zap,
   Settings,
   FileText,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   Card,
@@ -15,8 +18,66 @@ import {
   CardTitle,
 } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../../../components/ui/dialog';
+import { ScrollArea } from '../../../components/ui/scroll-area';
+import { useQuery } from '@tanstack/react-query';
+import { adminService } from '../../../services/adminService';
+import { format } from 'date-fns';
+import { useState } from 'react';
 
 export function AdminHome() {
+  const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [logPage, setLogPage] = useState(1);
+  const LOGS_PER_PAGE = 5;
+
+  // 1. Dashboard Summary (Top 4 Cards)
+  const { data: summary } = useQuery({
+    queryKey: ['admin', 'dashboard', 'summary'],
+    queryFn: adminService.getDashboardSummary,
+  });
+
+  // 2. DAU Data
+  const { data: dauData } = useQuery({
+    queryKey: ['admin', 'dashboard', 'dau'],
+    queryFn: adminService.getDashboardDau,
+  });
+
+  // 3. System Resources
+  const { data: resources } = useQuery({
+    queryKey: ['admin', 'dashboard', 'resources'],
+    queryFn: adminService.getDashboardResources,
+  });
+
+  // 4. System Logs
+  const { data: logsData, isError: isLogsError } = useQuery({
+    queryKey: ['admin', 'dashboard', 'logs'],
+    queryFn: () => adminService.getDashboardLogs(50),
+  });
+
+  const visibleLogs = logsData?.logs.slice(
+    (logPage - 1) * LOGS_PER_PAGE,
+    logPage * LOGS_PER_PAGE,
+  );
+
+  // 5. Deployment Info
+  const { data: deployment } = useQuery({
+    queryKey: ['admin', 'dashboard', 'deployment'],
+    queryFn: adminService.getDashboardDeployment,
+  });
+
+  // 6. All Logs (for Modal)
+  const { data: allLogsData } = useQuery({
+    queryKey: ['admin', 'dashboard', 'logs', 'all'],
+    queryFn: () => adminService.getDashboardLogs(100),
+    enabled: isLogsModalOpen, // Only fetch when modal is open
+  });
+
   return (
     <div className="space-y-6">
       {/* 시스템 상태 Overview */}
@@ -28,7 +89,9 @@ export function AdminHome() {
                 <Server className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <div className="text-2xl text-foreground font-bold">정상</div>
+                <div className="text-2xl text-foreground font-bold">
+                  {summary?.serverStatus.status || 'Checking...'}
+                </div>
                 <div className="text-sm text-muted-foreground">서버 상태</div>
               </div>
             </div>
@@ -42,7 +105,9 @@ export function AdminHome() {
                 <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <div className="text-2xl text-foreground font-bold">1,247</div>
+                <div className="text-2xl text-foreground font-bold">
+                  {summary?.totalUsers?.toLocaleString() || '-'}
+                </div>
                 <div className="text-sm text-muted-foreground">총 사용자</div>
               </div>
             </div>
@@ -56,7 +121,9 @@ export function AdminHome() {
                 <Database className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <div className="text-2xl text-foreground font-bold">3,482</div>
+                <div className="text-2xl text-foreground font-bold">
+                  {summary?.savedArtworks?.toLocaleString() || '-'}
+                </div>
                 <div className="text-sm text-muted-foreground">저장된 작품</div>
               </div>
             </div>
@@ -70,7 +137,9 @@ export function AdminHome() {
                 <Activity className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div>
-                <div className="text-2xl text-foreground font-bold">87</div>
+                <div className="text-2xl text-foreground font-bold">
+                  {summary?.activeSessions?.toLocaleString() || '-'}
+                </div>
                 <div className="text-sm text-muted-foreground">활성 세션</div>
               </div>
             </div>
@@ -92,19 +161,27 @@ export function AdminHome() {
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">오늘</span>
                 <div className="flex items-center gap-2">
-                  <Badge className="bg-green-500 text-white">+15%</Badge>
+                  <Badge className="bg-green-500 text-white">
+                    {dauData?.today && dauData?.yesterday
+                      ? `${(((dauData.today - dauData.yesterday) / dauData.yesterday) * 100).toFixed(1)}%`
+                      : '0%'}
+                  </Badge>
                   <span className="text-lg font-semibold text-foreground">
-                    352
+                    {dauData?.today?.toLocaleString() || '-'}
                   </span>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">어제</span>
-                <span className="text-lg text-muted-foreground">306</span>
+                <span className="text-lg text-muted-foreground">
+                  {dauData?.yesterday?.toLocaleString() || '-'}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">7일 평균</span>
-                <span className="text-lg text-muted-foreground">289</span>
+                <span className="text-lg text-muted-foreground">
+                  {dauData?.sevenDayAverage?.toFixed(0) || '-'}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -125,13 +202,13 @@ export function AdminHome() {
                     CPU 사용률
                   </span>
                   <span className="text-sm font-semibold text-foreground">
-                    42%
+                    {resources?.cpuUsage || 0}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full"
-                    style={{ width: '42%' }}
+                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    style={{ width: `${resources?.cpuUsage || 0}%` }}
                   ></div>
                 </div>
               </div>
@@ -141,13 +218,13 @@ export function AdminHome() {
                     메모리 사용률
                   </span>
                   <span className="text-sm font-semibold text-foreground">
-                    68%
+                    {resources?.memoryUsage || 0}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-purple-500 rounded-full"
-                    style={{ width: '68%' }}
+                    className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                    style={{ width: `${resources?.memoryUsage || 0}%` }}
                   ></div>
                 </div>
               </div>
@@ -157,13 +234,13 @@ export function AdminHome() {
                     스토리지 사용률
                   </span>
                   <span className="text-sm font-semibold text-foreground">
-                    55%
+                    {resources?.storageUsage || 0}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-green-500 rounded-full"
-                    style={{ width: '55%' }}
+                    className="h-full bg-green-500 rounded-full transition-all duration-500"
+                    style={{ width: `${resources?.storageUsage || 0}%` }}
                   ></div>
                 </div>
               </div>
@@ -174,106 +251,156 @@ export function AdminHome() {
 
       {/* 최근 시스템 로그 */}
       <Card className="border-border">
-        <CardHeader className="border-b border-border">
+        <CardHeader className="border-b border-border flex flex-row items-center justify-between">
           <CardTitle className="text-foreground flex items-center gap-2">
             <FileText className="w-5 h-5 text-muted-foreground" />
             <span>최근 시스템 로그</span>
           </CardTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsLogsModalOpen(true)}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="divide-y divide-border">
-            <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
-              <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-foreground truncate">
-                  데이터베이스 백업 완료
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  2026.01.09 14:32:15
-                </div>
-              </div>
-              <Badge
-                variant="outline"
-                className="border-green-300 dark:border-green-700 text-green-600 dark:text-green-400 shrink-0"
-              >
-                성공
-              </Badge>
+          {isLogsError ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">
+              아직 개발되지 않았습니다
             </div>
-
-            <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
-              <div className="w-2 h-2 bg-blue-500 rounded-full shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-foreground truncate">
-                  신규 사용자 계정 5개 생성
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  2026.01.09 13:45:22
-                </div>
+          ) : (
+            <>
+              <div className="divide-y divide-border">
+                {visibleLogs?.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        log.level === 'ERROR'
+                          ? 'bg-red-500'
+                          : log.level === 'WARNING'
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                      }`}
+                    ></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-foreground truncate">
+                        {log.message}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {format(new Date(log.timestamp), 'yyyy.MM.dd HH:mm:ss')}
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={`shrink-0 ${
+                        log.level === 'ERROR'
+                          ? 'border-red-300 text-red-600 dark:border-red-700 dark:text-red-400'
+                          : log.level === 'WARNING'
+                            ? 'border-yellow-300 text-yellow-600 dark:border-yellow-700 dark:text-yellow-400'
+                            : 'border-green-300 text-green-600 dark:border-green-700 dark:text-green-400'
+                      }`}
+                    >
+                      {log.category}
+                    </Badge>
+                  </div>
+                ))}
+                {(!visibleLogs || visibleLogs.length === 0) && (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    로그가 없습니다.
+                  </div>
+                )}
               </div>
-              <Badge
-                variant="outline"
-                className="border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 shrink-0"
-              >
-                정보
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-foreground truncate">
-                  API 응답 시간 증가 감지
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  2026.01.09 12:18:44
-                </div>
+              <div className="p-2 border-t border-border flex items-center justify-between">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLogPage((p) => Math.max(1, p - 1))}
+                  disabled={logPage === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  Page {logPage}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLogPage((p) => p + 1)}
+                  disabled={
+                    !logsData?.logs ||
+                    logPage * LOGS_PER_PAGE >= logsData.logs.length
+                  }
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
               </div>
-              <Badge
-                variant="outline"
-                className="border-yellow-300 dark:border-yellow-700 text-yellow-600 dark:text-yellow-400 shrink-0"
-              >
-                경고
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
-              <div className="w-2 h-2 bg-green-500 rounded-full shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-foreground truncate">
-                  서버 재시작 완료
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  2026.01.09 11:05:33
-                </div>
-              </div>
-              <Badge
-                variant="outline"
-                className="border-green-300 dark:border-green-700 text-green-600 dark:text-green-400 shrink-0"
-              >
-                성공
-              </Badge>
-            </div>
-
-            <div className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
-              <div className="w-2 h-2 bg-purple-500 rounded-full shrink-0"></div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-foreground truncate">
-                  시스템 업데이트 적용
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  2026.01.09 09:22:11
-                </div>
-              </div>
-              <Badge
-                variant="outline"
-                className="border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 shrink-0"
-              >
-                업데이트
-              </Badge>
-            </div>
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
+
+      {/* System Logs Modal */}
+      <Dialog open={isLogsModalOpen} onOpenChange={setIsLogsModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>시스템 로그 전체보기</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 pr-4">
+            <div className="space-y-4">
+              <div className="divide-y divide-border border rounded-md">
+                {allLogsData?.logs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        log.level === 'ERROR'
+                          ? 'bg-red-500'
+                          : log.level === 'WARNING'
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                      }`}
+                    ></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-foreground">
+                        {log.message}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(log.timestamp), 'yyyy.MM.dd HH:mm:ss')}
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={`shrink-0 ${
+                        log.level === 'ERROR'
+                          ? 'border-red-300 text-red-600 dark:border-red-700 dark:text-red-400'
+                          : log.level === 'WARNING'
+                            ? 'border-yellow-300 text-yellow-600 dark:border-yellow-700 dark:text-yellow-400'
+                            : 'border-green-300 text-green-600 dark:border-green-700 dark:text-green-400'
+                      }`}
+                    >
+                      {log.category}
+                    </Badge>
+                  </div>
+                ))}
+                {(!allLogsData?.logs || allLogsData.logs.length === 0) && (
+                  <div className="p-8 text-center text-muted-foreground">
+                    로그가 없습니다.
+                  </div>
+                )}
+              </div>
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
 
       {/* 배포 현황 */}
       <Card className="border-border">
@@ -293,16 +420,21 @@ export function AdminHome() {
                 현재 버전
               </div>
               <div className="text-lg font-semibold text-foreground">
-                v2.4.1
+                {deployment?.version || '-'}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                2026.01.05 배포
+                {deployment?.lastDeployment
+                  ? format(
+                      new Date(deployment.lastDeployment),
+                      'yyyy.MM.dd 배포',
+                    )
+                  : '-'}
               </div>
             </div>
             <div>
               <div className="text-sm text-muted-foreground mb-2">환경</div>
               <div className="text-lg font-semibold text-foreground">
-                Production
+                {deployment?.environment || '-'}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
                 AWS Seoul (ap-northeast-2)
@@ -312,7 +444,9 @@ export function AdminHome() {
               <div className="text-sm text-muted-foreground mb-2">
                 가동 시간
               </div>
-              <div className="text-lg font-semibold text-foreground">99.8%</div>
+              <div className="text-lg font-semibold text-foreground">
+                {deployment?.uptime || '-'}
+              </div>
               <div className="text-xs text-muted-foreground mt-1">
                 지난 30일 평균
               </div>
