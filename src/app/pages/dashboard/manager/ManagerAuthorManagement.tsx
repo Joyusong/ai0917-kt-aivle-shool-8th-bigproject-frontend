@@ -1,230 +1,322 @@
-import {
-  Search,
-  Filter,
-  MoreHorizontal,
-  Mail,
-  BookOpen,
-  Star,
-  Calendar,
-} from "lucide-react";
-import { Button } from "../../../components/ui/button";
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../../../api/axios';
 import {
   Card,
+  CardHeader,
+  CardTitle,
   CardContent,
-} from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
-import { Input } from "../../../components/ui/input";
+} from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input';
+import { Button } from '../../../components/ui/button';
 import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "../../../components/ui/avatar";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import axios from "axios";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../../components/ui/table';
+import { Badge } from '../../../components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '../../../components/ui/dialog';
+import {
+  Search,
+  User,
+  BookOpen,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+} from 'lucide-react';
+import { format } from 'date-fns';
+
+interface AuthorSummary {
+  totalAuthors: number;
+  newAuthors: number;
+  activeAuthors: number;
+}
+
+interface Author {
+  id: number;
+  name: string;
+  email: string;
+  workCount: number;
+  createdAt: string;
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+interface AuthorDetail extends Author {
+  recentWorks: { id: number; title: string; createdAt: string }[];
+  lastLogin: string;
+}
 
 export function ManagerAuthorManagement() {
-  interface Author {
-    id: number;
-    name: string;
-    email: string;
-    status: string;
-    works: number;
-    followers: string;
-    rating: number;
-    joinDate: string;
-  }
+  const [page, setPage] = useState(0);
+  const [keyword, setKeyword] = useState('');
+  const [selectedAuthorId, setSelectedAuthorId] = useState<number | null>(null);
 
-  const [authors, setAuthors] = useState<Author[]>([]);
-  const [keyword, setKeyword] = useState("");
+  // Fetch Summary
+  const { data: summary } = useQuery<AuthorSummary>({
+    queryKey: ['manager', 'authors', 'summary'],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/manager/authors/summary');
+      return res.data;
+    },
+  });
 
-  const authAxios = useMemo(() => {
-    const instance = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL || "",
-    });
-    instance.interceptors.request.use((config) => {
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    });
-    return instance;
-  }, []);
-
-  const fetchAuthors = useCallback(async () => {
-    try {
-      // Using Admin API to fetch authors
-      const res = await authAxios.get(`/api/v1/admin/access/users`, {
-        params: {
-          role: "Author",
-          keyword: keyword,
-          page: 0,
-          size: 20 // Fetch reasonable amount
-        }
+  // Fetch Authors List
+  const { data: authorPage } = useQuery({
+    queryKey: ['manager', 'authors', 'list', page, keyword],
+    queryFn: async () => {
+      const res = await apiClient.get('/api/v1/manager/authors/list', {
+        params: { page, size: 10, keyword, sort: 'createdAt,desc' },
       });
-      
-      const content = res.data.content || [];
-      const mappedAuthors = content.map((user: any) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        status: "active", // API doesn't provide status yet, default to active
-        works: 0, // API doesn't provide works count yet
-        followers: "0", // API doesn't provide followers yet
-        rating: 0.0, // API doesn't provide rating yet
-        joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"
-      }));
-      
-      setAuthors(mappedAuthors);
-    } catch (error) {
-      console.error("Failed to fetch authors", error);
-      setAuthors([]);
-    }
-  }, [authAxios, keyword]);
+      return res.data;
+    },
+  });
 
-  useEffect(() => {
-    fetchAuthors();
-  }, [fetchAuthors]);
+  // Fetch Author Detail
+  const { data: authorDetail } = useQuery<AuthorDetail>({
+    queryKey: ['manager', 'authors', 'detail', selectedAuthorId],
+    queryFn: async () => {
+      if (!selectedAuthorId) return null;
+      const res = await apiClient.get(
+        `/api/v1/manager/authors/${selectedAuthorId}`,
+      );
+      return res.data;
+    },
+    enabled: !!selectedAuthorId,
+  });
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      setPage(0);
+      // keyword state is already updated via onChange
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative flex-1 sm:flex-initial">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="작가 검색..."
-              className="pl-9 w-full sm:w-64"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-            />
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">
+                {summary?.totalAuthors || 0}
+              </div>
+              <div className="text-sm text-muted-foreground">전체 작가</div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <User className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">
+                {summary?.newAuthors || 0}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                신규 가입 (이번달)
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold">
+                {summary?.activeAuthors || 0}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                활동 중인 작가
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Author List */}
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex justify-between items-center">
+            <CardTitle>작가 목록</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="작가 이름 검색..."
+                className="pl-9"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onKeyDown={handleSearch}
+              />
+            </div>
           </div>
-          <Button variant="outline" size="icon">
-            <Filter className="w-4 h-4 text-slate-600" />
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline">엑셀 다운로드</Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-            작가 등록
-          </Button>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>이름</TableHead>
+                <TableHead>이메일</TableHead>
+                <TableHead>작품 수</TableHead>
+                <TableHead>가입일</TableHead>
+                <TableHead>상태</TableHead>
+                <TableHead>관리</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {authorPage?.content?.map((author: Author) => (
+                <TableRow key={author.id}>
+                  <TableCell className="font-medium">{author.name}</TableCell>
+                  <TableCell>{author.email}</TableCell>
+                  <TableCell>{author.workCount}</TableCell>
+                  <TableCell>
+                    {format(new Date(author.createdAt), 'yyyy.MM.dd')}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        author.status === 'ACTIVE' ? 'default' : 'secondary'
+                      }
+                    >
+                      {author.status === 'ACTIVE' ? '활동중' : '휴면'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedAuthorId(author.id)}
+                    >
+                      상세보기
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {(!authorPage?.content || authorPage.content.length === 0) && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24">
+                    데이터가 없습니다.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
 
-      {/* Author Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {authors.map((author) => (
-          <Card
-            key={author.id}
-            className="border-slate-200 hover:shadow-lg transition-all group"
-          >
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
-                    <AvatarImage src={`/avatars/${author.id}.jpg`} />
-                    <AvatarFallback className="bg-slate-100 text-slate-600 font-bold">
-                      {author.name ? author.name[0] : "?"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-slate-900">
-                      {author.name}
-                    </h3>
-                    <p className="text-sm text-slate-500">
-                      {author.email}
-                    </p>
+          {/* Pagination */}
+          <div className="flex items-center justify-center p-4 gap-2 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {page + 1} / {authorPage?.totalPages || 1}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPage((p) =>
+                  Math.min((authorPage?.totalPages || 1) - 1, p + 1),
+                )
+              }
+              disabled={page >= (authorPage?.totalPages || 1) - 1}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Detail Modal */}
+      <Dialog
+        open={!!selectedAuthorId}
+        onOpenChange={(open) => !open && setSelectedAuthorId(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>작가 상세 정보</DialogTitle>
+          </DialogHeader>
+          {authorDetail ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">이름</div>
+                  <div className="font-medium">{authorDetail.name}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">이메일</div>
+                  <div className="font-medium">{authorDetail.email}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">가입일</div>
+                  <div className="font-medium">
+                    {format(new Date(authorDetail.createdAt), 'yyyy.MM.dd')}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-slate-400"
-                >
-                  <MoreHorizontal className="w-5 h-5" />
-                </Button>
+                <div className="space-y-1">
+                  <div className="text-sm text-muted-foreground">최근 접속</div>
+                  <div className="font-medium">
+                    {authorDetail.lastLogin
+                      ? format(
+                          new Date(authorDetail.lastLogin),
+                          'yyyy.MM.dd HH:mm',
+                        )
+                      : '-'}
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-500 mb-1">
-                    작품 수
-                  </div>
-                  <div className="font-bold text-slate-900">
-                    {author.works}
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-500 mb-1">
-                    구독자
-                  </div>
-                  <div className="font-bold text-slate-900">
-                    {author.followers}
-                  </div>
-                </div>
-                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-500 mb-1">
-                    평점
-                  </div>
-                  <div className="font-bold text-slate-900 flex items-center justify-center gap-1">
-                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                    {author.rating}
-                  </div>
+              <div>
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" /> 최근 작품
+                </h4>
+                <div className="border rounded-lg divide-y">
+                  {authorDetail.recentWorks?.map((work) => (
+                    <div
+                      key={work.id}
+                      className="p-3 flex justify-between items-center"
+                    >
+                      <span>{work.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(work.createdAt), 'yyyy.MM.dd')}
+                      </span>
+                    </div>
+                  ))}
+                  {(!authorDetail.recentWorks ||
+                    authorDetail.recentWorks.length === 0) && (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      작품이 없습니다.
+                    </div>
+                  )}
                 </div>
               </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm text-slate-600">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  가입일: {author.joinDate}
-                </div>
-                <div className="flex items-center gap-3 text-sm text-slate-600">
-                  <Badge
-                    variant={
-                      author.status === "active"
-                        ? "default"
-                        : author.status === "warning"
-                          ? "secondary"
-                          : "outline"
-                    }
-                    className={
-                      author.status === "active"
-                        ? "bg-green-100 text-green-700 hover:bg-green-200"
-                        : author.status === "warning"
-                          ? "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                          : "text-slate-500"
-                    }
-                  >
-                    {author.status === "active"
-                      ? "활동중"
-                      : author.status === "warning"
-                        ? "경고"
-                        : "휴면"}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-slate-100 flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 text-slate-600"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  메시지
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 text-slate-600"
-                >
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  작품 목록
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </div>
+          ) : (
+            <div className="h-40 flex items-center justify-center">
+              Loading...
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,70 +1,122 @@
-import { User, Mail, Phone, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Button } from "../../../components/ui/button";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
+import { User, Mail, Shield, Calendar } from 'lucide-react';
+import { Button } from '../../../components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '../../../components/ui/card';
+import { Label } from '../../../components/ui/label';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/authService';
+import { format } from 'date-fns';
 
-export function AuthorMyPage() {
+interface AuthorMyPageProps {
+  onChangePassword: () => void;
+  userData: any;
+}
+
+export function AuthorMyPage({
+  onChangePassword,
+  userData,
+}: AuthorMyPageProps) {
+  const navigate = useNavigate();
+
+  const handleDeleteAccount = async () => {
+    if (
+      confirm(
+        '정말로 계정을 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없으며 모든 데이터가 삭제됩니다.',
+      )
+    ) {
+      try {
+        await authService.deleteAccount();
+        alert('계정이 탈퇴되었습니다.');
+        await authService.logout();
+        navigate('/');
+      } catch (error) {
+        console.error('Account deletion failed', error);
+        alert('계정 탈퇴에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
+  };
+
+  if (!userData) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Card className="border-border">
-        <CardHeader className="border-b border-border">
-          <CardTitle className="text-foreground">마이페이지</CardTitle>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+          마이페이지
+        </h2>
+        <p className="text-slate-500 dark:text-slate-400">
+          내 정보를 확인하고 계정을 관리합니다.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>기본 정보</CardTitle>
+          <CardDescription>
+            계정의 기본 정보입니다. 수정이 필요한 경우 관리자에게 문의하세요.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="p-8">
-           <div className="flex flex-col md:flex-row items-start gap-8">
-             <div className="flex flex-col items-center gap-4">
-               <div className="w-32 h-32 bg-muted rounded-full flex items-center justify-center overflow-hidden border-4 border-background shadow-lg">
-                 <User className="w-16 h-16 text-muted-foreground" />
-               </div>
-               <Button variant="outline" size="sm">프로필 사진 변경</Button>
-             </div>
-             
-             <div className="flex-1 space-y-6 w-full">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                   <Label htmlFor="name">이름 (필명)</Label>
-                   <div className="relative">
-                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                     <Input id="name" defaultValue="김작가" className="pl-9" />
-                   </div>
-                 </div>
-                 
-                 <div className="space-y-2">
-                   <Label htmlFor="email">이메일</Label>
-                   <div className="relative">
-                     <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                     <Input id="email" defaultValue="author@example.com" className="pl-9" readOnly />
-                   </div>
-                 </div>
-                 
-                 <div className="space-y-2">
-                   <Label htmlFor="phone">연락처</Label>
-                   <div className="relative">
-                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                     <Input id="phone" defaultValue="010-1234-5678" className="pl-9" />
-                   </div>
-                 </div>
-                 
-                 <div className="space-y-2">
-                   <Label htmlFor="joined">가입일</Label>
-                   <div className="relative">
-                     <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                     <Input id="joined" defaultValue="2025.12.01" className="pl-9" readOnly />
-                   </div>
-                 </div>
-               </div>
-               
-               <div className="space-y-2">
-                 <Label htmlFor="bio">소개</Label>
-                 <Input id="bio" defaultValue="판타지 소설을 주로 집필합니다." />
-               </div>
-               
-               <div className="flex justify-end pt-4">
-                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">변경사항 저장</Button>
-               </div>
-             </div>
-           </div>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>이름</Label>
+              <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{userData.name || '알 수 없음'}</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>이메일</Label>
+              <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {userData.email || '알 수 없음'}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>권한</Label>
+              <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
+                <Shield className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">{userData.role || 'Author'}</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>가입일</Label>
+              <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {userData.createdAt
+                    ? format(new Date(userData.createdAt), 'yyyy.MM.dd')
+                    : '-'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>계정 관리</CardTitle>
+          <CardDescription>
+            비밀번호 변경 및 계정 탈퇴를 수행할 수 있습니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button onClick={onChangePassword}>비밀번호 변경</Button>
+            <Button variant="destructive" onClick={handleDeleteAccount}>
+              계정 탈퇴
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

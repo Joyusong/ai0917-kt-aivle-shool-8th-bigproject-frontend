@@ -55,15 +55,66 @@ export const adminService = {
   },
 
   // System Notices
-  getSystemNotices: async () => {
+  getSystemNotices: async (unreadOnly: boolean = false) => {
+    const params = unreadOnly ? { read: false } : {};
     const response = await apiClient.get<SystemNoticeResponseDto>(
       '/api/v1/admin/sysnotice',
+      { params },
     );
     return response.data;
   },
 
   markSystemNoticeAsRead: async (source: string, id: number) => {
     await apiClient.patch(`/api/v1/admin/sysnotice/${source}/${id}/read`);
+  },
+
+  markAllSystemNoticesAsRead: async () => {
+    await apiClient.patch('/api/v1/admin/sysnotice/read-all');
+  },
+
+  // Notice Management
+  getNotices: async (page: number, size: number, keyword?: string) => {
+    const params: any = { page, size };
+    if (keyword) params.keyword = keyword;
+    const response = await apiClient.get('/api/v1/admin/notice', { params });
+    return response.data;
+  },
+
+  getNoticeDetail: async (id: number) => {
+    const response = await apiClient.get(`/api/v1/admin/notice/${id}`);
+    return response.data;
+  },
+
+  createNotice: async (formData: FormData) => {
+    const response = await apiClient.post('/api/v1/admin/notice', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  updateNotice: async (id: number, formData: FormData) => {
+    const response = await apiClient.patch(
+      `/api/v1/admin/notice/${id}`,
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      },
+    );
+    return response.data;
+  },
+
+  deleteNotice: async (id: number) => {
+    await apiClient.delete(`/api/v1/admin/notice/${id}`);
+  },
+
+  downloadNoticeFile: async (id: number) => {
+    const response = await apiClient.get(
+      `/api/v1/admin/notice/${id}/download`,
+      {
+        responseType: 'blob',
+      },
+    );
+    return response.data;
   },
 
   // Access Management

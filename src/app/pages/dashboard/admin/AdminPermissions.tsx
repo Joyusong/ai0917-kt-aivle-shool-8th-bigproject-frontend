@@ -7,6 +7,8 @@ import {
   Search,
   Trash2,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../../components/ui/button';
@@ -176,12 +178,6 @@ export function AdminPermissions() {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white w-full sm:w-auto"
-        >
-          <Plus className="w-4 h-4 mr-2" /> 새 사용자 추가
-        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -265,7 +261,7 @@ export function AdminPermissions() {
                         </span>
                       </td>
                       <td className="p-4 text-muted-foreground">
-                        {user.email}
+                        {user.siteEmail || user.email}
                       </td>
                       <td className="p-4">
                         <Badge
@@ -329,7 +325,7 @@ export function AdminPermissions() {
                           {maskName(user.name)}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {user.email}
+                          {user.siteEmail || '-'}
                         </div>
                       </div>
                     </div>
@@ -367,6 +363,42 @@ export function AdminPermissions() {
                 사용자가 없습니다.
               </div>
             )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between p-4 border-t border-border">
+            <div className="text-sm text-muted-foreground">
+              총 {userPage?.totalElements || 0}명 중{' '}
+              {userPage?.totalElements === 0 ? 0 : page * 10 + 1}-
+              {Math.min((page + 1) * 10, userPage?.totalElements || 0)}명
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="sr-only">이전 페이지</span>
+              </Button>
+              <div className="flex items-center px-2 text-sm font-medium">
+                {page + 1} / {userPage?.totalPages || 1}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setPage((p) =>
+                    Math.min((userPage?.totalPages || 1) - 1, p + 1),
+                  )
+                }
+                disabled={page >= (userPage?.totalPages || 1) - 1}
+              >
+                <ChevronRight className="w-4 h-4" />
+                <span className="sr-only">다음 페이지</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

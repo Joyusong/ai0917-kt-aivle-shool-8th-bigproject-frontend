@@ -4,6 +4,7 @@ export interface UserListResponseDto {
   id: number;
   name: string;
   email: string;
+  siteEmail?: string;
   role: UserRole;
   createdAt: string;
 }

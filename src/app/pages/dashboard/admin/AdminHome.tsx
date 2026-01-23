@@ -34,7 +34,9 @@ import { useState } from 'react';
 export function AdminHome() {
   const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
   const [logPage, setLogPage] = useState(1);
+  const [modalLogPage, setModalLogPage] = useState(1);
   const LOGS_PER_PAGE = 5;
+  const MODAL_LOGS_PER_PAGE = 6;
 
   // 1. Dashboard Summary (Top 4 Cards)
   const { data: summary } = useQuery({
@@ -77,6 +79,11 @@ export function AdminHome() {
     queryFn: () => adminService.getDashboardLogs(100),
     enabled: isLogsModalOpen, // Only fetch when modal is open
   });
+
+  const visibleModalLogs = allLogsData?.logs.slice(
+    (modalLogPage - 1) * MODAL_LOGS_PER_PAGE,
+    modalLogPage * MODAL_LOGS_PER_PAGE,
+  );
 
   return (
     <div className="space-y-6">
@@ -251,19 +258,13 @@ export function AdminHome() {
 
       {/* 최근 시스템 로그 */}
       <Card className="border-border">
-        <CardHeader className="border-b border-border flex flex-row items-center justify-between">
-          <CardTitle className="text-foreground flex items-center gap-2">
-            <FileText className="w-5 h-5 text-muted-foreground" />
-            <span>최근 시스템 로그</span>
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsLogsModalOpen(true)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <Plus className="w-5 h-5" />
-          </Button>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-purple-500" />
+            <h2 className="text-lg font-semibold text-foreground">
+              최근 시스템 로그
+            </h2>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {isLogsError ? (
@@ -355,7 +356,7 @@ export function AdminHome() {
           <ScrollArea className="flex-1 pr-4">
             <div className="space-y-4">
               <div className="divide-y divide-border border rounded-md">
-                {allLogsData?.logs.map((log) => (
+                {visibleModalLogs?.map((log) => (
                   <div
                     key={log.id}
                     className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
@@ -391,11 +392,40 @@ export function AdminHome() {
                     </Badge>
                   </div>
                 ))}
-                {(!allLogsData?.logs || allLogsData.logs.length === 0) && (
+                {(!visibleModalLogs || visibleModalLogs.length === 0) && (
                   <div className="p-8 text-center text-muted-foreground">
                     로그가 없습니다.
                   </div>
                 )}
+              </div>
+
+              {/* Modal Pagination */}
+              <div className="flex items-center justify-between pt-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setModalLogPage((p) => Math.max(1, p - 1))}
+                  disabled={modalLogPage === 1}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  이전
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {modalLogPage}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setModalLogPage((p) => p + 1)}
+                  disabled={
+                    !allLogsData?.logs ||
+                    modalLogPage * MODAL_LOGS_PER_PAGE >=
+                      allLogsData.logs.length
+                  }
+                >
+                  다음
+                  <ChevronRight className="w-4 h-4 ml-2" />
+                </Button>
               </div>
             </div>
           </ScrollArea>

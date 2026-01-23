@@ -9,10 +9,13 @@ import {
   Eye,
   EyeOff,
   User,
+  HelpCircle,
+  KeyRound,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { ThemeToggle } from '../../components/ui/theme-toggle';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import NaverLogin from '../../components/NaverLogin/NaverLoginButton';
@@ -22,6 +25,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '../../components/ui/dialog';
 
 interface LoginPageProps {
@@ -208,66 +212,69 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/40 flex flex-col items-center justify-center p-6 text-slate-900 font-sans antialiased">
+    <div className="min-h-screen bg-slate-50/40 dark:bg-background flex flex-col items-center justify-center p-6 text-slate-900 dark:text-foreground font-sans antialiased transition-colors duration-300">
       <div className="w-full max-w-[360px] flex flex-col gap-6">
         <header className="flex flex-col items-center gap-8">
-          <div className="w-full flex justify-start">
+          <div className="w-full flex justify-between items-center">
             <button
               onClick={onBack}
-              className="group flex items-center gap-2 text-[13px] font-bold text-slate-400 hover:text-slate-900 transition-all"
+              className="group flex items-center gap-2 text-[13px] font-bold text-slate-400 dark:text-muted-foreground hover:text-slate-900 dark:hover:text-foreground transition-all"
             >
               <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
               <span>돌아가기</span>
             </button>
+            <ThemeToggle />
           </div>
 
           <div className="flex flex-col items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] bg-primary shadow-xl shadow-primary/20 ring-1 ring-primary/10">
               <Brain className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight">반가워요!</h1>
+            <h1 className="text-2xl font-black tracking-tight dark:text-foreground">
+              반가워요!
+            </h1>
           </div>
         </header>
 
-        <main className="bg-white border border-slate-200/80 rounded-[2rem] shadow-sm overflow-hidden">
+        <main className="bg-white dark:bg-card border border-slate-200/80 dark:border-border rounded-[2rem] shadow-sm overflow-hidden transition-colors duration-300">
           {/* 네이버 로그인 */}
           <section className="p-8 pb-7 space-y-5">
             <div className="flex justify-start">
-              <span className="text-[11px] font-extrabold text-primary bg-primary/5 px-2.5 py-1 rounded-full tracking-tighter">
+              <span className="text-[11px] font-extrabold text-primary bg-primary/5 dark:bg-primary/20 px-2.5 py-1 rounded-full tracking-tighter">
                 처음 오셨나요?
               </span>
             </div>
             <NaverLogin />
-            <p className="text-[12px] text-slate-400 text-center font-semibold tracking-tight">
+            <p className="text-[12px] text-slate-400 dark:text-muted-foreground text-center font-semibold tracking-tight">
               네이버로 가입 신청을 시작하세요.
             </p>
           </section>
 
           <div className="flex items-center px-8 py-1">
-            <div className="flex-1 border-t border-slate-100" />
-            <span className="px-4 text-[10px] font-black text-slate-200 tracking-[0.2em] uppercase">
+            <div className="flex-1 border-t border-slate-100 dark:border-border/50" />
+            <span className="px-4 text-[10px] font-black text-slate-200 dark:text-muted-foreground/30 tracking-[0.2em] uppercase">
               또는
             </span>
-            <div className="flex-1 border-t border-slate-100" />
+            <div className="flex-1 border-t border-slate-100 dark:border-border/50" />
           </div>
 
           {/* 이메일 로그인 */}
-          <section className="p-8 pt-7 bg-slate-50/40 border-t border-slate-100/50">
+          <section className="p-8 pt-7 bg-slate-50/40 dark:bg-muted/30 border-t border-slate-100/50 dark:border-border/50 transition-colors">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label
                   htmlFor="email"
-                  className="text-[11px] font-black text-slate-400 ml-1 uppercase tracking-wider"
+                  className="text-[11px] font-black text-slate-400 dark:text-muted-foreground ml-1 uppercase tracking-wider"
                 >
                   이메일
                 </Label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="name@example.com"
-                    className="pl-11 h-12 bg-white border-slate-200 rounded-xl focus-visible:ring-primary/10 text-[14px]"
+                    className="pl-11 h-12 bg-white dark:bg-background border-slate-200 dark:border-border rounded-xl focus-visible:ring-primary/10 text-[14px] dark:text-foreground dark:placeholder:text-muted-foreground/50"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -278,17 +285,17 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
               <div className="space-y-2">
                 <Label
                   htmlFor="password"
-                  className="text-[11px] font-black text-slate-400 ml-1 uppercase tracking-wider"
+                  className="text-[11px] font-black text-slate-400 dark:text-muted-foreground ml-1 uppercase tracking-wider"
                 >
                   비밀번호
                 </Label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 dark:text-muted-foreground group-focus-within:text-primary transition-colors" />
                   <Input
                     id="password"
                     type={showLoginPwd ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-11 pr-10 h-12 bg-white border-slate-200 rounded-xl focus-visible:ring-primary/10 text-[14px]"
+                    className="pl-11 pr-10 h-12 bg-white dark:bg-background border-slate-200 dark:border-border rounded-xl focus-visible:ring-primary/10 text-[14px] dark:text-foreground dark:placeholder:text-muted-foreground/50"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -296,7 +303,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                   <button
                     type="button"
                     onClick={() => setShowLoginPwd(!showLoginPwd)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-muted-foreground hover:text-slate-600 dark:hover:text-foreground"
                   >
                     {showLoginPwd ? (
                       <EyeOff className="w-4 h-4" />
@@ -324,9 +331,10 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                   <button
                     type="button"
                     onClick={() => setIsResetOpen(true)}
-                    className="text-[11px] font-bold text-slate-400 hover:text-primary transition-colors"
+                    className="text-[11px] font-bold text-slate-400 dark:text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                   >
-                    비밀번호를 잊으셨나요?
+                    <HelpCircle className="w-3 h-3" />
+                    계정 접근에 문제가 있나요?
                   </button>
                 </div>
               </div>
@@ -334,9 +342,9 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
           </section>
         </main>
 
-        <div className="w-full bg-slate-200/40 border border-slate-200/50 rounded-2xl p-4 flex items-center justify-center gap-3 shadow-sm">
-          <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
-          <p className="text-[11px] text-slate-500 font-bold leading-tight tracking-tight">
+        <div className="w-full bg-slate-200/40 dark:bg-card/50 border border-slate-200/50 dark:border-border rounded-2xl p-4 flex items-center justify-center gap-3 shadow-sm transition-colors">
+          <ShieldCheck className="w-4 h-4 text-slate-400 dark:text-muted-foreground shrink-0" />
+          <p className="text-[11px] text-slate-500 dark:text-muted-foreground font-bold leading-tight tracking-tight">
             관리자 승인 후{' '}
             <span className="text-primary font-black underline underline-offset-4 decoration-primary/30">
               이메일 로그인
@@ -348,11 +356,15 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
 
       {/* 비밀번호 찾기 모달 */}
       <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
-        <DialogContent className="sm:max-w-md bg-white rounded-2xl border-0 shadow-2xl">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-card rounded-2xl border-0 shadow-2xl dark:shadow-primary/5">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-center pb-2">
-              비밀번호 재설정
+            <DialogTitle className="text-xl font-bold text-center pb-2 flex items-center justify-center gap-2 dark:text-foreground">
+              <KeyRound className="w-5 h-5 text-primary" />
+              계정 복구 지원
             </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
+              본인 확인 후 비밀번호를 재설정할 수 있습니다.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
@@ -360,28 +372,28 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
             {resetStep === 0 && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-500">
+                  <Label className="text-xs font-bold text-slate-500 dark:text-muted-foreground">
                     이름
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-muted-foreground" />
                     <Input
                       placeholder="가입된 이름"
                       value={resetData.name}
                       onChange={(e) =>
                         setResetData({ ...resetData, name: e.target.value })
                       }
-                      className="pl-9 h-11 rounded-xl bg-slate-50 border-slate-200"
+                      className="pl-9 h-11 rounded-xl bg-slate-50 dark:bg-background border-slate-200 dark:border-border dark:text-foreground"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-500">
+                  <Label className="text-xs font-bold text-slate-500 dark:text-muted-foreground">
                     이메일
                   </Label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-muted-foreground" />
                       <Input
                         type="email"
                         placeholder="가입된 이메일"
@@ -392,14 +404,14 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                             siteEmail: e.target.value,
                           })
                         }
-                        className="pl-9 h-11 rounded-xl bg-slate-50 border-slate-200"
+                        className="pl-9 h-11 rounded-xl bg-slate-50 dark:bg-background border-slate-200 dark:border-border dark:text-foreground"
                       />
                     </div>
                     <Button
                       type="button"
                       onClick={handleResetRequest}
                       disabled={resetLoading}
-                      className="h-11 px-4 rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800"
+                      className="h-11 px-4 rounded-xl font-bold bg-slate-900 dark:bg-primary text-white hover:bg-slate-800 dark:hover:bg-primary/90"
                     >
                       {resetLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -415,12 +427,12 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
             {/* Step 1: Verify Code */}
             {resetStep === 1 && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="p-3 bg-blue-50 text-blue-700 text-xs rounded-lg font-medium flex items-center gap-2">
+                <div className="p-3 bg-blue-50 dark:bg-primary/10 text-blue-700 dark:text-primary text-xs rounded-lg font-medium flex items-center gap-2">
                   <Mail className="w-4 h-4" />
                   이메일로 발송된 인증코드를 입력해주세요.
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold text-slate-500">
+                  <Label className="text-xs font-bold text-slate-500 dark:text-muted-foreground">
                     인증코드
                   </Label>
                   <div className="flex gap-2">
@@ -430,14 +442,14 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                       onChange={(e) =>
                         setResetData({ ...resetData, code: e.target.value })
                       }
-                      className="h-11 rounded-xl bg-slate-50 border-slate-200 text-center tracking-widest font-mono text-lg"
+                      className="h-11 rounded-xl bg-slate-50 dark:bg-background border-slate-200 dark:border-border text-center tracking-widest font-mono text-lg dark:text-foreground"
                       maxLength={6}
                     />
                     <Button
                       type="button"
                       onClick={handleResetVerify}
                       disabled={resetLoading}
-                      className="h-11 px-6 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700"
+                      className="h-11 px-6 rounded-xl font-bold bg-blue-600 dark:bg-primary text-white hover:bg-blue-700 dark:hover:bg-primary/90"
                     >
                       {resetLoading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -450,7 +462,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                 <div className="text-center">
                   <button
                     onClick={() => setResetStep(0)}
-                    className="text-xs text-slate-400 hover:text-slate-600 underline"
+                    className="text-xs text-slate-400 dark:text-muted-foreground hover:text-slate-600 dark:hover:text-foreground underline"
                   >
                     이메일 다시 입력하기
                   </button>
@@ -463,7 +475,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-xs font-bold text-slate-500">
+                    <Label className="text-xs font-bold text-slate-500 dark:text-muted-foreground">
                       새 비밀번호
                     </Label>
                     {resetData.newPassword.length > 0 && (
@@ -485,7 +497,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     )}
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-muted-foreground" />
                     <Input
                       type={showResetPwd ? 'text' : 'password'}
                       placeholder="8자 이상, 특수문자 포함"
@@ -496,12 +508,12 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                           newPassword: e.target.value,
                         })
                       }
-                      className="pl-9 pr-10 h-11 rounded-xl bg-slate-50 border-slate-200"
+                      className="pl-9 pr-10 h-11 rounded-xl bg-slate-50 dark:bg-background border-slate-200 dark:border-border dark:text-foreground"
                     />
                     <button
                       type="button"
                       onClick={() => setShowResetPwd(!showResetPwd)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-muted-foreground hover:text-slate-600 dark:hover:text-foreground"
                     >
                       {showResetPwd ? (
                         <EyeOff className="w-4 h-4" />

@@ -20,17 +20,20 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="bg-background min-h-screen transition-colors duration-300">
+    <div className="bg-background min-h-screen transition-colors duration-300 selection:bg-primary/20">
       {/* Navigation Bar */}
-      <nav className="bg-card border-b border-border sticky top-0 z-50 transition-colors duration-300">
+      <nav className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50 transition-all duration-300">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <Brain className="w-5 h-5 text-primary-foreground" />
+            <div
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                <Brain className="w-5 h-5 text-primary" />
               </div>
-              <span className="text-foreground text-lg font-semibold">
+              <span className="text-foreground text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
                 IPSUM
               </span>
             </div>
@@ -39,19 +42,19 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
             <div className="hidden md:flex items-center gap-8">
               <a
                 href="#features"
-                className="text-foreground hover:text-muted-foreground transition-colors text-sm"
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
               >
                 Features
               </a>
               <a
                 href="#pricing"
-                className="text-foreground hover:text-muted-foreground transition-colors text-sm"
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
               >
                 Pricing
               </a>
               <a
                 href="#about"
-                className="text-foreground hover:text-muted-foreground transition-colors text-sm"
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
               >
                 About
               </a>
@@ -62,8 +65,7 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
               <ThemeToggle />
               <Button
                 onClick={onSignInClick}
-                variant="outline"
-                className="border-border text-foreground hover:bg-primary hover:text-primary-foreground transition-all h-10 px-6 rounded-lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all h-10 px-6 rounded-xl font-bold"
               >
                 Get Started
               </Button>
@@ -84,35 +86,38 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t border-border transition-colors duration-300">
+            <div className="md:hidden py-4 border-t border-border/50 animate-in slide-in-from-top-2 duration-200">
               <div className="flex flex-col gap-4">
                 <a
                   href="#features"
-                  className="text-foreground hover:text-muted-foreground transition-colors text-sm"
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   Features
                 </a>
                 <a
                   href="#pricing"
-                  className="text-foreground hover:text-muted-foreground transition-colors text-sm"
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   Pricing
                 </a>
                 <a
                   href="#about"
-                  className="text-foreground hover:text-muted-foreground transition-colors text-sm"
+                  className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium px-2 py-1"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
                   About
                 </a>
-                <div className="flex items-center gap-2 pt-2">
-                  <div className="flex-1 flex justify-center">
-                    <ThemeToggle />
-                  </div>
+                <div className="flex items-center justify-between px-2 py-2 border-t border-border/50 mt-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Appearance
+                  </span>
+                  <ThemeToggle />
                 </div>
                 <Button
                   onClick={onSignInClick}
-                  variant="outline"
-                  className="border-border text-foreground hover:bg-accent transition-all h-10 rounded-lg"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-11 rounded-xl font-bold mt-2"
                 >
                   Get Started
                 </Button>
@@ -123,32 +128,44 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
       </nav>
 
       {/* Hero Section */}
-      <section className="max-w-[1200px] mx-auto px-6 py-24">
+      <section className="max-w-[1200px] mx-auto px-6 py-24 md:py-32">
         <div className="grid md:grid-cols-2 gap-16 items-center">
           {/* Left: Text Content */}
           <div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight tracking-tight text-foreground mb-6">
-              서사를 데이터로,
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-6">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+              </span>
+              v2.0 업데이트 완료
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tight text-foreground mb-6">
+              서사를{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-600">
+                데이터
+              </span>
+              로,
               <br />
               IP의 가치를
               <br />
               증명하세요
             </h1>
-            <p className="text-muted-foreground leading-relaxed mb-8 text-lg md:text-xl">
-              AI 기반 설정집 자동 추출과 IP 확장 시뮬레이션으로 창작물의 가치를
-              체계적으로 관리하고 증명합니다.
+            <p className="text-muted-foreground leading-relaxed mb-8 text-lg md:text-xl max-w-lg">
+              AI 기반 설정집 자동 추출과 IP 확장 시뮬레이션으로
+              <br className="hidden md:block" /> 창작물의 가치를 체계적으로
+              관리하고 증명합니다.
             </p>
             <div className="flex items-center gap-4">
               <Button
                 onClick={onSignInClick}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 rounded-lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 rounded-xl font-bold text-lg shadow-lg shadow-primary/20 transition-transform active:scale-95"
               >
                 시작하기
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <ArrowRight className="w-5 h-5 ml-2" />
               </Button>
               <Button
                 variant="ghost"
-                className="text-foreground hover:bg-muted h-12 px-8 rounded-lg"
+                className="text-foreground hover:bg-muted h-12 px-8 rounded-xl font-medium text-lg border border-border/50"
               >
                 데모 보기
               </Button>
@@ -157,35 +174,35 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
 
           {/* Right: Wireframe UI Mockup */}
           <div className="relative">
-            <div className="bg-card border border-border rounded-lg p-8 shadow-sm">
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-8 shadow-2xl dark:shadow-primary/5">
               {/* Mockup Header */}
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-3 h-3 rounded-full bg-muted"></div>
-                <div className="w-3 h-3 rounded-full bg-muted"></div>
-                <div className="w-3 h-3 rounded-full bg-muted"></div>
+                <div className="w-3 h-3 rounded-full bg-red-400/80"></div>
+                <div className="w-3 h-3 rounded-full bg-amber-400/80"></div>
+                <div className="w-3 h-3 rounded-full bg-green-400/80"></div>
               </div>
 
               {/* Mockup Content */}
               <div className="space-y-6">
-                <div className="h-4 bg-primary rounded w-1/3"></div>
+                <div className="h-4 bg-primary/20 rounded w-1/3 animate-pulse"></div>
                 <div className="space-y-3">
                   <div className="h-3 bg-muted rounded w-full"></div>
                   <div className="h-3 bg-muted rounded w-5/6"></div>
                   <div className="h-3 bg-muted rounded w-4/6"></div>
                 </div>
                 <div className="grid grid-cols-3 gap-4 pt-4">
-                  <div className="h-24 bg-muted/50 border border-border rounded-lg"></div>
-                  <div className="h-24 bg-muted/50 border border-border rounded-lg"></div>
-                  <div className="h-24 bg-muted/50 border border-border rounded-lg"></div>
+                  <div className="h-24 bg-muted/30 border border-border/50 rounded-xl"></div>
+                  <div className="h-24 bg-muted/30 border border-border/50 rounded-xl"></div>
+                  <div className="h-24 bg-muted/30 border border-border/50 rounded-xl"></div>
                 </div>
               </div>
             </div>
 
             {/* Floating Card */}
-            <div className="absolute -right-4 -bottom-4 bg-card border border-border rounded-lg p-4 shadow-sm w-48">
+            <div className="absolute -right-4 -bottom-4 bg-card border border-border rounded-xl p-4 shadow-xl w-48 animate-bounce-slow">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <Brain className="w-4 h-4 text-primary-foreground" />
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <Brain className="w-4 h-4 text-primary" />
                 </div>
                 <div>
                   <div className="h-2 bg-muted rounded w-16 mb-1"></div>
@@ -212,11 +229,13 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
 
         <div className="grid md:grid-cols-3 gap-8">
           {/* Feature 1 */}
-          <div className="bg-card border border-border rounded-lg p-8">
-            <div className="w-12 h-12 border border-border rounded-lg flex items-center justify-center mb-6">
-              <Users className="w-6 h-6 text-foreground" />
+          <div className="bg-card hover:bg-accent/50 transition-colors border border-border/50 rounded-2xl p-8 group">
+            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <Users className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl text-foreground mb-3">인물 설정 자동화</h3>
+            <h3 className="text-xl font-bold text-foreground mb-3">
+              인물 설정 자동화
+            </h3>
             <p className="text-muted-foreground leading-[1.6]">
               캐릭터 프로필, 관계도, 핵심 욕망을 AI가 자동으로 추출하고
               체계화합니다.
@@ -224,11 +243,13 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
           </div>
 
           {/* Feature 2 */}
-          <div className="bg-card border border-border rounded-lg p-8">
-            <div className="w-12 h-12 border border-border rounded-lg flex items-center justify-center mb-6">
-              <Globe className="w-6 h-6 text-foreground" />
+          <div className="bg-card hover:bg-accent/50 transition-colors border border-border/50 rounded-2xl p-8 group">
+            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <Globe className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl text-foreground mb-3">세계관 동기화</h3>
+            <h3 className="text-xl font-bold text-foreground mb-3">
+              세계관 동기화
+            </h3>
             <p className="text-muted-foreground leading-[1.6]">
               시간, 공간, 시스템 규칙을 명확하게 정의하고 설정 간 충돌을
               실시간으로 감지합니다.
@@ -236,11 +257,11 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
           </div>
 
           {/* Feature 3 */}
-          <div className="bg-card border border-border rounded-lg p-8">
-            <div className="w-12 h-12 border border-border rounded-lg flex items-center justify-center mb-6">
-              <BookMarked className="w-6 h-6 text-foreground" />
+          <div className="bg-card hover:bg-accent/50 transition-colors border border-border/50 rounded-2xl p-8 group">
+            <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <BookMarked className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl text-foreground mb-3">
+            <h3 className="text-xl font-bold text-foreground mb-3">
               2차 창작 시뮬레이션
             </h3>
             <p className="text-muted-foreground leading-[1.6]">

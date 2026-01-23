@@ -11,14 +11,13 @@ export default function PrivacyPolicy() {
       <div className="w-full max-w-7xl bg-card border border-border rounded-lg p-8 shadow-sm">
         {/* 상단 네비게이션 */}
         <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="ghost"
+          <button
             onClick={() => navigate(-1)}
-            className="p-0 h-auto hover:bg-transparent hover:text-primary transition-colors"
+            className="flex items-center text-muted-foreground hover:text-foreground transition-colors group"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
+            <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             <span className="text-base font-medium">돌아가기</span>
-          </Button>
+          </button>
           <ThemeToggle />
         </div>
 

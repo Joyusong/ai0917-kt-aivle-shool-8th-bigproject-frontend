@@ -55,9 +55,14 @@ export const authService = {
 
   completeSignup: async (data: SignupCompleteRequest) => {
     const response = await apiClient.post<SignupCompleteResponse>(
-      '/api/v1/signup/naver/complete',
+      '/api/v1/signup/complete',
       data,
     );
+    return response.data;
+  },
+
+  deleteAccount: async () => {
+    const response = await apiClient.delete('/api/v1/auth/me');
     return response.data;
   },
 
@@ -80,6 +85,11 @@ export const authService = {
       '/api/v1/signup/password/reset',
       data,
     );
+    return response.data;
+  },
+
+  changePassword: async (data: any) => {
+    const response = await apiClient.patch('/api/v1/auth/password', data);
     return response.data;
   },
 };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import apiClient from '../../../api/axios';
+import { adminService } from '../../../services/adminService';
 import {
   Megaphone,
   X as CloseIcon,
@@ -46,6 +47,7 @@ export function AdminNotices() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // New state for input
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -66,11 +68,9 @@ export function AdminNotices() {
   const fetchNotices = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get<PageResponse>('/api/v1/admin/notice', {
-        params: { keyword, page, size: 10 },
-      });
-      setNotices(res.data.content);
-      setTotalPages(res.data.totalPages);
+      const data = await adminService.getNotices(page, 10, keyword);
+      setNotices(data.content);
+      setTotalPages(data.totalPages);
     } catch (error) {
       console.error('데이터 로드 실패', error);
     } finally {
@@ -82,6 +82,17 @@ export function AdminNotices() {
     fetchNotices();
   }, [fetchNotices]);
 
+  const handleSearch = () => {
+    setKeyword(searchInput);
+    setPage(0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   // 2. 저장 (등록/수정)
   const handleSave = async () => {
     if (!title.trim() || !content.trim() || !writer.trim()) {
@@ -89,13 +100,11 @@ export function AdminNotices() {
     }
 
     const formData = new FormData();
-    const dataObj = { title, content, writer };
-
-    // 파일 전송 시 필수: JSON 데이터에 대한 Blob 처리
-    const jsonBlob = new Blob([JSON.stringify(dataObj)], {
-      type: 'application/json',
-    });
-    formData.append('data', jsonBlob);
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('writer', writer);
+    // CSV에 status가 있지만 기존 코드에 없으므로 생략 혹은 필요 시 추가
+    // formData.append('status', 'POSTED');
 
     if (selectedFile) {
       formData.append('file', selectedFile);
@@ -104,31 +113,30 @@ export function AdminNotices() {
     try {
       setLoading(true);
       if (modalMode === 'edit' && selectedNotice) {
-        await apiClient.patch(
-          `/api/v1/admin/notice/${selectedNotice.id}`,
-          formData,
-          {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          },
-        );
+        await adminService.updateNotice(selectedNotice.id, formData);
       } else {
-        await apiClient.post('/api/v1/admin/notice', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        await adminService.createNotice(formData);
       }
       alert('성공적으로 처리되었습니다.');
       closeModal();
       fetchNotices();
     } catch (e: any) {
+      console.error(e);
       alert(e.response?.data?.message || '처리 실패');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
-    apiClient.delete(`/api/v1/admin/notice/${id}`).then(() => fetchNotices());
+    try {
+      await adminService.deleteNotice(id);
+      fetchNotices();
+    } catch (error) {
+      console.error('삭제 실패', error);
+      alert('삭제에 실패했습니다.');
+    }
   };
 
   const closeModal = () => {
@@ -155,33 +163,53 @@ export function AdminNotices() {
     setModalMode('edit');
   };
 
+  const handleDownload = async (id: number, filename: string) => {
+    try {
+      const blob = await adminService.downloadNoticeFile(id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed', error);
+      alert('파일 다운로드에 실패했습니다.');
+    }
+  };
+
   return (
     <div className="space-y-6 p-4 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Megaphone className="text-blue-600 w-7 h-7" /> 공지사항 관리
-        </h2>
-        <Button
-          onClick={() => setModalMode('create')}
-          className="bg-blue-600 w-full sm:w-auto"
-        >
-          <Plus className="w-4 h-4 mr-2" /> 새 공지 등록
-        </Button>
-      </div>
-
       <Card className="shadow-sm border-slate-200">
-        <CardHeader className="bg-slate-50/50 border-b">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="공지 제목 검색..."
-              className="pl-9 bg-white"
-              value={keyword}
-              onChange={(e) => {
-                setKeyword(e.target.value);
-                setPage(0);
-              }}
-            />
+        <CardHeader className="bg-slate-50/50 border-b flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              공지사항 관리
+            </CardTitle>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              시스템 공지사항을 등록하고 관리합니다.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative w-64 hidden sm:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input
+                placeholder="검색..."
+                className="pl-9 h-9 bg-white"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
+            <Button
+              onClick={() => setModalMode('create')}
+              className="bg-blue-600 hover:bg-blue-700 h-9"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" /> 새 공지
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -342,6 +370,12 @@ export function AdminNotices() {
                         variant="outline"
                         size="sm"
                         className="text-xs h-7"
+                        onClick={() =>
+                          handleDownload(
+                            selectedNotice.id,
+                            selectedNotice.originalFilename!,
+                          )
+                        }
                       >
                         다운로드
                       </Button>

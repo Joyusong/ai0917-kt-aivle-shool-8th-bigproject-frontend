@@ -13,19 +13,29 @@ import {
   Settings,
   ChevronRight,
   FileText,
+  KeyRound,
 } from 'lucide-react';
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '../../components/ui/dialog';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
 import { useState } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { authService } from '../../services/authService';
 
 // Import sub-components
 import { AuthorHome } from './author/AuthorHome';
-import { AuthorManuscripts } from './author/AuthorManuscripts';
-import { AuthorSettings } from './author/AuthorSettings';
+import { AuthorWorks } from './author/AuthorWorks';
 import { AuthorNotice } from './author/AuthorNotice';
 import { AuthorMyPage } from './author/AuthorMyPage';
 import { AuthorAccount } from './author/AuthorAccount';
@@ -45,6 +55,12 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
     useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Password Change State
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   // Fetch User Profile
   const { data: userData } = useQuery({
     queryKey: ['auth', 'me'],
@@ -54,6 +70,41 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const userName =
     userData && 'name' in userData ? (userData.name as string) : '김민지';
   const userInitial = userName.charAt(0);
+
+  const passwordMutation = useMutation({
+    mutationFn: authService.changePassword,
+    onSuccess: () => {
+      alert('비밀번호가 변경되었습니다.');
+      setShowPasswordModal(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.');
+    },
+  });
+
+  const handlePasswordChange = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      alert('모든 필드를 입력해주세요.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert('새 비밀번호가 일치하지 않습니다.');
+      return;
+    }
+    if (newPassword.length < 4) {
+      alert('비밀번호는 4자 이상이어야 합니다.');
+      return;
+    }
+
+    passwordMutation.mutate({
+      currentPassword,
+      newPassword,
+      newPasswordConfirm: confirmPassword,
+    });
+  };
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
@@ -140,37 +191,20 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
           </button>
 
           <button
-            onClick={() => handleMenuClick('manuscripts')}
+            onClick={() => handleMenuClick('works')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeMenu === 'manuscripts'
-                ? 'text-white'
+              activeMenu === 'works'
+                ? 'text-white dark:text-black'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
-              activeMenu === 'manuscripts'
+              activeMenu === 'works'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
           >
             <BookOpen className="w-5 h-5" />
-            <span className="text-sm font-medium">원문</span>
-          </button>
-
-          <button
-            onClick={() => handleMenuClick('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeMenu === 'settings'
-                ? 'text-white dark:text-black'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
-            style={
-              activeMenu === 'settings'
-                ? { backgroundColor: 'var(--role-primary)' }
-                : {}
-            }
-          >
-            <Database className="w-5 h-5" />
-            <span className="text-sm font-medium">설정집</span>
+            <span className="text-sm font-medium">작품</span>
           </button>
 
           <button
@@ -205,7 +239,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                   backgroundColor: 'var(--role-primary)',
                 }}
               >
-                김
+                {userName.charAt(0)}
               </div>
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium text-sidebar-foreground">
@@ -233,6 +267,16 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                 </button>
                 <button
                   onClick={() => {
+                    setShowPasswordModal(true);
+                    setShowProfileDropdown(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
+                >
+                  <KeyRound className="w-4 h-4" />
+                  <span className="text-sm">비밀번호 변경</span>
+                </button>
+                <button
+                  onClick={() => {
                     handleMenuClick('account-settings');
                     setShowProfileDropdown(false);
                   }}
@@ -241,13 +285,13 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                   <Settings className="w-4 h-4" />
                   <span className="text-sm">설정</span>
                 </button>
-                <div className="border-t border-border my-1"></div>
+                <div className="h-px bg-border my-1" />
                 <button
                   onClick={() => {
                     setShowProfileDropdown(false);
                     onLogout();
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors rounded-lg"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm">로그아웃</span>
@@ -265,7 +309,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                   backgroundColor: 'var(--role-primary)',
                 }}
               >
-                김
+                {userName.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm text-sidebar-foreground font-medium">
@@ -415,18 +459,75 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-4 md:p-8">
           {activeMenu === 'home' && <AuthorHome />}
-          {activeMenu === 'manuscripts' && <AuthorManuscripts />}
-          {activeMenu === 'settings' && (
-            <AuthorSettings
-              settingsCategory={settingsCategory}
-              setSettingsCategory={setSettingsCategory}
+          {activeMenu === 'works' && <AuthorWorks />}
+          {activeMenu === 'notice' && <AuthorNotice />}
+          {activeMenu === 'mypage' && (
+            <AuthorMyPage
+              userData={userData}
+              onChangePassword={() => setShowPasswordModal(true)}
             />
           )}
-          {activeMenu === 'notice' && <AuthorNotice />}
-          {activeMenu === 'mypage' && <AuthorMyPage />}
           {activeMenu === 'account-settings' && <AuthorAccount />}
         </main>
       </div>
+
+      {/* Password Change Modal */}
+      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>비밀번호 변경</DialogTitle>
+            <DialogDescription>
+              계정 보안을 위해 주기적으로 비밀번호를 변경해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">현재 비밀번호</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="현재 사용 중인 비밀번호"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">새 비밀번호</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="새 비밀번호 (4자 이상)"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">새 비밀번호 확인</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="새 비밀번호를 다시 입력하세요"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPasswordModal(false)}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handlePasswordChange}
+              disabled={passwordMutation.isPending}
+            >
+              {passwordMutation.isPending ? '변경 중...' : '비밀번호 변경'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,26 +1,25 @@
-import { User, Mail, Shield, Calendar } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
-import { useNavigate } from 'react-router-dom';
-import { authService } from '../../../services/authService';
+import { User, Shield, Mail, Calendar, KeyRound, UserX } from 'lucide-react';
 import { format } from 'date-fns';
 
-interface ManagerMyPageProps {
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../../../services/authService';
+
+interface AdminMyPageProps {
   onChangePassword: () => void;
   userData: any;
 }
 
-export function ManagerMyPage({
-  onChangePassword,
-  userData,
-}: ManagerMyPageProps) {
+export function AdminMyPage({ onChangePassword, userData }: AdminMyPageProps) {
   const navigate = useNavigate();
 
   const handleDeleteAccount = async () => {
@@ -85,7 +84,7 @@ export function ManagerMyPage({
               <Label>권한</Label>
               <div className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
                 <Shield className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{userData.role || 'Manager'}</span>
+                <span className="text-sm">{userData.role || 'ADMIN'}</span>
               </div>
             </div>
             <div className="space-y-2">
@@ -112,8 +111,20 @@ export function ManagerMyPage({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={onChangePassword}>비밀번호 변경</Button>
-            <Button variant="destructive" onClick={handleDeleteAccount}>
+            <Button
+              variant="outline"
+              onClick={onChangePassword}
+              className="flex-1 sm:flex-none"
+            >
+              <KeyRound className="w-4 h-4 mr-2" />
+              비밀번호 변경
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              className="flex-1 sm:flex-none"
+            >
+              <UserX className="w-4 h-4 mr-2" />
               계정 탈퇴
             </Button>
           </div>
