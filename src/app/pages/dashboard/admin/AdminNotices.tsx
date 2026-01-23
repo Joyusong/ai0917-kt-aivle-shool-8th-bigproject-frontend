@@ -46,8 +46,10 @@ export function AdminNotices() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const PAGE_SIZE = 10;
 
   // 모달 제어 상태
   const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view' | null>(
@@ -155,6 +157,17 @@ export function AdminNotices() {
     setModalMode('edit');
   };
 
+  const filteredNotices = keyword
+    ? notices.filter((n) =>
+        (n.title ?? '').toLowerCase().includes(keyword.toLowerCase()) ||
+        (n.content ?? '').toLowerCase().includes(keyword.toLowerCase()),
+      )
+    : notices;
+
+  const shouldShowPagination = keyword
+    ? filteredNotices.length > PAGE_SIZE
+    : totalPages > 1;
+
   return (
     <div className="space-y-6 p-4 max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -171,15 +184,24 @@ export function AdminNotices() {
 
       <Card className="shadow-sm border-slate-200">
         <CardHeader className="bg-slate-50/50 border-b">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="공지 제목 검색..."
-              className="pl-9 bg-white"
-              value={keyword}
-              onChange={(e) => {
-                setKeyword(e.target.value);
+          <div className="relative max-w-md flex items-center">
+            <Search 
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 cursor-pointer hover:text-blue-600" 
+              onClick={() => {
+                setKeyword(searchInput);
                 setPage(0);
+              }}
+            />
+            <Input
+              placeholder="공지 제목/내용 검색..."
+              className="pl-9 bg-white"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setKeyword(searchInput);
+                  setPage(0);
+                }
               }}
             />
           </div>
@@ -204,7 +226,7 @@ export function AdminNotices() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {notices.map((n) => (
+                {filteredNotices.map((n) => (
                   <tr
                     key={n.id}
                     className="hover:bg-blue-50/30 transition-colors cursor-pointer group"
@@ -264,36 +286,38 @@ export function AdminNotices() {
           </div>
 
           {/* 페이지네이션 */}
-          <div className="flex items-center justify-center gap-1.5 py-4 border-t bg-slate-50/30">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => (
+          {shouldShowPagination && (
+            <div className="flex items-center justify-center gap-1.5 py-4 border-t bg-slate-50/30">
               <Button
-                key={i}
-                variant={page === i ? 'default' : 'ghost'}
-                className={`h-8 w-8 p-0 ${page === i ? 'bg-blue-600 text-white' : 'text-slate-600'}`}
-                onClick={() => setPage(i)}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
               >
-                {i + 1}
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-            ))}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage(page + 1)}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Button
+                  key={i}
+                  variant={page === i ? 'default' : 'ghost'}
+                  className={`h-8 w-8 p-0 ${page === i ? 'bg-blue-600 text-white' : 'text-slate-600'}`}
+                  onClick={() => setPage(i)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(page + 1)}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

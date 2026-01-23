@@ -7,6 +7,8 @@ import {
   Search,
   Trash2,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../../components/ui/button';
@@ -93,6 +95,7 @@ export function AdminPermissions() {
   });
 
   const users = userPage?.content || [];
+  const totalPages = userPage?.totalPages || 0;
 
   // Mutations
   const createMutation = useMutation({
@@ -370,6 +373,37 @@ export function AdminPermissions() {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex items-center justify-center gap-1.5 py-4 border-t bg-slate-50/30">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          disabled={page === 0}
+          onClick={() => setPage(page - 1)}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <Button
+            key={i}
+            variant={page === i ? 'default' : 'ghost'}
+            className={`h-8 w-8 p-0 ${page === i ? 'bg-purple-600 text-white' : 'text-slate-600'}`}
+            onClick={() => setPage(i)}
+          >
+            {i + 1}
+          </Button>
+        ))}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          disabled={page >= totalPages - 1}
+          onClick={() => setPage(page + 1)}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </Button>
+      </div>
 
       {/* Create User Modal */}
       {showCreateModal && (
