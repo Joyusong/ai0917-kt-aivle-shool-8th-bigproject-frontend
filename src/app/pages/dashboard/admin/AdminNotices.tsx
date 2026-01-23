@@ -47,169 +47,41 @@ export function AdminNotices() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
-  const [searchInput, setSearchInput] = useState(''); // New state for input
-  const [page, setPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
+  const filteredNotices = keyword
+    ? notices.filter((n) =>
+        (n.title ?? '').toLowerCase().includes(keyword.toLowerCase()) ||
+        (n.content ?? '').toLowerCase().includes(keyword.toLowerCase()),
+      )
+    : notices;
 
-  // 모달 제어 상태
-  const [modalMode, setModalMode] = useState<'create' | 'edit' | 'view' | null>(
-    null,
-  );
-  const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
-
-  // 폼 상태
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [writer, setWriter] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [existingFileName, setExistingFileName] = useState<string | null>(null);
-
-  // 1. 목록 조회
-  const fetchNotices = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await adminService.getNotices(page, 10, keyword);
-      setNotices(data.content);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      console.error('데이터 로드 실패', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [keyword, page]);
-
-  useEffect(() => {
-    fetchNotices();
-  }, [fetchNotices]);
-
-  const handleSearch = () => {
-    setKeyword(searchInput);
-    setPage(0);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  // 2. 저장 (등록/수정)
-  const handleSave = async () => {
-    if (!title.trim() || !content.trim() || !writer.trim()) {
-      return alert('모든 필드를 입력해주세요.');
-    }
-
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', content);
-    formData.append('writer', writer);
-    // CSV에 status가 있지만 기존 코드에 없으므로 생략 혹은 필요 시 추가
-    // formData.append('status', 'POSTED');
-
-    if (selectedFile) {
-      formData.append('file', selectedFile);
-    }
-
-    try {
-      setLoading(true);
-      if (modalMode === 'edit' && selectedNotice) {
-        await adminService.updateNotice(selectedNotice.id, formData);
-      } else {
-        await adminService.createNotice(formData);
-      }
-      alert('성공적으로 처리되었습니다.');
-      closeModal();
-      fetchNotices();
-    } catch (e: any) {
-      console.error(e);
-      alert(e.response?.data?.message || '처리 실패');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    try {
-      await adminService.deleteNotice(id);
-      fetchNotices();
-    } catch (error) {
-      console.error('삭제 실패', error);
-      alert('삭제에 실패했습니다.');
-    }
-  };
-
-  const closeModal = () => {
-    setModalMode(null);
-    setSelectedNotice(null);
-    setTitle('');
-    setContent('');
-    setWriter('');
-    setSelectedFile(null);
-  };
-
-  const openView = (notice: Notice) => {
-    setSelectedNotice(notice);
-    setModalMode('view');
-  };
-
-  const openEdit = (e: React.MouseEvent, notice: Notice) => {
-    e.stopPropagation(); // 제목 클릭 이벤트 방지
-    setSelectedNotice(notice);
-    setTitle(notice.title);
-    setContent(notice.content);
-    setWriter(notice.writer);
-    setExistingFileName(notice.originalFilename);
-    setModalMode('edit');
-  };
-
-  const handleDownload = async (id: number, filename: string) => {
-    try {
-      const blob = await adminService.downloadNoticeFile(id);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Download failed', error);
-      alert('파일 다운로드에 실패했습니다.');
-    }
-  };
+  const shouldShowPagination = keyword
+    ? filteredNotices.length > PAGE_SIZE
+    : totalPages > 1;
 
   return (
     <div className="space-y-6 p-4 max-w-6xl mx-auto">
       <Card className="shadow-sm border-slate-200">
-        <CardHeader className="bg-slate-50/50 border-b flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              공지사항 관리
-            </CardTitle>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              시스템 공지사항을 등록하고 관리합니다.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative w-64 hidden sm:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="검색..."
-                className="pl-9 h-9 bg-white"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-            </div>
-            <Button
-              onClick={() => setModalMode('create')}
-              className="bg-blue-600 hover:bg-blue-700 h-9"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" /> 새 공지
-            </Button>
+        <CardHeader className="bg-slate-50/50 border-b">
+          <div className="relative max-w-md flex items-center">
+            <Search 
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 cursor-pointer hover:text-blue-600" 
+              onClick={() => {
+                setKeyword(searchInput);
+                setPage(0);
+              }}
+            />
+            <Input
+              placeholder="공지 제목/내용 검색..."
+              className="pl-9 bg-white"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setKeyword(searchInput);
+                  setPage(0);
+                }
+              }}
+            />
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -232,7 +104,7 @@ export function AdminNotices() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {notices.map((n) => (
+                {filteredNotices.map((n) => (
                   <tr
                     key={n.id}
                     className="hover:bg-blue-50/30 transition-colors cursor-pointer group"
@@ -292,36 +164,38 @@ export function AdminNotices() {
           </div>
 
           {/* 페이지네이션 */}
-          <div className="flex items-center justify-center gap-1.5 py-4 border-t bg-slate-50/30">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => (
+          {shouldShowPagination && (
+            <div className="flex items-center justify-center gap-1.5 py-4 border-t bg-slate-50/30">
               <Button
-                key={i}
-                variant={page === i ? 'default' : 'ghost'}
-                className={`h-8 w-8 p-0 ${page === i ? 'bg-blue-600 text-white' : 'text-slate-600'}`}
-                onClick={() => setPage(i)}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={page === 0}
+                onClick={() => setPage(page - 1)}
               >
-                {i + 1}
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-            ))}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage(page + 1)}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <Button
+                  key={i}
+                  variant={page === i ? 'default' : 'ghost'}
+                  className={`h-8 w-8 p-0 ${page === i ? 'bg-blue-600 text-white' : 'text-slate-600'}`}
+                  onClick={() => setPage(i)}
+                >
+                  {i + 1}
+                </Button>
+              ))}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(page + 1)}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
