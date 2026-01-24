@@ -44,7 +44,11 @@ interface PageResponse {
   number: number;
 }
 
-export function AdminNotices() {
+interface AdminNoticesProps {
+  readOnly?: boolean;
+}
+
+export function AdminNotices({ readOnly = false }: AdminNoticesProps) {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -237,16 +241,18 @@ export function AdminNotices() {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => {
-            setModalMode('create');
-            setWriter(currentUserEmail);
-          }}
-          className="bg-blue-600 hover:bg-blue-700 h-9"
-          size="sm"
-        >
-          <Plus className="w-4 h-4 mr-2" /> 새 공지
-        </Button>
+        {!readOnly && (
+          <Button
+            onClick={() => {
+              setModalMode('create');
+              setWriter(currentUserEmail);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 h-9"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" /> 새 공지
+          </Button>
+        )}
       </div>
 
       <Card className="border-border shadow-sm gap-0">
@@ -282,7 +288,9 @@ export function AdminNotices() {
                   <th className="px-4 py-3 w-20 text-center hidden sm:table-cell">
                     첨부
                   </th>
-                  <th className="px-4 py-3 w-28 text-center">관리</th>
+                  {!readOnly && (
+                    <th className="px-4 py-3 w-28 text-center">관리</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -313,29 +321,31 @@ export function AdminNotices() {
                         <FileText className="w-4 h-4 mx-auto text-blue-400" />
                       )}
                     </td>
-                    <td
-                      className="px-4 py-4 text-center"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-blue-600 disabled:opacity-30"
-                          onClick={(e) => openEdit(e, n)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-red-500 disabled:opacity-30"
-                          onClick={() => handleDelete(n.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
+                    {!readOnly && (
+                      <td
+                        className="px-4 py-4 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-blue-600 disabled:opacity-30"
+                            onClick={(e) => openEdit(e, n)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-red-500 disabled:opacity-30"
+                            onClick={() => handleDelete(n.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

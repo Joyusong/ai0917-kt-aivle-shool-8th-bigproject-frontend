@@ -109,15 +109,23 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
     setIsLoading(true);
     try {
       // 백엔드 AuthController 구조에 맞춘 로그인 요청
-      const res = await authService.login({
+      // HttpOnly 쿠키가 설정되므로 응답 바디의 role에 의존하지 않고 세션을 재확인합니다.
+      await authService.login({
         siteEmail: email,
         sitePwd: password,
       });
 
-      // 백엔드 응답에서 Role 추출 (HttpOnly 쿠키는 헤더에 저장됨)
-      const userRole = res.role;
-      if (userRole) {
-        onLogin(userRole);
+      // 세션 확인 (쿠키가 잘 설정되었는지 확인)
+      const user = await authService.me();
+      if (user.role) {
+        onLogin(user.role);
+      } else {
+        // Role이 없는 경우 (예: 승인 대기 등)
+        if (user.type === 'PENDING') {
+          alert('관리자 승인 대기 중인 계정입니다.');
+        } else {
+          alert('로그인에 성공했으나 권한 정보를 불러올 수 없습니다.');
+        }
       }
     } catch (error: any) {
       const message = error.response?.data?.message || '로그인에 실패했습니다.';

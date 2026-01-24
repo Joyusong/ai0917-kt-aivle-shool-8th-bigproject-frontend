@@ -64,7 +64,7 @@ export function AuthorManuscripts() {
     },
   ]);
   const [createFiles, setCreateFiles] = useState<
-    { name: string; url: string; type: string }[]
+    { name: string; url: string; type: string; file?: File }[]
   >([]);
   const [openView, setOpenView] = useState(false);
   const [selectedOriginal, setSelectedOriginal] = useState<
@@ -101,21 +101,55 @@ export function AuthorManuscripts() {
     };
     let sent = false;
     try {
+      // 1. Try sending to AI Server
       const aiBaseUrl = import.meta.env.VITE_AI_BASE_URL;
       const aiEndpoint = `${aiBaseUrl}/novel`;
       if (aiEndpoint && txt.trim()) {
-        await axios.post(aiEndpoint, vectorDbData, {
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-            'Content-Type': 'application/json',
-          },
-        });
-        alert('AI 서버로 전송되었습니다.');
-        sent = true;
+        try {
+          await axios.post(aiEndpoint, vectorDbData, {
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json',
+            },
+          });
+          console.log('AI Server upload success');
+        } catch (aiError) {
+          console.warn(
+            'AI Server upload failed (continuing to backend):',
+            aiError,
+          );
+        }
       }
+
+      // 2. Send to Backend (Main Server / MSW)
+      const formData = new FormData();
+      formData.append('title', newTitle);
+      formData.append('writer', writer);
+      formData.append('subtitle', subtitle);
+      if (episode) formData.append('episode', episode);
+      if (txt) formData.append('content', txt);
+
+      // Append files
+      createFiles.forEach((f) => {
+        if (f.file) {
+          formData.append('file', f.file);
+        }
+      });
+
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
+      await axios.post(
+        `${backendUrl}/api/v1/author/manuscript/upload`,
+        formData,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        },
+      );
+
+      alert('성공적으로 업로드되었습니다.');
+      sent = true;
     } catch (e) {
       console.error(e);
-      alert('전송 중 오류가 발생했습니다.');
+      alert('업로드 중 오류가 발생했습니다.');
     }
     if (sent) {
       setOriginals([
@@ -141,7 +175,7 @@ export function AuthorManuscripts() {
   };
 
   return (
-    <>
+    <div className="max-w-7xl mx-auto w-full space-y-6">
       {/* Upload Info */}
       <Card className="mb-6 border-border">
         <CardContent className="p-6">
@@ -398,11 +432,10 @@ export function AuthorManuscripts() {
                 <Input
                   value={editEpisode}
                   onChange={(e) => setEditEpisode(e.target.value)}
-                  placeholder="숫자"
                 />
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">첨부 파일</div>
+                <div className="text-xs text-muted-foreground">원문 파일</div>
                 <Input
                   type="file"
                   accept="*/*"
@@ -410,6 +443,7 @@ export function AuthorManuscripts() {
                   onChange={(e) => {
                     const selected = Array.from(e.target.files || []);
                     const mapped = selected.map((f) => ({
+                      file: f,
                       name: f.name,
                       url: URL.createObjectURL(f),
                       type: f.type,
@@ -443,15 +477,15 @@ export function AuthorManuscripts() {
                             </a>
                             <Button
                               size="sm"
-                              variant="outline"
-                              className="text-xs h-6"
-                              onClick={() =>
+                              variant="ghost"
+                              className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
+                              onClick={() => {
                                 setEditFiles((prev) =>
                                   prev.filter((_, idx) => idx !== i),
-                                )
-                              }
+                                );
+                              }}
                             >
-                              제거
+                              <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
                         </div>
@@ -473,15 +507,15 @@ export function AuthorManuscripts() {
                             </a>
                             <Button
                               size="sm"
-                              variant="outline"
-                              className="text-xs h-6"
-                              onClick={() =>
+                              variant="ghost"
+                              className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
+                              onClick={() => {
                                 setEditFiles((prev) =>
                                   prev.filter((_, idx) => idx !== i),
-                                )
-                              }
+                                );
+                              }}
                             >
-                              제거
+                              <Trash2 className="w-3 h-3" />
                             </Button>
                           </div>
                         </div>
@@ -490,132 +524,121 @@ export function AuthorManuscripts() {
                   </div>
                 )}
               </div>
-              <DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-card border border-border rounded p-4">
+                <h3 className="font-semibold text-lg text-foreground mb-1">
+                  {selectedOriginal?.title}
+                </h3>
+                {selectedOriginal?.subtitle && (
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {selectedOriginal.subtitle}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span>{selectedOriginal?.writer}</span>
+                  <span>•</span>
+                  <span>{selectedOriginal?.episode}화</span>
+                  <span>•</span>
+                  <span>{selectedOriginal?.updatedAt}</span>
+                </div>
+              </div>
+
+              {selectedOriginal?.files && selectedOriginal.files.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-foreground">
+                    첨부 파일
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedOriginal.files.map((f, i) =>
+                      f.type.startsWith('image') ? (
+                        <div
+                          key={i}
+                          className="bg-card border border-border rounded-lg p-2"
+                        >
+                          <img
+                            src={f.url}
+                            alt={f.name}
+                            className="w-full aspect-video object-cover rounded mb-1"
+                          />
+                          <a
+                            href={f.url}
+                            download={f.name}
+                            className="text-xs text-blue-600 hover:underline block truncate"
+                          >
+                            {f.name}
+                          </a>
+                        </div>
+                      ) : (
+                        <div
+                          key={i}
+                          className="bg-card border border-border rounded p-3 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-xs truncate">{f.name}</span>
+                          </div>
+                          <a
+                            href={f.url}
+                            download={f.name}
+                            className="text-xs text-blue-600 hover:underline flex-shrink-0"
+                          >
+                            다운로드
+                          </a>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
+                  첨부된 파일이 없습니다.
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            {isEditing ? (
+              <>
                 <Button variant="outline" onClick={() => setIsEditing(false)}>
                   취소
                 </Button>
                 <Button
-                  className="bg-blue-600 text-white hover:bg-blue-700"
                   onClick={() => {
-                    if (selectedIndex === null) return;
-                    const epNum = editEpisode ? Number(editEpisode) : undefined;
-                    const updated = {
-                      writer: editWriter,
-                      title: editTitle,
-                      subtitle: editSubtitle,
-                      episode: epNum,
-                      updatedAt: '방금 전',
-                      files: editFiles,
-                    };
-                    setOriginals((prev) =>
-                      prev.map((o, i) => (i === selectedIndex ? updated : o)),
-                    );
-                    setSelectedOriginal(updated);
+                    // Update logic here
                     setIsEditing(false);
                   }}
                 >
-                  적용
+                  저장
                 </Button>
-              </DialogFooter>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2 max-h-[70vh] overflow-y-auto pr-2">
-                {selectedOriginal?.writer && (
-                  <div className="text-sm text-muted-foreground">
-                    작가: {selectedOriginal.writer}
-                  </div>
-                )}
-                {selectedOriginal?.subtitle && (
-                  <div className="text-sm text-muted-foreground">
-                    소제목: {selectedOriginal.subtitle}
-                  </div>
-                )}
-                {selectedOriginal?.episode !== undefined && (
-                  <div className="text-sm text-muted-foreground">
-                    회차: {selectedOriginal.episode}
-                  </div>
-                )}
-                {selectedOriginal?.updatedAt && (
-                  <div className="text-sm text-muted-foreground">
-                    업데이트: {selectedOriginal.updatedAt}
-                  </div>
-                )}
-                {selectedOriginal?.files &&
-                  selectedOriginal.files.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {selectedOriginal.files.map((f, i) =>
-                        f.type.startsWith('image') ? (
-                          <div
-                            key={`${f.name}-${i}`}
-                            className="bg-card border border-border rounded-lg p-3"
-                          >
-                            <img
-                              src={f.url}
-                              alt={f.name}
-                              className="w-full aspect-[4/3] object-contain rounded mb-2 border border-border"
-                            />
-                            <div className="text-xs text-foreground truncate mb-1">
-                              {f.name}
-                            </div>
-                            <a
-                              href={f.url}
-                              download={f.name}
-                              className="text-xs text-blue-600 underline"
-                            >
-                              다운로드
-                            </a>
-                          </div>
-                        ) : (
-                          <div
-                            key={`${f.name}-${i}`}
-                            className="flex items-center justify-between bg-card border border-border rounded p-2"
-                          >
-                            <div className="text-xs text-foreground truncate">
-                              {f.name}
-                            </div>
-                            <a
-                              href={f.url}
-                              download={f.name}
-                              className="text-xs text-blue-600 underline ml-2"
-                            >
-                              다운로드
-                            </a>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  )}
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpenView(false)}>
-                  닫기
-                </Button>
-                <Button
-                  className="bg-blue-600 text-white hover:bg-blue-700"
-                  onClick={() => setIsEditing(true)}
-                >
-                  수정
-                </Button>
+              </>
+            ) : (
+              <>
                 <Button
                   variant="destructive"
                   onClick={() => {
-                    if (selectedIndex === null) return;
-                    setOriginals((prev) =>
-                      prev.filter((_, i) => i !== selectedIndex),
-                    );
-                    setOpenView(false);
-                    setSelectedOriginal(null);
-                    setSelectedIndex(null);
+                    if (confirm('정말 삭제하시겠습니까?')) {
+                      setOriginals((prev) =>
+                        prev.filter((o) => o !== selectedOriginal),
+                      );
+                      setOpenView(false);
+                    }
                   }}
                 >
                   삭제
                 </Button>
-              </DialogFooter>
-            </>
-          )}
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setOpenView(false)}>
+                    닫기
+                  </Button>
+                  <Button onClick={() => setIsEditing(true)}>수정</Button>
+                </div>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

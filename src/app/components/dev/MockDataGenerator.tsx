@@ -43,7 +43,35 @@ admin,4,공지사항 삭제,DELETE,/api/v1,/admin/notice/{id}
 admin,5,최근 알림 목록 조회,GET,/api/v1,/admin/sysnotice
 admin,5,알림 통계 조회,GET,/api/v1,/admin/sysnotice/stats
 admin,5,실시간 알림 구독 ( 1시간 ),GET,/api/v1,/admin/sysnotice/subscribe
-admin,5,알림 읽음 처리,PATCH,/api/v1,/admin/sysnotice/{source}/{id}/read`;
+admin,5,알림 읽음 처리,PATCH,/api/v1,/admin/sysnotice/{source}/{id}/read
+author,17,작가 대시보드 페이지 조회,GET,/api/v1,/author/dashboard
+author,17,작가 활동 요약 정보 조회,GET,/api/v1,/author/dashboard/summary
+author,17,대시보드용 최신 공지 조회,GET,/api/v1,/author/dashboard/notice
+author,18,원문 관리 페이지 조회,GET,/api/v1,/author/manuscript
+author,18,원문 파일 목록 조회,GET,/api/v1,/author/manuscript/list
+author,18,새 원문 파일 업로드,POST,/api/v1,/author/manuscript/upload
+author,18,원문 상세 정보 조회,GET,/api/v1,/author/manuscript/{id}
+author,18,원문 파일 삭제,DELETE,/api/v1,/author/manuscript/{id}
+author,19,설정집 페이지 조회,GET,/api/v1,/author/lorebook
+author,19,설정집 상세 페이지 조회,GET,/api/v1,/author/lorebook/{workId}
+author,19,AI 설정 검토 결과 조회,GET,/api/v1,/author/lorebook/{workId}/ai-review
+author,19,설정 전체 재검토 요청,POST,/api/v1,/author/lorebook/{workId}/ai-review/rescan
+author,19,인물 설정 목록 조회,GET,/api/v1,/author/lorebook/{workId}/characters
+author,19,세계관 설정 목록 조회,GET,/api/v2,/author/lorebook/{workId}/worldview
+author,19,서사 설정 목록 조회,GET,/api/v1,/author/lorebook/{workId}/narrative
+author,19,설정 항목 신규 추가,POST,/api/v1,/author/lorebook/{workId}/items
+author,19,설정 항목 수정,PATCH,/api/v1,/author/lorebook/{workId}/items/{itemId}
+author,19,설정 항목 삭제,DELETE,/api/v1,/author/lorebook/{workId}/items/{itemId}
+author,20,공지사항 페이지 접속,GET,/api/v1,/author/notice
+author,20,공지사항 리스트 조회,GET,/api/v1,/author/notice/list
+author,20,공지사항 상세 내용 조회,GET,/api/v1,/author/notice/{id}
+author,21,마이페이지 초기 데이터 조회,GET,/api/v1,/author/{userId}/mypage
+author,21,프로필 정보 업데이트,PATCH,/api/v1,/author/{userId}/mypage/profile
+author,21,비밀번호 변경,PATCH,/api/v1,/author/{userId}/mypage/pwd
+author,21,활동 통계 상세 조회,GET,/api/v1,/author/{userId}/mypage/stats
+author,22,시스템 설정 데이터 조회,GET,/api/v1,/author/{userId}/setting
+author,22,시스템 설정 정보 업데이트,PATCH,/api/v1,/author/{userId}/setting
+author,23,최근 알림 목록 조회,GET,/api/v1,/author/sysnotice`;
 
 export function MockDataGenerator() {
   const [isOpen, setIsOpen] = useState(false);

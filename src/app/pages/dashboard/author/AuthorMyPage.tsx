@@ -46,7 +46,7 @@ export function AuthorMyPage({
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
           마이페이지

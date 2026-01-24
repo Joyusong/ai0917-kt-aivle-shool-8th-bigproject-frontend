@@ -7,7 +7,7 @@ import {
 
 export function ManagerSettings() {
   return (
-    <div className="max-w-4xl">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <Card className="border-slate-200">
         <CardHeader className="border-b border-slate-200">
           <CardTitle className="text-slate-900">

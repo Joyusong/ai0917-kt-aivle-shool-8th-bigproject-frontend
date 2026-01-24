@@ -63,6 +63,7 @@ export default function App() {
       console.error('Logout failed', error);
     }
     localStorage.removeItem('userRole');
+    localStorage.removeItem('msw-session-role'); // Clear MSW session role
     // localStorage.clear(); // Avoid clearing everything if not necessary
     setUserType(null);
     navigate('/login');

@@ -36,7 +36,7 @@ export function AuthorSettings({
   setSettingsCategory,
 }: AuthorSettingsProps) {
   return (
-    <div className="h-full flex flex-col">
+    <div className="max-w-7xl mx-auto w-full h-full flex flex-col">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-1">

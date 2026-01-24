@@ -14,7 +14,7 @@ import { Badge } from "../../../components/ui/badge";
 
 export function ManagerIPTrend() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Popular Genres */}
       <Card className="border-slate-200">
         <CardHeader className="border-b border-slate-200">

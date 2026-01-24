@@ -11,6 +11,19 @@ async function enableMocking() {
     return;
   }
 
+  // Manual Override via VITE_USE_MSW
+  const useMsw = import.meta.env.VITE_USE_MSW;
+  if (useMsw === 'true') {
+    console.log('[App] VITE_USE_MSW is true. Starting MSW...');
+    const { worker } = await import('./mocks/browser');
+    return worker.start({ onUnhandledRequest: 'bypass' });
+  }
+  if (useMsw === 'false') {
+    console.log('[App] VITE_USE_MSW is false. MSW skipped.');
+    return;
+  }
+
+  // Auto Mode: Check if Backend is reachable
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   try {

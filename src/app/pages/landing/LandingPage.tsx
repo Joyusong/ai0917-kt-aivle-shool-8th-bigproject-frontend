@@ -27,7 +27,7 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Logo onClick={() => (window.location.href = '/')} />
+            <Logo onClick={() => (window.location.href = '#')} />
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">

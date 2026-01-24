@@ -14,6 +14,7 @@ import {
   ChevronRight,
   FileText,
   KeyRound,
+  Trophy,
 } from 'lucide-react';
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
@@ -29,6 +30,8 @@ import { AuthorHome } from './author/AuthorHome';
 import { AuthorWorks } from './author/AuthorWorks';
 import { AuthorNotice } from './author/AuthorNotice';
 import { AuthorMyPage } from './author/AuthorMyPage';
+import { AuthorIPExpansion } from './author/AuthorIPExpansion';
+import { AuthorContestTemplates } from './author/AuthorContestTemplates';
 import { AuthorAccount } from './author/AuthorAccount';
 
 import { Logo } from '../../components/common/Logo';
@@ -66,6 +69,14 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
     // Close sidebar on mobile when menu is clicked
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
+
+  const handleSubMenuClick = (menu: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveMenu(menu);
     if (window.innerWidth < 768) {
       setSidebarOpen(false);
     }
@@ -140,6 +151,77 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
           >
             <BookOpen className="w-5 h-5" />
             <span className="text-sm font-medium">작품</span>
+          </button>
+
+          {/* IP 확장 (서브메뉴 포함) */}
+          <div className="space-y-1">
+            <button
+              onClick={() => handleMenuClick('ip-expansion')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                activeMenu === 'ip-expansion' ||
+                activeMenu === 'ip-proposal' ||
+                activeMenu === 'ip-matching'
+                  ? 'text-white dark:text-black'
+                  : 'text-sidebar-foreground hover:bg-sidebar-accent'
+              }`}
+              style={
+                activeMenu === 'ip-expansion' ||
+                activeMenu === 'ip-proposal' ||
+                activeMenu === 'ip-matching'
+                  ? { backgroundColor: 'var(--role-primary)' }
+                  : {}
+              }
+            >
+              <Database className="w-5 h-5" />
+              <span className="text-sm font-medium">IP 확장</span>
+              <ChevronDown
+                className={`w-4 h-4 ml-auto transition-transform ${activeMenu.startsWith('ip-') ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {/* 서브메뉴 (항상 보이거나 선택 시 보임 - 여기선 항상 보이게 하거나 클릭 시 토글 등 정책 필요하지만, 일단 간단히 들여쓰기로 구현) */}
+            {(activeMenu.startsWith('ip-') || true) && (
+              <div className="pl-12 space-y-1">
+                <button
+                  onClick={(e) => handleSubMenuClick('ip-proposal', e)}
+                  className={`w-full flex items-center gap-2 py-2 text-sm transition-colors ${
+                    activeMenu === 'ip-proposal'
+                      ? 'text-foreground font-medium'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                  제안서 검토
+                </button>
+                <button
+                  onClick={(e) => handleSubMenuClick('ip-matching', e)}
+                  className={`w-full flex items-center gap-2 py-2 text-sm transition-colors ${
+                    activeMenu === 'ip-matching'
+                      ? 'text-foreground font-medium'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+                  담당자 매칭
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => handleMenuClick('contest-templates')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              activeMenu === 'contest-templates'
+                ? 'text-white dark:text-black'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent'
+            }`}
+            style={
+              activeMenu === 'contest-templates'
+                ? { backgroundColor: 'var(--role-primary)' }
+                : {}
+            }
+          >
+            <Trophy className="w-5 h-5" />
+            <span className="text-sm font-medium">공모전 템플릿</span>
           </button>
 
           <button
@@ -399,6 +481,10 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
           {activeMenu === 'works' && (
             <AuthorWorks integrationId={integrationId} />
           )}
+          {(activeMenu === 'ip-expansion' ||
+            activeMenu === 'ip-proposal' ||
+            activeMenu === 'ip-matching') && <AuthorIPExpansion />}
+          {activeMenu === 'contest-templates' && <AuthorContestTemplates />}
           {activeMenu === 'notice' && (
             <AuthorNotice integrationId={integrationId} />
           )}

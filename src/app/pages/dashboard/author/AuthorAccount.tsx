@@ -6,7 +6,7 @@ import { Label } from "../../../components/ui/label";
 
 export function AuthorAccount() {
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       <Card className="border-border">
         <CardHeader className="border-b border-border">
           <CardTitle className="text-foreground">계정 설정</CardTitle>
