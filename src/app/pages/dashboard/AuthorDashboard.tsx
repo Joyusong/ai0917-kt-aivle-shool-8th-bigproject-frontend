@@ -14,6 +14,7 @@ import {
   ChevronRight,
   FileText,
   KeyRound,
+  Trophy,
 } from 'lucide-react';
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
@@ -28,6 +29,7 @@ import { PasswordChangeModal } from '../../components/common/PasswordChangeModal
 import { AuthorHome } from './author/AuthorHome';
 import { AuthorWorks } from './author/AuthorWorks';
 import { AuthorNotice } from './author/AuthorNotice';
+import { AuthorContest } from './author/AuthorContest';
 import { AuthorMyPage } from './author/AuthorMyPage';
 import { AuthorAccount } from './author/AuthorAccount';
 
@@ -158,6 +160,22 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
             <Megaphone className="w-5 h-5" />
             <span className="text-sm font-medium">공지사항</span>
           </button>
+          <button
+            onClick={() => handleMenuClick('contest')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              activeMenu === 'contest'
+                ? 'text-white dark:text-black'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent'
+            }`}
+            style={
+              activeMenu === 'contest'
+                ? { backgroundColor: 'var(--role-primary)' }
+                : {}
+            }
+          >
+            <Trophy className="w-5 h-5" />
+            <span className="text-sm font-medium">공모전</span>
+          </button>
         </nav>
 
         {/* Profile Section */}
@@ -200,26 +218,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                   <User className="w-4 h-4" />
                   <span className="text-sm">마이페이지</span>
                 </button>
-                <button
-                  onClick={() => {
-                    setShowPasswordModal(true);
-                    setShowProfileDropdown(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span className="text-sm">비밀번호 변경</span>
-                </button>
-                <button
-                  onClick={() => {
-                    handleMenuClick('account-settings');
-                    setShowProfileDropdown(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
-                >
-                  <Settings className="w-4 h-4" />
-                  <span className="text-sm">설정</span>
-                </button>
+                
                 <div className="h-px bg-border my-1" />
                 <button
                   onClick={() => {
@@ -260,13 +259,6 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
             >
               <User className="w-4 h-4" />
               <span className="text-sm">마이페이지</span>
-            </button>
-            <button
-              onClick={() => handleMenuClick('account-settings')}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="text-sm">설정</span>
             </button>
             <div className="border-t border-sidebar-border my-2"></div>
             <button
@@ -310,6 +302,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                     {activeMenu === 'manuscripts' && '원문'}
                     {activeMenu === 'settings' && '설정집'}
                     {activeMenu === 'notice' && '공지사항'}
+                    {activeMenu === 'contest' && '공모전'}
                     {activeMenu === 'mypage' && '마이페이지'}
                     {activeMenu === 'account-settings' && '설정'}
                   </span>
@@ -394,7 +387,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-4 md:p-8">
           {activeMenu === 'home' && (
-            <AuthorHome integrationId={integrationId} />
+            <AuthorHome integrationId={integrationId} onNavigate={handleMenuClick} />
           )}
           {activeMenu === 'works' && (
             <AuthorWorks integrationId={integrationId} />
@@ -402,6 +395,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
           {activeMenu === 'notice' && (
             <AuthorNotice integrationId={integrationId} />
           )}
+          {activeMenu === 'contest' && <AuthorContest integrationId={integrationId} />}
           {activeMenu === 'mypage' && (
             <AuthorMyPage
               userData={userData}

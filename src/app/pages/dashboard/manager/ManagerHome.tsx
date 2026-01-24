@@ -1,4 +1,4 @@
-import { Megaphone, Plus, Award } from "lucide-react";
+import { Megaphone, Plus, Award, FileText } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { Button } from "../../../components/ui/button";
@@ -20,6 +20,8 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
     title: string;
     createdAt: string;
     isNew?: boolean;
+    writer?: string;
+    originalFilename?: string | null;
   }
   interface DashboardContest {
     id: number | string;
@@ -66,6 +68,8 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
           id: n.id,
           title: n.title,
           createdAt: n.createdAt,
+          writer: n.writer,
+          originalFilename: n.originalFilename,
           isNew: false, // Admin API might not have this, or we can calculate based on date
         }))
       );
@@ -120,29 +124,33 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-border">
-              {notices.map((n) => (
-                <div
-                  key={n.id}
-                  className="flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm text-foreground">
-                        {n.title}
-                      </span>
-                      {n.isNew && (
-                        <Badge className="bg-orange-500 text-white text-xs">
-                          N
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-sm text-muted-foreground">
-                    {n.createdAt}
-                  </span>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">ID</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">제목</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">작성자</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">첨부</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">작성일</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {notices.map((n) => (
+                    <tr key={n.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-foreground">{n.id}</td>
+                      <td className="px-4 py-3 text-sm text-foreground">{n.title}</td>
+                      <td className="px-4 py-3 text-sm text-foreground">{n.writer || '운영자'}</td>
+                      <td className="px-4 py-3 text-sm text-foreground">
+                        {n.originalFilename && <FileText className="w-4 h-4 text-blue-600" />}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-foreground">
+                        {new Date(n.createdAt).toISOString().split('T')[0]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
