@@ -29,6 +29,7 @@ import { adminService } from '../../services/adminService';
 import { authService } from '../../services/authService';
 import { format } from 'date-fns';
 import { MockDataGenerator } from '../../components/dev/MockDataGenerator';
+import { Logo } from '../../components/common/Logo';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -204,10 +205,8 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
         )}
 
         {/* Logo */}
-        <div className="flex items-center gap-2 mb-8 px-6 pt-6">
-          <div className="text-2xl font-black tracking-tighter text-foreground select-none">
-            IP.SUM
-          </div>
+        <div className="px-6 pt-6 mb-8">
+          <Logo />
         </div>
 
         {/* Navigation Menu */}
@@ -490,6 +489,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
         open={showPasswordModal}
         onOpenChange={setShowPasswordModal}
       />
+      {import.meta.env.DEV && <MockDataGenerator />}
     </div>
   );
 }

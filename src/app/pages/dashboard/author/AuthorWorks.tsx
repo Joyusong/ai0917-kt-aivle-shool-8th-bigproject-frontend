@@ -12,9 +12,8 @@ import {
   CardContent,
 } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
-import { Plus, Book, FileText, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { Plus, Book, FileText, MoreVertical, Edit, Trash2, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '../../../api/axios';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,67 +27,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../../components/ui/dialog';
+import { authorService } from '../../../services/authorService';
+import { WorkResponseDto } from '../../../types/author';
 
-interface Work {
-  id: number;
-  title: string;
-  type: 'NOVEL' | 'SETTING';
-  createdAt: string;
-  updatedAt: string;
-  status: string;
+interface AuthorWorksProps {
+  integrationId: string;
 }
 
-export function AuthorWorks() {
+export function AuthorWorks({ integrationId }: AuthorWorksProps) {
   const [activeTab, setActiveTab] = useState('novel');
-  const [selectedWork, setSelectedWork] = useState<Work | null>(null);
+  const [selectedWork, setSelectedWork] = useState<WorkResponseDto | null>(null);
 
   // Fetch Works
   const { data: works, isLoading } = useQuery({
-    queryKey: ['author', 'works'],
-    queryFn: async () => {
-      // API call to fetch works
-      // Assuming GET /api/v1/author/works returns all works
-      // If endpoint is different, it needs to be adjusted.
-      // For now, mocking or assuming a standard endpoint.
-      // If separate endpoints exist for novels and settings, we might need Promise.all
-      try {
-        const res = await apiClient.get('/api/v1/author/works');
-        return res.data;
-      } catch (e) {
-        // Fallback or mock if API not ready
-        return [];
-      }
-    },
+    queryKey: ['author', 'works', integrationId],
+    queryFn: () => authorService.getWorks(integrationId),
+    enabled: !!integrationId,
   });
 
-  const novels =
-    works?.filter((w: Work) => w.type === 'NOVEL' || !w.type) || [];
-  const settings = works?.filter((w: Work) => w.type === 'SETTING') || [];
+  // Filter works (Assuming all works are novels for now as backend doesn't distinguish yet)
+  // If backend adds 'type' field later, we can filter properly.
+  const novels = works || [];
+  const settings: WorkResponseDto[] = []; // Placeholder for now
 
-  // Fetch Work Detail
-  const { data: workDetail, isLoading: isDetailLoading } = useQuery({
-    queryKey: ['author', 'works', selectedWork?.id],
-    queryFn: async () => {
-      if (!selectedWork) return null;
-      try {
-        const res = await apiClient.get(
-          `/api/v1/author/works/${selectedWork.id}`,
-        );
-        return res.data;
-      } catch (e) {
-        console.error('Failed to fetch work detail', e);
-        // Fallback for demo if API fails
-        return {
-          ...selectedWork,
-          content:
-            '이 작품의 내용은 아직 불러올 수 없습니다. (API 연동 필요)\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-        };
-      }
-    },
-    enabled: !!selectedWork,
-  });
-
-  const handleWorkClick = (work: Work) => {
+  const handleWorkClick = (work: WorkResponseDto) => {
     setSelectedWork(work);
   };
 
@@ -119,71 +81,82 @@ export function AuthorWorks() {
         </TabsList>
 
         <TabsContent value="novel" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {novels.length > 0 ? (
-              novels.map((work: Work) => (
-                <Card
-                  key={work.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow group"
-                  onClick={() => handleWorkClick(work)}
-                >
-                  <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
-                    <CardTitle className="text-lg font-semibold line-clamp-1">
-                      {work.title}
-                    </CardTitle>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Edit logic
-                          }}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          수정
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Delete logic
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          삭제
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm text-muted-foreground">
-                      최종 수정:{' '}
-                      {format(new Date(work.updatedAt), 'yyyy.MM.dd HH:mm')}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                등록된 원문이 없습니다. 새 작품을 만들어보세요.
-              </div>
-            )}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {novels.length > 0 ? (
+                novels.map((work) => (
+                  <Card
+                    key={work.id}
+                    className="cursor-pointer hover:shadow-md transition-shadow group"
+                    onClick={() => handleWorkClick(work)}
+                  >
+                    <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
+                      <CardTitle className="text-lg font-semibold line-clamp-1">
+                        {work.title}
+                      </CardTitle>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Edit logic
+                            }}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            수정
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Delete logic
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            삭제
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                        {work.description}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        생성일:{' '}
+                        {work.createdAt
+                          ? format(new Date(work.createdAt), 'yyyy.MM.dd HH:mm')
+                          : '-'}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
+                  등록된 원문이 없습니다. 새 작품을 만들어보세요.
+                </div>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="setting" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {settings.length > 0 ? (
-              settings.map((work: Work) => (
+              settings.map((work) => (
                 <Card
                   key={work.id}
                   className="cursor-pointer hover:shadow-md transition-shadow group"
@@ -227,9 +200,14 @@ export function AuthorWorks() {
                     </DropdownMenu>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-sm text-muted-foreground">
-                      최종 수정:{' '}
-                      {format(new Date(work.updatedAt), 'yyyy.MM.dd HH:mm')}
+                    <div className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      {work.description}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      생성일:{' '}
+                      {work.createdAt
+                        ? format(new Date(work.createdAt), 'yyyy.MM.dd HH:mm')
+                        : '-'}
                     </div>
                   </CardContent>
                 </Card>
@@ -253,16 +231,11 @@ export function AuthorWorks() {
             <DialogTitle>{selectedWork?.title}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto p-4 border rounded-md bg-muted/20 whitespace-pre-wrap">
-            {isDetailLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <span className="loading loading-spinner loading-lg"></span>
-                <p className="ml-2 text-muted-foreground">불러오는 중...</p>
-              </div>
-            ) : workDetail?.content ? (
-              workDetail.content
+            {selectedWork?.description ? (
+              selectedWork.description
             ) : (
               <p className="text-muted-foreground text-center mt-20">
-                작품 내용이 비어있습니다.
+                작품 설명이 없습니다.
               </p>
             )}
           </div>

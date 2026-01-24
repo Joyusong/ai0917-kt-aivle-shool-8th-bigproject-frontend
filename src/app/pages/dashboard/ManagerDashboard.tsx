@@ -36,6 +36,7 @@ import { ManagerContestTemplates } from './manager/ManagerContestTemplates';
 import { ManagerMyPage } from './manager/ManagerMyPage';
 import { ManagerSettings } from './manager/ManagerSettings';
 import { PasswordChangeModal } from '../../components/common/PasswordChangeModal';
+import { Logo } from '../../components/common/Logo';
 
 interface ManagerDashboardProps {
   onLogout: () => void;
@@ -99,27 +100,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
         )}
 
         <div className="p-6 border-b border-sidebar-border">
-          <button
-            onClick={onHome}
-            className="flex items-center gap-3 w-full text-left rounded-lg p-2 transition-colors"
-            aria-label="홈으로 이동"
-          >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: 'var(--role-primary)' }}
-            >
-              <Brain className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="text-sidebar-foreground font-semibold">IPSUM</div>
-              <div
-                className="text-xs font-medium"
-                style={{ color: 'var(--role-primary)' }}
-              >
-                운영자 포털
-              </div>
-            </div>
-          </button>
+          <Logo />
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

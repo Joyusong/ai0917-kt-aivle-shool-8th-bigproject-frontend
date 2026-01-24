@@ -11,6 +11,7 @@ import { Button } from '../../components/ui/button';
 import { useState } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
 import { Link } from 'react-router-dom';
+import { Logo } from '../../components/common/Logo';
 
 interface LandingPageProps {
   onSignInClick: () => void;
@@ -26,17 +27,7 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <div
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            >
-              <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <Brain className="w-5 h-5 text-primary" />
-              </div>
-              <span className="text-foreground text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
-                IPSUM
-              </span>
-            </div>
+            <Logo onClick={() => (window.location.href = '/')} />
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-8">
@@ -219,10 +210,10 @@ export function LandingPage({ onSignInClick }: LandingPageProps) {
       {/* Feature Grid */}
       <section id="features" className="max-w-[1200px] mx-auto px-6 py-24">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold leading-tight tracking-tight text-foreground mb-4">
+          <h2 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight text-foreground mb-4">
             핵심 기능
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             AI가 창작물을 분석하고 체계화합니다
           </p>
         </div>

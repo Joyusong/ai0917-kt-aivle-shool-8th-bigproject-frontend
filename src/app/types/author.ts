@@ -1,3 +1,5 @@
+import { UserRole } from './common';
+
 export interface ExtractSettingRequest {
   txt: string;
   episode?: number;
@@ -8,8 +10,52 @@ export interface ExtractSettingRequest {
 }
 
 export interface ExtractSettingResponse {
-  // The code doesn't show the response structure used, it just alerts success.
-  // We can assume it returns something, but for now we can use any or void.
-  // But usually axios returns data.
   [key: string]: any;
+}
+
+// Dashboard
+export interface AuthorDashboardSummaryDto {
+  ongoingCount: number;
+  settingBookCount: number;
+  completedCount: number;
+}
+
+// Work Status Enum
+export type WorkStatus = 'ONGOING' | 'COMPLETED' | 'HIATUS' | 'DROPPED';
+
+// Work DTOs
+export interface WorkResponseDto {
+  id: number;
+  title: string;
+  writer: string;
+  description: string;
+  status: WorkStatus;
+  statusDescription: string;
+  createdAt: string;
+}
+
+export interface WorkCreateRequestDto {
+  title: string;
+  userIntegrationId: string;
+  writer: string;
+  description: string;
+  status: WorkStatus;
+}
+
+export interface WorkUpdateRequestDto {
+  id: number;
+  title: string;
+  description: string;
+  status: WorkStatus;
+}
+
+// Notice DTO (Author View)
+export interface AuthorNoticeDto {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
+  writer: string;
+  originalFilename?: string;
+  category?: string;
 }

@@ -60,7 +60,7 @@ export function AdminPermissions() {
 
   // Local State
   const [keyword, setKeyword] = useState('');
-  const [searchQuery, setSearchQuery] = useState(''); // Actual query state
+  const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
   const [page, setPage] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -108,27 +108,6 @@ export function AdminPermissions() {
   });
 
   // Mutations
-  const createMutation = useMutation({
-    mutationFn: adminService.createUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      queryClient.invalidateQueries({ queryKey: ['adminSummary'] });
-      setShowCreateModal(false);
-      setNewForm({
-        name: '',
-        email: '',
-        role: 'Manager',
-        siteEmail: '',
-        sitePwd: '',
-        mobile: '',
-      });
-      alert('사용자가 추가되었습니다.');
-    },
-    onError: () => {
-      alert('사용자 추가에 실패했습니다.');
-    },
-  });
-
   const updateMutation = useMutation({
     mutationFn: ({ id, role }: { id: number; role: UserRole }) =>
       adminService.updateUserRole(id, role),
@@ -157,11 +136,6 @@ export function AdminPermissions() {
   });
 
   // Handlers
-  const handleCreate = () => {
-    if (!newForm.name || !newForm.email) return;
-    createMutation.mutate(newForm);
-  };
-
   const handleDelete = (user: UserListResponseDto) => {
     if (user.role === 'Admin')
       return alert('관리자 권한은 삭제할 수 없습니다.');
@@ -175,7 +149,7 @@ export function AdminPermissions() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto font-sans">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans pb-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
@@ -216,50 +190,38 @@ export function AdminPermissions() {
         />
       </div>
 
-      {/* User List */}
-      <Card className="border-border gap-0">
+      {/* User List - Removed internal scroll containers to prevent double scroll */}
+      <Card className="border-border shadow-sm gap-0">
         <CardHeader className="flex flex-col md:flex-row justify-between items-center gap-4 border-b">
           <span>사용자 목록</span>
-          <div className="flex flex-wrap gap-3 w-full md:w-auto">
-            <div className="flex gap-2 w-full md:w-auto flex-1 md:flex-none">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  className="pl-9 w-full md:w-64"
-                  placeholder="이름/이메일 검색 (Enter)"
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setSearchQuery(keyword);
-                      setPage(0);
-                    }
-                  }}
-                />
-              </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Input
+                placeholder="이름, 이메일 검색 (Enter)"
+                className="pl-9 h-9 bg-background"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setSearchQuery(keyword);
+                    setPage(0);
+                  }
+                }}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             </div>
-            <select
-              className="border rounded-md px-3 py-2 bg-background text-sm flex-1 md:flex-none"
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as UserRole)}
-            >
-              <option value="">모든 역할</option>
-              <option value="Admin">관리자</option>
-              <option value="Manager">매니저</option>
-              <option value="Author">작가</option>
-            </select>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm table-fixed">
-              <thead className="bg-muted/50 text-muted-foreground">
+          <div className="hidden md:block">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-muted-foreground border-b uppercase font-semibold text-xs text-left">
                 <tr>
-                  <th className="p-4 text-left font-medium w-[30%]">사용자</th>
-                  <th className="p-4 text-left font-medium w-[30%]">이메일</th>
-                  <th className="p-4 text-left font-medium w-[20%]">역할</th>
-                  <th className="p-4 text-center font-medium w-[20%]">관리</th>
+                  <th className="px-6 py-4">사용자</th>
+                  <th className="px-6 py-4">이메일</th>
+                  <th className="px-6 py-4">역할</th>
+                  <th className="px-6 py-4 text-center">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -269,48 +231,52 @@ export function AdminPermissions() {
                       key={user.id}
                       className="hover:bg-muted/30 transition-colors"
                     >
-                      <td className="p-4 flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-full bg-gradient-to-br ${getGradient(user.role)} flex items-center justify-center text-white font-bold text-xs shadow-sm`}
-                        >
-                          {user.name[0]}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-8 h-8 rounded-full bg-gradient-to-br ${getGradient(user.role)} flex items-center justify-center text-white font-bold text-xs shadow-sm`}
+                          >
+                            {user.name[0]}
+                          </div>
+                          <span className="font-medium text-foreground">
+                            {maskName(user.name)}
+                          </span>
                         </div>
-                        <span className="font-medium">
-                          {maskName(user.name)}
-                        </span>
                       </td>
-                      <td className="p-4 text-muted-foreground">
+                      <td className="px-6 py-4 text-muted-foreground">
                         {user.siteEmail || user.email}
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4">
                         <Badge
-                          className={`${getRoleBadge(user.role)} border-none`}
+                          className={`${getRoleBadge(user.role)} border-none font-normal`}
                         >
                           {ROLE_LABELS[user.role]}
                         </Badge>
                       </td>
-                      <td className="p-4 text-center space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={user.role === 'Admin'}
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowEditModal(true);
-                          }}
-                          className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          disabled={user.role === 'Admin'}
-                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleDelete(user)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex justify-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={user.role === 'Admin'}
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowEditModal(true);
+                            }}
+                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={user.role === 'Admin'}
+                            className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDelete(user)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -318,9 +284,9 @@ export function AdminPermissions() {
                   <tr>
                     <td
                       colSpan={4}
-                      className="p-8 text-center text-muted-foreground"
+                      className="p-12 text-center text-muted-foreground"
                     >
-                      사용자가 없습니다.
+                      검색된 사용자가 없습니다.
                     </td>
                   </tr>
                 )}
@@ -390,7 +356,7 @@ export function AdminPermissions() {
             <div className="text-sm text-muted-foreground">
               총 {userPage?.totalElements || 0}명 중{' '}
               {userPage?.totalElements === 0 ? 0 : page * 10 + 1}-
-              {Math.min((page + 1) * 10, userPage?.totalElements || 0)}명
+              {Math.min((page + 1) * 10, userPage?.totalElements || 0)}번째
             </div>
             <div className="flex gap-2">
               <Button
@@ -400,7 +366,6 @@ export function AdminPermissions() {
                 disabled={page === 0}
               >
                 <ChevronLeft className="w-4 h-4" />
-                <span className="sr-only">이전 페이지</span>
               </Button>
               <div className="flex items-center px-2 text-sm font-medium">
                 {page + 1} / {userPage?.totalPages || 1}
@@ -416,17 +381,16 @@ export function AdminPermissions() {
                 disabled={page >= (userPage?.totalPages || 1) - 1}
               >
                 <ChevronRight className="w-4 h-4" />
-                <span className="sr-only">다음 페이지</span>
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Create User Modal */}
+      {/* Modals remain the same (fixed position ensures they sit above all scrolls) */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <Card className="w-full max-w-md shadow-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>새 사용자 등록</CardTitle>
               <Button
@@ -479,23 +443,15 @@ export function AdminPermissions() {
                 >
                   취소
                 </Button>
-                <Button
-                  onClick={handleCreate}
-                  className="bg-purple-600 hover:bg-purple-700"
-                  disabled={createMutation.isPending}
-                >
-                  {createMutation.isPending ? '처리중...' : '사용자 추가'}
-                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Edit User Modal */}
       {showEditModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <Card className="w-full max-w-md shadow-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>권한 수정</CardTitle>
               <Button
@@ -522,7 +478,6 @@ export function AdminPermissions() {
                   </div>
                 </div>
               </div>
-
               <div className="space-y-2">
                 <label className="text-sm font-medium">역할 변경</label>
                 <select
@@ -537,7 +492,6 @@ export function AdminPermissions() {
                   * 관리자(Admin) 권한은 변경할 수 없습니다.
                 </p>
               </div>
-
               <div className="flex justify-end gap-2 pt-4">
                 <Button
                   variant="outline"
@@ -561,7 +515,6 @@ export function AdminPermissions() {
   );
 }
 
-// Stat Card Component
 function StatCard({ title, count, icon, color, bg }: any) {
   return (
     <Card className="overflow-hidden border-border shadow-sm">

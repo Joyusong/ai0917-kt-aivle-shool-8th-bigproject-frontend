@@ -31,6 +31,8 @@ import { AuthorNotice } from './author/AuthorNotice';
 import { AuthorMyPage } from './author/AuthorMyPage';
 import { AuthorAccount } from './author/AuthorAccount';
 
+import { Logo } from '../../components/common/Logo';
+
 interface AuthorDashboardProps {
   onLogout: () => void;
   onHome?: () => void;
@@ -58,6 +60,8 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const userName =
     userData && 'name' in userData ? (userData.name as string) : '김민지';
   const userInitial = userName.charAt(0);
+  const integrationId =
+    userData && 'userId' in userData ? String(userData.userId) : '';
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
@@ -98,29 +102,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
 
         {/* Logo */}
         <div className="p-6 border-b border-sidebar-border">
-          <button
-            onClick={onHome}
-            className="flex items-center gap-3 w-full text-left rounded-lg p-2 transition-colors"
-            aria-label="홈으로 이동"
-          >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: 'var(--role-primary)' }}
-            >
-              <Brain className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="text-base font-semibold text-sidebar-foreground">
-                IPSUM
-              </div>
-              <div
-                className="text-xs font-medium"
-                style={{ color: 'var(--role-primary)' }}
-              >
-                작가 스튜디오
-              </div>
-            </div>
-          </button>
+          <Logo />
         </div>
 
         {/* Navigation Menu */}
@@ -411,9 +393,15 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-4 md:p-8">
-          {activeMenu === 'home' && <AuthorHome />}
-          {activeMenu === 'works' && <AuthorWorks />}
-          {activeMenu === 'notice' && <AuthorNotice />}
+          {activeMenu === 'home' && (
+            <AuthorHome integrationId={integrationId} />
+          )}
+          {activeMenu === 'works' && (
+            <AuthorWorks integrationId={integrationId} />
+          )}
+          {activeMenu === 'notice' && (
+            <AuthorNotice integrationId={integrationId} />
+          )}
           {activeMenu === 'mypage' && (
             <AuthorMyPage
               userData={userData}
