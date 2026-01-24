@@ -1,44 +1,27 @@
 import { http, HttpResponse } from 'msw';
 
-// Define the base URL from environment variables
-// If it's not set, default to localhost:8080 (standard Spring Boot)
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+const baseURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
 
 export const handlers = [
-  // Mock: Auth - Me (Session Check)
-  http.get(`${BACKEND_URL}/api/v1/auth/me`, () => {
-    // Simulate a logged-in user
-    // To simulate a logged-out state, you can comment this out and return 401
+  // Example: Mocking /api/v1/auth/me
+  http.get(`${baseURL}/api/v1/auth/me`, () => {
     return HttpResponse.json({
-      isAuthenticated: true,
-      user: {
-        id: 1,
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'ADMIN', // Try changing this to 'MANAGER' or 'AUTHOR' to test permissions
-      },
-    });
-
-    // Simulate Not Authenticated
-    // return new HttpResponse(null, { status: 401 });
-  }),
-
-  // Mock: Auth - Login
-  http.post(`${BACKEND_URL}/api/v1/auth/login`, async ({ request }) => {
-    const info = await request.json();
-    console.log('Login attempt with:', info);
-
-    return HttpResponse.json({
-      success: true,
-      message: 'Login successful (Mocked)',
+      role: 'Admin',
+      name: 'Mock Admin',
+      email: 'admin@example.com',
+      siteEmail: 'admin@mysite.com',
+      mobile: '010-1234-5678',
+      createdAt: new Date().toISOString(),
     });
   }),
 
-  // Mock: Auth - Logout
-  http.post(`${BACKEND_URL}/api/v1/auth/logout`, () => {
+  // Example: Mocking Admin Dashboard Summary
+  http.get(`${baseURL}/api/v1/admin/dashboard/summary`, () => {
     return HttpResponse.json({
-      success: true,
-      message: 'Logout successful (Mocked)',
+      serverStatus: { status: 'NORMAL' },
+      totalUsers: 1234,
+      savedArtworks: 567,
+      activeSessions: 89,
     });
   }),
 ];

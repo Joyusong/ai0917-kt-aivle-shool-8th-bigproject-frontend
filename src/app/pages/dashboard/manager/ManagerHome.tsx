@@ -94,7 +94,7 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
   }, [fetchDashboard, fetchDashboardNotices, fetchDashboardContests]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* 2 Column Grid: Notice & Contests - Responsive */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Notice Section */}

@@ -18,20 +18,11 @@ import {
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '../../components/ui/dialog';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import { useState } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { authService } from '../../services/authService';
+import { PasswordChangeModal } from '../../components/common/PasswordChangeModal';
 
 // Import sub-components
 import { AuthorHome } from './author/AuthorHome';
@@ -57,9 +48,6 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
 
   // Password Change State
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Fetch User Profile
   const { data: userData } = useQuery({
@@ -70,41 +58,6 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const userName =
     userData && 'name' in userData ? (userData.name as string) : '김민지';
   const userInitial = userName.charAt(0);
-
-  const passwordMutation = useMutation({
-    mutationFn: authService.changePassword,
-    onSuccess: () => {
-      alert('비밀번호가 변경되었습니다.');
-      setShowPasswordModal(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    },
-    onError: (error: any) => {
-      alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.');
-    },
-  });
-
-  const handlePasswordChange = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      alert('모든 필드를 입력해주세요.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      alert('새 비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    if (newPassword.length < 4) {
-      alert('비밀번호는 4자 이상이어야 합니다.');
-      return;
-    }
-
-    passwordMutation.mutate({
-      currentPassword,
-      newPassword,
-      newPasswordConfirm: confirmPassword,
-    });
-  };
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
@@ -472,62 +425,10 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
       </div>
 
       {/* Password Change Modal */}
-      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>비밀번호 변경</DialogTitle>
-            <DialogDescription>
-              계정 보안을 위해 주기적으로 비밀번호를 변경해주세요.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">현재 비밀번호</Label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="현재 사용 중인 비밀번호"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-password">새 비밀번호</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="새 비밀번호 (4자 이상)"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">새 비밀번호 확인</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="새 비밀번호를 다시 입력하세요"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPasswordModal(false)}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={handlePasswordChange}
-              disabled={passwordMutation.isPending}
-            >
-              {passwordMutation.isPending ? '변경 중...' : '비밀번호 변경'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PasswordChangeModal
+        open={showPasswordModal}
+        onOpenChange={setShowPasswordModal}
+      />
     </div>
   );
 }

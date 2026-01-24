@@ -91,6 +91,9 @@ export interface SystemLogDto {
   message: string;
   category: string;
   timestamp: string;
+  details?: string;
+  userId?: string;
+  ipAddress?: string;
 }
 
 export interface SystemLogsResponseDto {

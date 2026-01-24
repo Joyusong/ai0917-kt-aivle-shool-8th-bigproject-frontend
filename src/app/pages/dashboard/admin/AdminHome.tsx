@@ -32,11 +32,9 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 
 export function AdminHome() {
-  const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
   const [logPage, setLogPage] = useState(1);
-  const [modalLogPage, setModalLogPage] = useState(1);
   const LOGS_PER_PAGE = 5;
-  const MODAL_LOGS_PER_PAGE = 6;
 
   // 1. Dashboard Summary (Top 4 Cards)
   const { data: summary } = useQuery({
@@ -73,20 +71,16 @@ export function AdminHome() {
     queryFn: adminService.getDashboardDeployment,
   });
 
-  // 6. All Logs (for Modal)
-  const { data: allLogsData } = useQuery({
-    queryKey: ['admin', 'dashboard', 'logs', 'all'],
-    queryFn: () => adminService.getDashboardLogs(100),
-    enabled: isLogsModalOpen, // Only fetch when modal is open
-  });
+  // 6. All Logs (Removed)
 
-  const visibleModalLogs = allLogsData?.logs.slice(
-    (modalLogPage - 1) * MODAL_LOGS_PER_PAGE,
-    modalLogPage * MODAL_LOGS_PER_PAGE,
-  );
+  const getResourceColor = (usage: number) => {
+    if (usage >= 80) return 'text-red-500 bg-red-500';
+    if (usage >= 60) return 'text-orange-500 bg-orange-500';
+    return 'text-green-500 bg-green-500';
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* 시스템 상태 Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <Card className="border-border">
@@ -208,13 +202,15 @@ export function AdminHome() {
                   <span className="text-sm text-muted-foreground">
                     CPU 사용률
                   </span>
-                  <span className="text-sm font-semibold text-foreground">
+                  <span
+                    className={`text-sm font-semibold ${getResourceColor(resources?.cpuUsage || 0).split(' ')[0]}`}
+                  >
                     {resources?.cpuUsage || 0}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                    className={`h-full rounded-full transition-all duration-500 ${getResourceColor(resources?.cpuUsage || 0).split(' ')[1]}`}
                     style={{ width: `${resources?.cpuUsage || 0}%` }}
                   ></div>
                 </div>
@@ -224,13 +220,15 @@ export function AdminHome() {
                   <span className="text-sm text-muted-foreground">
                     메모리 사용률
                   </span>
-                  <span className="text-sm font-semibold text-foreground">
+                  <span
+                    className={`text-sm font-semibold ${getResourceColor(resources?.memoryUsage || 0).split(' ')[0]}`}
+                  >
                     {resources?.memoryUsage || 0}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                    className={`h-full rounded-full transition-all duration-500 ${getResourceColor(resources?.memoryUsage || 0).split(' ')[1]}`}
                     style={{ width: `${resources?.memoryUsage || 0}%` }}
                   ></div>
                 </div>
@@ -240,13 +238,15 @@ export function AdminHome() {
                   <span className="text-sm text-muted-foreground">
                     스토리지 사용률
                   </span>
-                  <span className="text-sm font-semibold text-foreground">
+                  <span
+                    className={`text-sm font-semibold ${getResourceColor(resources?.storageUsage || 0).split(' ')[0]}`}
+                  >
                     {resources?.storageUsage || 0}%
                   </span>
                 </div>
                 <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-green-500 rounded-full transition-all duration-500"
+                    className={`h-full rounded-full transition-all duration-500 ${getResourceColor(resources?.storageUsage || 0).split(' ')[1]}`}
                     style={{ width: `${resources?.storageUsage || 0}%` }}
                   ></div>
                 </div>
@@ -256,14 +256,12 @@ export function AdminHome() {
         </Card>
       </div>
 
-      {/* 최근 시스템 로그 */}
+      {/* 시스템 로그 */}
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border">
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-purple-500" />
-            <h2 className="text-lg font-semibold text-foreground">
-              최근 시스템 로그
-            </h2>
+            <span>시스템 로그</span>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -277,7 +275,8 @@ export function AdminHome() {
                 {visibleLogs?.map((log) => (
                   <div
                     key={log.id}
-                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer font-sans"
+                    onClick={() => setSelectedLog(log)}
                   >
                     <div
                       className={`w-2 h-2 rounded-full shrink-0 ${
@@ -347,91 +346,6 @@ export function AdminHome() {
         </CardContent>
       </Card>
 
-      {/* System Logs Modal */}
-      <Dialog open={isLogsModalOpen} onOpenChange={setIsLogsModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>시스템 로그 전체보기</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-4">
-              <div className="divide-y divide-border border rounded-md">
-                {visibleModalLogs?.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full shrink-0 ${
-                        log.level === 'ERROR'
-                          ? 'bg-red-500'
-                          : log.level === 'WARNING'
-                            ? 'bg-yellow-500'
-                            : 'bg-green-500'
-                      }`}
-                    ></div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-foreground">
-                        {log.message}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(log.timestamp), 'yyyy.MM.dd HH:mm:ss')}
-                      </div>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={`shrink-0 ${
-                        log.level === 'ERROR'
-                          ? 'border-red-300 text-red-600 dark:border-red-700 dark:text-red-400'
-                          : log.level === 'WARNING'
-                            ? 'border-yellow-300 text-yellow-600 dark:border-yellow-700 dark:text-yellow-400'
-                            : 'border-green-300 text-green-600 dark:border-green-700 dark:text-green-400'
-                      }`}
-                    >
-                      {log.category}
-                    </Badge>
-                  </div>
-                ))}
-                {(!visibleModalLogs || visibleModalLogs.length === 0) && (
-                  <div className="p-8 text-center text-muted-foreground">
-                    로그가 없습니다.
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Pagination */}
-              <div className="flex items-center justify-between pt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setModalLogPage((p) => Math.max(1, p - 1))}
-                  disabled={modalLogPage === 1}
-                >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  이전
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  Page {modalLogPage}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setModalLogPage((p) => p + 1)}
-                  disabled={
-                    !allLogsData?.logs ||
-                    modalLogPage * MODAL_LOGS_PER_PAGE >=
-                      allLogsData.logs.length
-                  }
-                >
-                  다음
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
-
       {/* 배포 현황 */}
       <Card className="border-border">
         <CardHeader className="border-b border-border">
@@ -484,6 +398,74 @@ export function AdminHome() {
           </div>
         </CardContent>
       </Card>
+      {/* 로그 상세 모달 */}
+      <Dialog
+        open={!!selectedLog}
+        onOpenChange={(open) => !open && setSelectedLog(null)}
+      >
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col font-sans">
+          <DialogHeader>
+            <DialogTitle>시스템 로그 상세</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto pr-2">
+            {selectedLog && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={`${
+                      selectedLog.level === 'ERROR'
+                        ? 'border-red-300 text-red-600 bg-red-50 dark:bg-red-900/20'
+                        : selectedLog.level === 'WARNING'
+                          ? 'border-yellow-300 text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20'
+                          : 'border-green-300 text-green-600 bg-green-50 dark:bg-green-900/20'
+                    }`}
+                  >
+                    {selectedLog.level}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {format(
+                      new Date(selectedLog.timestamp),
+                      'yyyy.MM.dd HH:mm:ss',
+                    )}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    카테고리
+                  </h3>
+                  <div className="p-3 bg-muted/50 rounded-md text-sm">
+                    {selectedLog.category}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    메시지
+                  </h3>
+                  <div className="p-4 bg-muted/50 rounded-md text-sm whitespace-pre-wrap break-words">
+                    {selectedLog.message}
+                  </div>
+                </div>
+
+                {selectedLog.stackTrace && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-foreground">
+                      Stack Trace
+                    </h3>
+                    <ScrollArea className="h-[200px] w-full rounded-md border p-4 bg-muted/50">
+                      <code className="text-xs font-mono whitespace-pre text-red-500">
+                        {selectedLog.stackTrace}
+                      </code>
+                    </ScrollArea>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

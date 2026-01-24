@@ -11,16 +11,31 @@ async function enableMocking() {
     return;
   }
 
-  // Set this to true to enable MSW
-  const ENABLE_MSW = false;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  if (ENABLE_MSW) {
-    const { worker } = await import('./mocks/browser');
-    // Start the worker
-    return worker.start({
-      onUnhandledRequest: 'bypass', // Don't warn for unhandled requests (like assets)
+  try {
+    // Try to reach the server with a short timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 800); // 800ms timeout
+
+    await fetch(backendUrl, {
+      method: 'HEAD', // Lightweight check
+      mode: 'no-cors', // Avoid CORS errors during check
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
+    console.log('[App] Backend detected. MSW skipped.');
+    return;
+  } catch (error) {
+    console.log('[App] Backend unreachable. Starting MSW...');
   }
+
+  const { worker } = await import('./mocks/browser');
+  // Start the worker
+  return worker.start({
+    onUnhandledRequest: 'bypass', // Don't warn for unhandled requests (like assets)
+  });
 }
 
 const queryClient = new QueryClient({

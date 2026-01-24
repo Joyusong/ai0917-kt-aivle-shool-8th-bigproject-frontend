@@ -13,30 +13,22 @@ import {
   CheckCheck,
   KeyRound,
   User,
+  ShieldCheck,
 } from 'lucide-react';
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from '../../components/ui/dialog';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
 import { useState, useRef, useEffect } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
+import { PasswordChangeModal } from '../../components/common/PasswordChangeModal';
 import { AdminHome } from './admin/AdminHome';
 import { AdminNotices } from './admin/AdminNotices';
 import { AdminPermissions } from './admin/AdminPermissions';
-import { AdminMyPage } from './admin/AdminMyPage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '../../services/adminService';
 import { authService } from '../../services/authService';
 import { format } from 'date-fns';
+import { MockDataGenerator } from '../../components/dev/MockDataGenerator';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -54,9 +46,6 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
 
   // Password Change State
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Outside click handler for notification dropdown
   useEffect(() => {
@@ -149,47 +138,29 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
 
   const handleMarkAllRead = async () => {
     if (unreadNotices.length === 0) return;
+
+    // Optimistic Update
+    const previousNotices = queryClient.getQueryData(['admin', 'notices']);
+    queryClient.setQueryData(['admin', 'notices'], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        notices: old.notices.map((notice: any) => ({
+          ...notice,
+          isRead: true,
+        })),
+      };
+    });
+
     try {
       await adminService.markAllSystemNoticesAsRead();
-      queryClient.invalidateQueries({ queryKey: ['admin', 'notices'] });
+      // Success - let the next poll sync or invalidate if strict consistency needed
+      // queryClient.invalidateQueries({ queryKey: ['admin', 'notices'] });
     } catch (error) {
       console.error('Failed to mark all as read', error);
+      // Revert on error
+      queryClient.setQueryData(['admin', 'notices'], previousNotices);
     }
-  };
-
-  const passwordMutation = useMutation({
-    mutationFn: authService.changePassword,
-    onSuccess: () => {
-      alert('비밀번호가 변경되었습니다.');
-      setShowPasswordModal(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    },
-    onError: (error: any) => {
-      alert(error.response?.data?.message || '비밀번호 변경에 실패했습니다.');
-    },
-  });
-
-  const handlePasswordChange = () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      alert('모든 필드를 입력해주세요.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      alert('새 비밀번호가 일치하지 않습니다.');
-      return;
-    }
-    if (newPassword.length < 4) {
-      alert('비밀번호는 4자 이상이어야 합니다.');
-      return;
-    }
-
-    passwordMutation.mutate({
-      currentPassword,
-      newPassword,
-      newPasswordConfirm: confirmPassword,
-    });
   };
 
   const handleMenuClick = (menu: string) => {
@@ -201,7 +172,10 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
   };
 
   return (
-    <div className="flex h-screen bg-background" data-role="admin">
+    <div
+      className="flex h-screen bg-background font-sans antialiased"
+      data-role="admin"
+    >
       {/* Sidebar Open Button (when closed) */}
       {!sidebarOpen && (
         <Button
@@ -230,30 +204,10 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
         )}
 
         {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border">
-          <button
-            onClick={onHome}
-            className="flex items-center gap-3 w-full text-left rounded-lg p-2 transition-colors"
-            aria-label="홈으로 이동"
-          >
-            <div
-              className="w-10 h-10 rounded-lg flex items-center justify-center"
-              style={{ backgroundColor: 'var(--role-primary)' }}
-            >
-              <Brain className="w-6 h-6 text-white dark:text-black" />
-            </div>
-            <div>
-              <div className="text-base font-semibold text-sidebar-foreground">
-                IPSUM
-              </div>
-              <div
-                className="text-xs font-medium"
-                style={{ color: 'var(--role-primary)' }}
-              >
-                관리자
-              </div>
-            </div>
-          </button>
+        <div className="flex items-center gap-2 mb-8 px-6 pt-6">
+          <div className="text-2xl font-black tracking-tighter text-foreground select-none">
+            IP.SUM
+          </div>
         </div>
 
         {/* Navigation Menu */}
@@ -263,7 +217,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
             onClick={() => handleMenuClick('home')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               activeMenu === 'home'
-                ? 'text-white dark:text-black'
+                ? 'text-white'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
@@ -280,7 +234,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
             onClick={() => handleMenuClick('permissions')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               activeMenu === 'permissions'
-                ? 'text-white dark:text-black'
+                ? 'text-white'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
@@ -297,7 +251,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
             onClick={() => handleMenuClick('notices')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               activeMenu === 'notices'
-                ? 'text-white dark:text-black'
+                ? 'text-white'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
@@ -329,7 +283,9 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
                 <div className="text-sm font-medium text-sidebar-foreground">
                   {maskName(userName)}
                 </div>
-                <div className="text-xs text-muted-foreground">Admin</div>
+                <div className="text-xs text-muted-foreground">
+                  Administrator
+                </div>
               </div>
               <ChevronDown
                 className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`}
@@ -340,35 +296,11 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
             {showProfileDropdown && (
               <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
                 <button
-                  onClick={() => {
-                    handleMenuClick('mypage');
-                    setShowProfileDropdown(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="text-sm">마이페이지</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPasswordModal(true);
-                    setShowProfileDropdown(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span className="text-sm">비밀번호 변경</span>
-                </button>
-                <div className="h-px bg-border my-1" />
-                <button
-                  onClick={() => {
-                    onLogout();
-                    setShowProfileDropdown(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-destructive hover:bg-destructive/10 transition-colors"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
-                  <span className="text-sm">로그아웃</span>
+                  <span className="text-sm font-medium">로그아웃</span>
                 </button>
               </div>
             )}
@@ -550,72 +482,14 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
           {activeMenu === 'home' && <AdminHome />}
           {activeMenu === 'notices' && <AdminNotices />}
           {activeMenu === 'permissions' && <AdminPermissions />}
-          {activeMenu === 'mypage' && (
-            <AdminMyPage
-              userData={userData}
-              onChangePassword={() => setShowPasswordModal(true)}
-            />
-          )}
         </main>
       </div>
 
       {/* Password Change Modal */}
-      <Dialog open={showPasswordModal} onOpenChange={setShowPasswordModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>비밀번호 변경</DialogTitle>
-            <DialogDescription>
-              계정 보안을 위해 주기적으로 비밀번호를 변경해주세요.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">현재 비밀번호</Label>
-              <Input
-                id="current-password"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="현재 사용 중인 비밀번호"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-password">새 비밀번호</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="새 비밀번호 (4자 이상)"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">새 비밀번호 확인</Label>
-              <Input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="새 비밀번호를 다시 입력하세요"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowPasswordModal(false)}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={handlePasswordChange}
-              disabled={passwordMutation.isPending}
-            >
-              {passwordMutation.isPending ? '변경 중...' : '비밀번호 변경'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PasswordChangeModal
+        open={showPasswordModal}
+        onOpenChange={setShowPasswordModal}
+      />
     </div>
   );
 }

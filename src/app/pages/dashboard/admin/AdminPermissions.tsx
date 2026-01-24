@@ -9,6 +9,7 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  Edit2,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '../../../components/ui/button';
@@ -59,6 +60,7 @@ export function AdminPermissions() {
 
   // Local State
   const [keyword, setKeyword] = useState('');
+  const [searchQuery, setSearchQuery] = useState(''); // Actual query state
   const [roleFilter, setRoleFilter] = useState<UserRole | ''>('');
   const [page, setPage] = useState(0);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -90,11 +92,20 @@ export function AdminPermissions() {
   });
 
   const { data: userPage } = useQuery({
-    queryKey: ['adminUsers', page, keyword, roleFilter],
-    queryFn: () => adminService.getUsers(page, 10, keyword, roleFilter),
+    queryKey: ['adminUsers', page, searchQuery, roleFilter],
+    queryFn: () => adminService.getUsers(page, 10, searchQuery, roleFilter),
   });
 
-  const users = userPage?.content || [];
+  const users = (userPage?.content || []).sort((a, b) => {
+    const roleOrder: Record<string, number> = {
+      Admin: 0,
+      Manager: 1,
+      Author: 2,
+    };
+    const roleA = roleOrder[a.role] ?? 99;
+    const roleB = roleOrder[b.role] ?? 99;
+    return roleA - roleB;
+  });
 
   // Mutations
   const createMutation = useMutation({
@@ -154,7 +165,7 @@ export function AdminPermissions() {
   const handleDelete = (user: UserListResponseDto) => {
     if (user.role === 'Admin')
       return alert('관리자 권한은 삭제할 수 없습니다.');
-    if (!confirm(`${user.name}님의 모든 권한을 회수하시겠습니까?`)) return;
+    if (!confirm(`${user.name} 사용자를 삭제하시겠습니까?`)) return;
     deleteMutation.mutate(user.id);
   };
 
@@ -164,7 +175,7 @@ export function AdminPermissions() {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-background min-h-screen text-foreground">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-3">
@@ -206,18 +217,26 @@ export function AdminPermissions() {
       </div>
 
       {/* User List */}
-      <Card className="border-border">
+      <Card className="border-border gap-0">
         <CardHeader className="flex flex-col md:flex-row justify-between items-center gap-4 border-b">
-          <CardTitle className="text-lg">사용자 리스트</CardTitle>
+          <span>사용자 목록</span>
           <div className="flex flex-wrap gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:flex-none">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                className="pl-9 w-full md:w-64"
-                placeholder="이름 또는 이메일 검색"
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-              />
+            <div className="flex gap-2 w-full md:w-auto flex-1 md:flex-none">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  className="pl-9 w-full md:w-64"
+                  placeholder="이름/이메일 검색 (Enter)"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSearchQuery(keyword);
+                      setPage(0);
+                    }
+                  }}
+                />
+              </div>
             </div>
             <select
               className="border rounded-md px-3 py-2 bg-background text-sm flex-1 md:flex-none"
@@ -234,13 +253,13 @@ export function AdminPermissions() {
         <CardContent className="p-0">
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
-                  <th className="p-4 text-left font-medium">사용자</th>
-                  <th className="p-4 text-left font-medium">이메일</th>
-                  <th className="p-4 text-left font-medium">역할</th>
-                  <th className="p-4 text-center font-medium">관리</th>
+                  <th className="p-4 text-left font-medium w-[30%]">사용자</th>
+                  <th className="p-4 text-left font-medium w-[30%]">이메일</th>
+                  <th className="p-4 text-left font-medium w-[20%]">역할</th>
+                  <th className="p-4 text-center font-medium w-[20%]">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -273,20 +292,21 @@ export function AdminPermissions() {
                       <td className="p-4 text-center space-x-1">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           disabled={user.role === 'Admin'}
                           onClick={() => {
                             setSelectedUser(user);
                             setShowEditModal(true);
                           }}
+                          className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
-                          수정
+                          <Edit2 className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           disabled={user.role === 'Admin'}
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                           onClick={() => handleDelete(user)}
                         >
                           <Trash2 className="w-4 h-4" />

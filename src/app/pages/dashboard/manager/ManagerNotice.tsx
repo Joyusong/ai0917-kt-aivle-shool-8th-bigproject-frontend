@@ -65,11 +65,11 @@ export function ManagerNotice() {
   // Auth Axios Instance
   const apiClient = useMemo(() => {
     const instance = axios.create({
-      baseURL: import.meta.env.VITE_BACKEND_URL || "",
+      baseURL: import.meta.env.VITE_BACKEND_URL || '',
       withCredentials: true,
     });
     instance.interceptors.request.use((config) => {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem('accessToken');
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -90,7 +90,7 @@ export function ManagerNotice() {
     } catch (error) {
       console.error('데이터 로드 실패', error);
       // Fallback for demo if API fails/empty
-      setNotices([]); 
+      setNotices([]);
     } finally {
       setLoading(false);
     }
@@ -175,7 +175,7 @@ export function ManagerNotice() {
   };
 
   return (
-    <div className="space-y-6 p-4 max-w-6xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Megaphone className="text-blue-600 w-7 h-7" /> 공지사항 관리
@@ -191,8 +191,8 @@ export function ManagerNotice() {
       <Card className="shadow-sm border-slate-200">
         <CardHeader className="bg-slate-50/50 border-b">
           <div className="relative max-w-md flex items-center">
-            <Search 
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 cursor-pointer hover:text-blue-600" 
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 cursor-pointer hover:text-blue-600"
               onClick={() => {
                 setKeyword(searchInput);
                 setPage(0);
@@ -421,7 +421,9 @@ export function ManagerNotice() {
                       }
                     />
                     {existingFileName && !selectedFile && (
-                        <p className="text-xs text-slate-500">현재 파일: {existingFileName}</p>
+                      <p className="text-xs text-slate-500">
+                        현재 파일: {existingFileName}
+                      </p>
                     )}
                   </div>
                 </>

@@ -87,7 +87,9 @@ export const adminService = {
 
   createNotice: async (formData: FormData) => {
     const response = await apiClient.post('/api/v1/admin/notice', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
     return response.data;
   },
@@ -97,7 +99,9 @@ export const adminService = {
       `/api/v1/admin/notice/${id}`,
       formData,
       {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       },
     );
     return response.data;
@@ -105,6 +109,10 @@ export const adminService = {
 
   deleteNotice: async (id: number) => {
     await apiClient.delete(`/api/v1/admin/notice/${id}`);
+  },
+
+  deleteNoticeFile: async (id: number) => {
+    await apiClient.delete(`/api/v1/admin/notice/${id}/file`);
   },
 
   downloadNoticeFile: async (id: number) => {

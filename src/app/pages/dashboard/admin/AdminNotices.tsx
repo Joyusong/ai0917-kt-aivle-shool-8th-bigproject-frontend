@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import apiClient from '../../../api/axios';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { adminService } from '../../../services/adminService';
+import { authService } from '../../../services/authService';
+import { maskName } from '../../../utils/format';
 import {
   Megaphone,
   X as CloseIcon,
@@ -61,8 +62,28 @@ export function AdminNotices() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [writer, setWriter] = useState('');
+  const [currentUser, setCurrentUser] = useState('');
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState(''); // Role 상태 추가
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [existingFileName, setExistingFileName] = useState<string | null>(null);
+  const [deleteFile, setDeleteFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 0. 사용자 정보 조회
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const me = await authService.me();
+        setCurrentUser(me.name || '');
+        setCurrentUserEmail(me.siteEmail || '');
+        setCurrentUserRole(me.role || ''); // Role 설정
+      } catch (e) {
+        console.error('사용자 정보 로드 실패', e);
+      }
+    };
+    fetchMe();
+  }, []);
 
   // 1. 목록 조회
   const fetchNotices = useCallback(async () => {
@@ -95,16 +116,24 @@ export function AdminNotices() {
 
   // 2. 저장 (등록/수정)
   const handleSave = async () => {
-    if (!title.trim() || !content.trim() || !writer.trim()) {
-      return alert('모든 필드를 입력해주세요.');
+    if (!title.trim() || !content.trim()) {
+      return alert('제목과 내용을 입력해주세요.');
     }
 
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', content);
-    formData.append('writer', writer);
-    // CSV에 status가 있지만 기존 코드에 없으므로 생략 혹은 필요 시 추가
-    // formData.append('status', 'POSTED');
+    const noticeData = {
+      title,
+      content,
+      writer: maskName(currentUser),
+      status: 'POSTED',
+      deleteFile,
+    };
+
+    // JSON 데이터를 Blob으로 변환하여 Content-Type을 application/json으로 명시
+    const jsonBlob = new Blob([JSON.stringify(noticeData)], {
+      type: 'application/json',
+    });
+    formData.append('data', jsonBlob);
 
     if (selectedFile) {
       formData.append('file', selectedFile);
@@ -113,6 +142,15 @@ export function AdminNotices() {
     try {
       setLoading(true);
       if (modalMode === 'edit' && selectedNotice) {
+        // 파일 삭제 플래그가 있고, 기존 파일이 있었다면 삭제 API 호출
+        if (deleteFile && selectedNotice.originalFilename) {
+          try {
+            await adminService.deleteNoticeFile(selectedNotice.id);
+          } catch (e) {
+            console.error('파일 삭제 실패:', e);
+            // 파일 삭제 실패 시 진행 여부 결정 (일단 진행)
+          }
+        }
         await adminService.updateNotice(selectedNotice.id, formData);
       } else {
         await adminService.createNotice(formData);
@@ -146,6 +184,10 @@ export function AdminNotices() {
     setContent('');
     setWriter('');
     setSelectedFile(null);
+    setExistingFileName(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const openView = (notice: Notice) => {
@@ -181,72 +223,84 @@ export function AdminNotices() {
   };
 
   return (
-    <div className="space-y-6 p-4 max-w-6xl mx-auto">
-      <Card className="shadow-sm border-slate-200">
-        <CardHeader className="bg-slate-50/50 border-b flex flex-row items-center justify-between">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+            <Megaphone className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          </div>
           <div>
-            <CardTitle className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              공지사항 관리
-            </CardTitle>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              시스템 공지사항을 등록하고 관리합니다.
+            <h1 className="text-2xl font-bold">공지사항 관리</h1>
+            <p className="text-sm text-muted-foreground">
+              공지사항을 등록하고 관리합니다.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="relative w-64 hidden sm:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="검색..."
-                className="pl-9 h-9 bg-white"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
+        </div>
+        <Button
+          onClick={() => {
+            setModalMode('create');
+            setWriter(currentUserEmail);
+          }}
+          className="bg-blue-600 hover:bg-blue-700 h-9"
+          size="sm"
+        >
+          <Plus className="w-4 h-4 mr-2" /> 새 공지
+        </Button>
+      </div>
+
+      <Card className="border-border shadow-sm gap-0">
+        <CardHeader className="flex flex-col md:flex-row justify-between items-center gap-4 border-b">
+          <span>공지사항 목록</span>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex gap-2 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="검색어 입력 (Enter)"
+                  className="pl-9 h-9 bg-background"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </div>
             </div>
-            <Button
-              onClick={() => setModalMode('create')}
-              className="bg-blue-600 hover:bg-blue-700 h-9"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" /> 새 공지
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-500 border-b uppercase font-semibold text-xs">
+            <table className="w-full text-sm table-fixed">
+              <thead className="bg-muted/50 text-muted-foreground border-b uppercase font-semibold text-xs">
                 <tr>
-                  <th className="px-4 py-3 w-16 text-center">ID</th>
-                  <th className="px-4 py-3 text-left">제목</th>
+                  <th className="px-4 py-3 w-40 text-center hidden md:table-cell">
+                    작성일
+                  </th>
+                  <th className="px-4 py-3 text-left w-auto">제목</th>
                   <th className="px-4 py-3 w-28 text-center hidden sm:table-cell">
                     작성자
                   </th>
                   <th className="px-4 py-3 w-20 text-center hidden sm:table-cell">
                     첨부
                   </th>
-                  <th className="px-4 py-3 w-40 text-center hidden md:table-cell">
-                    작성일
-                  </th>
                   <th className="px-4 py-3 w-28 text-center">관리</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-border">
                 {notices.map((n) => (
                   <tr
                     key={n.id}
-                    className="hover:bg-blue-50/30 transition-colors cursor-pointer group"
+                    className="hover:bg-muted/50 transition-colors cursor-pointer group"
                     onClick={() => openView(n)}
                   >
-                    <td className="px-4 py-4 text-center text-slate-400 font-mono text-xs">
-                      {n.id}
+                    <td className="px-4 py-4 text-center text-muted-foreground hidden md:table-cell">
+                      {new Date(n.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                        <span className="font-medium text-foreground group-hover:text-blue-600 transition-colors line-clamp-1">
                           {n.title}
                         </span>
-                        <ExternalLink className="w-3 h-3 text-slate-300 sm:hidden" />
+                        <ExternalLink className="w-3 h-3 text-muted-foreground sm:hidden" />
                       </div>
                     </td>
                     <td className="px-4 py-4 text-center hidden sm:table-cell">
@@ -259,9 +313,6 @@ export function AdminNotices() {
                         <FileText className="w-4 h-4 mx-auto text-blue-400" />
                       )}
                     </td>
-                    <td className="px-4 py-4 text-center text-slate-500 hidden md:table-cell">
-                      {new Date(n.createdAt).toLocaleDateString()}
-                    </td>
                     <td
                       className="px-4 py-4 text-center"
                       onClick={(e) => e.stopPropagation()}
@@ -270,7 +321,7 @@ export function AdminNotices() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-blue-600"
+                          className="h-8 w-8 text-blue-600 disabled:opacity-30"
                           onClick={(e) => openEdit(e, n)}
                         >
                           <Edit className="w-4 h-4" />
@@ -278,7 +329,7 @@ export function AdminNotices() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-red-500"
+                          className="h-8 w-8 text-red-500 disabled:opacity-30"
                           onClick={() => handleDelete(n.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -327,8 +378,14 @@ export function AdminNotices() {
 
       {/* --- 통합 모달 (작성/수정/보기) --- */}
       {modalMode && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <Card className="w-full max-w-lg shadow-2xl border-none">
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+          onClick={closeModal}
+        >
+          <Card
+            className="w-full max-w-lg shadow-2xl border-none"
+            onClick={(e) => e.stopPropagation()}
+          >
             <CardHeader className="border-b flex flex-row items-center justify-between py-4">
               <CardTitle className="text-lg">
                 {modalMode === 'view'
@@ -388,11 +445,20 @@ export function AdminNotices() {
                     <label className="text-xs font-bold text-slate-500 uppercase">
                       작성자
                     </label>
-                    <Input
-                      value={writer}
-                      onChange={(e) => setWriter(e.target.value)}
-                      placeholder="작성자 이름"
-                    />
+                    <div className="text-sm font-medium text-foreground px-3 py-2 bg-muted/50 rounded-md">
+                      {modalMode === 'create' ? (
+                        <>
+                          <span className="mr-2">{maskName(currentUser)}</span>
+                          <span className="text-muted-foreground text-xs">
+                            ({currentUserEmail})
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-2">{writer}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase">
@@ -419,13 +485,47 @@ export function AdminNotices() {
                     <label className="text-xs font-bold text-slate-500 uppercase">
                       파일 첨부
                     </label>
-                    <Input
-                      type="file"
-                      className="text-xs cursor-pointer"
-                      onChange={(e) =>
-                        setSelectedFile(e.target.files?.[0] || null)
-                      }
-                    />
+                    <div className="flex items-center gap-2">
+                      {!existingFileName && !selectedFile && (
+                        <Input
+                          type="file"
+                          className="text-xs cursor-pointer flex-1"
+                          ref={fileInputRef}
+                          onChange={(e) =>
+                            setSelectedFile(e.target.files?.[0] || null)
+                          }
+                        />
+                      )}
+                      {(selectedFile || existingFileName) && (
+                        <div className="flex-1 flex items-center gap-2 p-2 border rounded-md bg-muted/30">
+                          <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                          <span className="text-sm truncate flex-1">
+                            {existingFileName || selectedFile?.name}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 shrink-0"
+                            onClick={() => {
+                              if (!confirm('정말 첨부파일을 삭제하시겠습니까?'))
+                                return;
+
+                              // UI에서만 즉시 제거 (낙관적 업데이트)
+                              setSelectedFile(null);
+                              setExistingFileName(null);
+                              setDeleteFile(true);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                              }
+                            }}
+                            title="파일 삭제"
+                          >
+                            <CloseIcon className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
