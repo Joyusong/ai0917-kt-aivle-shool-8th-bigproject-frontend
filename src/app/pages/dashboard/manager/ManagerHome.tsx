@@ -9,6 +9,15 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
+import { format } from "date-fns";
+import { ko } from "date-fns/locale/ko";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "../../../components/ui/dialog";
 
 interface ManagerHomeProps {
   onNavigate?: (menu: string) => void;
@@ -20,6 +29,8 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
     title: string;
     createdAt: string;
     isNew?: boolean;
+    content?: string;
+    writer?: string;
   }
   interface DashboardContest {
     id: number | string;
@@ -30,6 +41,10 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
   }
   const [notices, setNotices] = useState<DashboardNotice[]>([]);
   const [contests, setContests] = useState<DashboardContest[]>([]);
+  const [noticeModalOpen, setNoticeModalOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState<DashboardNotice | null>(
+    null
+  );
 
   const authAxios = useMemo(() => {
     const instance = axios.create({
@@ -66,6 +81,8 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
           id: n.id,
           title: n.title,
           createdAt: n.createdAt,
+          content: n.content,
+          writer: n.writer,
           isNew: false, // Admin API might not have this, or we can calculate based on date
         }))
       );
@@ -125,6 +142,10 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                 <div
                   key={n.id}
                   className="flex items-center justify-between p-4 hover:bg-muted/50 cursor-pointer transition-colors"
+                  onClick={() => {
+                    setSelectedNotice(n);
+                    setNoticeModalOpen(true);
+                  }}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -139,13 +160,37 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                     </div>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {n.createdAt}
+                    {format(new Date(n.createdAt), "yyyy. M. d. a h:mm", {
+                      locale: ko,
+                    })}
                   </span>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
+        <Dialog open={noticeModalOpen} onOpenChange={setNoticeModalOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>{selectedNotice?.title || "공지사항"}</DialogTitle>
+              <DialogDescription className="flex items-center justify-between">
+                <span>{selectedNotice?.writer || ""}</span>
+                <span className="text-sm text-muted-foreground">
+                  {selectedNotice?.createdAt
+                    ? format(
+                        new Date(selectedNotice.createdAt),
+                        "yyyy. M. d. a h:mm",
+                        { locale: ko }
+                      )
+                    : ""}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[50vh] overflow-y-auto whitespace-pre-wrap text-sm text-foreground">
+              {selectedNotice?.content || "내용이 없습니다."}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Contest Section */}
         <Card className="border-border">

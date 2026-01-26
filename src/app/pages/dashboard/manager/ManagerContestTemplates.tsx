@@ -5,8 +5,6 @@ import {
   MoreHorizontal,
   Calendar,
   FileText,
-  Users,
-  Target,
   DollarSign,
   X,
   ChevronRight,
@@ -16,10 +14,10 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
 } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { Input } from "../../../components/ui/input";
+import { Textarea } from "../../../components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +30,39 @@ import { useState } from "react";
 
 export function ManagerContestTemplates() {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  type AwardItem = { name: string; winners: number | ''; prize: string };
+  const [awards, setAwards] = useState<AwardItem[]>([
+    { name: "대상", winners: 1, prize: "" },
+  ]);
+  const [description, setDescription] = useState("");
+
+  const handleAddAward = () => {
+    setAwards((prev) => [...prev, { name: "최우수", winners: "", prize: "" }]);
+  };
+
+  const handleRemoveAward = (index: number) => {
+    setAwards((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateAward = (
+    index: number,
+    field: "name" | "prize" | "winners",
+    value: string | number
+  ) => {
+    setAwards((prev) =>
+      prev.map((a, i) =>
+        i === index
+          ? {
+              ...a,
+              [field]:
+                field === "winners"
+                  ? value === "" ? "" : Number(value)
+                  : String(value),
+            }
+          : a
+      )
+    );
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -162,7 +193,7 @@ export function ManagerContestTemplates() {
         open={isTemplateModalOpen}
         onOpenChange={setIsTemplateModalOpen}
       >
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>공모전 템플릿 생성</DialogTitle>
             <DialogDescription>
@@ -202,30 +233,22 @@ export function ManagerContestTemplates() {
 
               <div>
                 <h4 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-blue-600" />
-                  심사 기준
+                  <FileText className="w-4 h-4 text-purple-600" />
+                  공모전 내용
                 </h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <span className="text-sm text-slate-700">
-                      대중성 (조회수/좋아요)
-                    </span>
-                    <Input className="w-20 text-right" defaultValue="40" />
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <span className="text-sm text-slate-700">
-                      작품성 (심사위원)
-                    </span>
-                    <Input className="w-20 text-right" defaultValue="30" />
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <span className="text-sm text-slate-700">
-                      성실성 (연재 주기)
-                    </span>
-                    <Input className="w-20 text-right" defaultValue="30" />
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-sm text-slate-600">
+                    상세 내용
+                  </label>
+                  <Textarea
+                    placeholder="공모전에 관한 상세 내용을 입력하세요..."
+                    className="min-h-32"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
                 </div>
               </div>
+
             </div>
 
             <div className="space-y-6">
@@ -235,30 +258,65 @@ export function ManagerContestTemplates() {
                   상금 및 특전
                 </h4>
                 <div className="space-y-4">
-                  <div className="p-4 border border-slate-200 rounded-xl space-y-4">
+                {awards.map((award, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 border border-slate-200 rounded-xl space-y-4"
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="font-medium text-slate-900">
-                        대상 (1명)
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <select
+                          className="border rounded-md px-3 py-2 bg-background text-sm"
+                          value={award.name}
+                          onChange={(e) =>
+                            updateAward(idx, "name", e.target.value)
+                          }
+                        >
+                          <option value="대상">대상</option>
+                          <option value="최우수">최우수</option>
+                          <option value="우수">우수</option>
+                        </select>
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-red-500 h-8"
+                        onClick={() => handleRemoveAward(idx)}
                       >
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                      <Input placeholder="상금 (만원)" />
-                      <Input placeholder="특전 (예: 출판 계약)" />
+                      <Input
+                        placeholder="상금 (만원)"
+                        value={award.prize}
+                        onChange={(e) =>
+                          updateAward(idx, "prize", e.target.value)
+                        }
+                      />
+                      <Input
+                        type="number"
+                        min={1}
+                        placeholder="인원수"
+                        value={award.winners}
+                        onChange={(e) =>
+                          updateAward(
+                            idx,
+                            "winners",
+                            e.target.value === "" ? "" : Number(e.target.value)
+                          )
+                        }
+                      />
                     </div>
                   </div>
+                ))}
                   <Button
                     variant="outline"
                     className="w-full border-dashed border-slate-300 text-slate-500 hover:text-purple-600 hover:border-purple-300"
+                  onClick={handleAddAward}
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    수상 부문 추가
+                  수상 부분 추가
                   </Button>
                 </div>
               </div>

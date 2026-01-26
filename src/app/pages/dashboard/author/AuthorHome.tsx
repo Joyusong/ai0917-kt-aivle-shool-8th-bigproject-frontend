@@ -5,6 +5,7 @@ import {
   Megaphone,
   Loader2,
   Calendar,
+  Plus,
 } from 'lucide-react';
 import { useContext, useEffect } from 'react';
 import { AuthorBreadcrumbContext } from './AuthorBreadcrumbContext';
@@ -15,15 +16,18 @@ import {
   CardTitle,
 } from '../../../components/ui/card';
 import { Badge } from '../../../components/ui/badge';
+import { Button } from '../../../components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { authorService } from '../../../services/authorService';
+import { format } from 'date-fns';
+import { ko } from 'date-fns/locale/ko';
 
 interface AuthorHomeProps {
   integrationId: string;
 }
 
 export function AuthorHome({ integrationId }: AuthorHomeProps) {
-  const { setBreadcrumbs } = useContext(AuthorBreadcrumbContext);
+  const { setBreadcrumbs, onNavigate } = useContext(AuthorBreadcrumbContext);
 
   useEffect(() => {
     setBreadcrumbs([{ label: '홈' }]);
@@ -115,12 +119,22 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
 
       {/* 공지사항 Section */}
       <Card className="border-border">
-        <CardHeader className="border-b border-border flex-row items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <Megaphone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <CardHeader className="border-b border-border">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <Megaphone className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <CardTitle className="text-foreground">공지사항</CardTitle>
             </div>
-            <CardTitle className="text-foreground">공지사항</CardTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 h-8 w-8"
+              onClick={() => onNavigate('notice')}
+            >
+              <Plus className="w-5 h-5" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -152,16 +166,13 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
                       <h4 className="text-sm font-medium text-foreground group-hover:text-blue-600 transition-colors">
                         {notice.title}
                       </h4>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span>{notice.writer}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(notice.createdAt).toLocaleString()}
-                        </span>
-                      </div>
                     </div>
                   </div>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(notice.createdAt), 'yyyy. M. d. a h:mm', {
+                      locale: ko,
+                    })}
+                  </span>
                 </div>
               ))
             ) : (
