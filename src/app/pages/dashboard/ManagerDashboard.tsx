@@ -16,7 +16,6 @@ import {
   LogOut,
   Settings,
   User,
-  KeyRound,
 } from 'lucide-react';
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
@@ -278,16 +277,6 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
                 >
                   <User className="w-4 h-4" />
                   <span className="text-sm">마이페이지</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPasswordModal(true);
-                    setShowProfileDropdown(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
-                >
-                  <KeyRound className="w-4 h-4" />
-                  <span className="text-sm">비밀번호 변경</span>
                 </button>
                 <div className="h-px bg-border my-1" />
                 <button

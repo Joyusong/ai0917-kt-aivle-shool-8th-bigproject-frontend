@@ -59,20 +59,24 @@ src/
 ## 🚀 시작하기 (Getting Started)
 
 ### 사전 요구사항
+
 - Node.js (v18 이상 권장)
 - npm
 
 ### 설치 및 실행
 
 1. **의존성 설치**:
+
    ```bash
    npm install
    ```
 
 2. **개발 서버 실행**:
+
    ```bash
    npm run dev
    ```
+
    - 브라우저에서 `http://localhost:5173` 접속.
    - 백엔드 연결이 없을 경우 MSW가 자동으로 활성화되어 모의 데이터로 동작합니다.
 
