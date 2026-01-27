@@ -41,6 +41,7 @@ interface AuthorWritingEditorProps {
   initialTitle?: string;
   initialContent?: string;
   onClose: () => void;
+  isReadOnly?: boolean;
 }
 
 // Mock data for settings
@@ -105,6 +106,7 @@ export function AuthorWritingEditor({
   initialTitle = '',
   initialContent = '',
   onClose,
+  isReadOnly = false,
 }: AuthorWritingEditorProps) {
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
@@ -172,10 +174,12 @@ export function AuthorWritingEditor({
             <BookOpen className="w-4 h-4 mr-2" />
             참고 자료
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={isSaving}>
-            <Save className="w-4 h-4 mr-2" />
-            저장
-          </Button>
+          {!isReadOnly && (
+            <Button size="sm" onClick={handleSave} disabled={isSaving}>
+              <Save className="w-4 h-4 mr-2" />
+              저장
+            </Button>
+          )}
         </div>
       </header>
 
@@ -186,7 +190,7 @@ export function AuthorWritingEditor({
       >
         {/* Editor Area */}
         <ResizablePanel defaultSize={75} minSize={50}>
-          <div className="h-full overflow-y-auto bg-background">
+          <div className="h-full bg-background overflow-y-auto">
             <div className="max-w-3xl mx-auto py-12 px-8 min-h-full">
               <Textarea
                 value={content}

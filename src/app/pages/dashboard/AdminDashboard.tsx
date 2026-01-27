@@ -204,7 +204,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
         )}
 
         {/* Logo */}
-        <div className="px-6 pt-6 mb-8">
+        <div className="h-16 flex items-center px-6 border-b border-sidebar-border mb-4">
           <Logo />
         </div>
 
@@ -269,7 +269,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
           <div className="hidden md:block relative">
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="w-full flex items-center gap-3 p-3 bg-sidebar-accent rounded-lg hover:bg-muted transition-colors"
+              className="w-full flex items-center gap-3 p-3 bg-sidebar-accent hover:bg-muted transition-colors"
             >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white dark:text-black text-sm font-semibold"
@@ -292,13 +292,13 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
+              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border shadow-lg py-1 z-50">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground text-destructive flex items-center gap-2"
                 >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">로그아웃</span>
+                  <LogOut size={16} />
+                  로그아웃
                 </button>
               </div>
             )}
@@ -343,9 +343,9 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-card border-b border-border px-4 md:px-8 py-4">
+        <header className="h-16 bg-card border-b border-border px-4 md:px-8 flex items-center">
           <div
-            className={`flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
+            className={`w-full flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
           >
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-sm">

@@ -14,6 +14,9 @@ import {
   LorebookCharacterDto,
   LorebookWorldviewDto,
   LorebookPlotDto,
+  LorebookPlaceDto,
+  LorebookItemDto,
+  LorebookGroupDto,
   WorkCreateRequestDto,
   WorkResponseDto,
   WorkStatus,
@@ -117,12 +120,19 @@ export const authorService = {
     return response.data;
   },
 
+  publishEpisode: async (workId: string, episodeId: string) => {
+    const response = await apiClient.post<EpisodeDto>(
+      `/api/v1/author/works/${workId}/episodes/${episodeId}/publish`,
+    );
+    return response.data;
+  },
+
   createWork: async (data: WorkCreateRequestDto) => {
     const response = await apiClient.post<number>('/api/v1/author/works', data);
     return response.data;
   },
 
-  updateWork: async (data: WorkUpdateRequestDto) => {
+  updateWork: async (p0: string, data: WorkUpdateRequestDto) => {
     const response = await apiClient.patch<number>(
       '/api/v1/author/works',
       data,
@@ -168,6 +178,104 @@ export const authorService = {
   getLorebookPlots: async (workId: string) => {
     const response = await apiClient.get<LorebookPlotDto[]>(
       `/api/v1/author/lorebook/${workId}/plot`,
+    );
+    return response.data;
+  },
+
+  getLorebookPlaces: async (workId: string) => {
+    const response = await apiClient.get<LorebookPlaceDto[]>(
+      `/api/v1/author/lorebook/${workId}/places`,
+    );
+    return response.data;
+  },
+
+  getLorebookItems: async (workId: string) => {
+    const response = await apiClient.get<LorebookItemDto[]>(
+      `/api/v1/author/lorebook/${workId}/items`,
+    );
+    return response.data;
+  },
+
+  getLorebookGroups: async (workId: string) => {
+    const response = await apiClient.get<LorebookGroupDto[]>(
+      `/api/v1/author/lorebook/${workId}/groups`,
+    );
+    return response.data;
+  },
+
+  // Lorebook Mutations (Generic-like pattern for simplicity in service, though specific in implementation)
+  createLorebookEntry: async (workId: string, category: string, data: any) => {
+    // category: characters, places, items, groups, worldview, plot
+    // Mapping category to endpoint path component
+    const pathMap: Record<string, string> = {
+      characters: 'characters',
+      places: 'places',
+      items: 'items',
+      groups: 'groups',
+      worldviews: 'worldview',
+      plots: 'plot',
+    };
+    const path = pathMap[category];
+    if (!path) throw new Error(`Invalid category: ${category}`);
+
+    const response = await apiClient.post(
+      `/api/v1/author/lorebook/${workId}/${path}`,
+      data,
+    );
+    return response.data;
+  },
+
+  updateLorebookEntry: async (
+    workId: string,
+    category: string,
+    id: number,
+    data: any,
+  ) => {
+    const pathMap: Record<string, string> = {
+      characters: 'characters',
+      places: 'places',
+      items: 'items',
+      groups: 'groups',
+      worldviews: 'worldview',
+      plots: 'plot',
+    };
+    const path = pathMap[category];
+    if (!path) throw new Error(`Invalid category: ${category}`);
+
+    const response = await apiClient.put(
+      `/api/v1/author/lorebook/${workId}/${path}/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  deleteLorebookEntry: async (workId: string, category: string, id: number) => {
+    const pathMap: Record<string, string> = {
+      characters: 'characters',
+      places: 'places',
+      items: 'items',
+      groups: 'groups',
+      worldviews: 'worldview',
+      plots: 'plot',
+    };
+    const path = pathMap[category];
+    if (!path) throw new Error(`Invalid category: ${category}`);
+
+    await apiClient.delete(`/api/v1/author/lorebook/${workId}/${path}/${id}`);
+  },
+
+  searchLorebook: async (workId: string, category: string, query: string) => {
+    const response = await apiClient.get<any[]>(
+      `/api/v1/author/lorebook/${workId}/search`,
+      { params: { category, query } },
+    );
+    return response.data;
+  },
+
+  exportLorebook: async (workId: string) => {
+    const response = await apiClient.get(
+      `/api/v1/author/lorebook/${workId}/export`,
+      { responseType: 'blob' },
     );
     return response.data;
   },

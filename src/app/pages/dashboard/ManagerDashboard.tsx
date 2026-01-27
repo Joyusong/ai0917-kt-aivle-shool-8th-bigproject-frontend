@@ -98,7 +98,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
           </Button>
         )}
 
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
           <Logo />
         </div>
 
@@ -242,21 +242,21 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
         </nav>
 
         {/* Profile Section */}
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="border-t border-sidebar-border">
           {/* Desktop: Dropdown style */}
           <div className="hidden md:block relative">
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent transition-colors"
+              className="w-full flex items-center gap-3 p-3 bg-sidebar-accent hover:bg-muted transition-colors"
             >
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white dark:text-black text-sm"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-white dark:text-black text-sm"
                 style={{ backgroundColor: 'var(--role-primary)' }}
               >
                 {userName.charAt(0)}
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm text-sidebar-foreground truncate">
+                <div className="text-sm font-medium text-sidebar-foreground truncate">
                   {maskName(userName)}
                 </div>
                 <div className="text-xs text-muted-foreground">Manager</div>
@@ -267,13 +267,13 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
             </button>
 
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-lg shadow-lg py-1">
+              <div className="absolute bottom-full left-0 right-0 bg-card border-t border-border shadow-lg py-1 z-50">
                 <button
                   onClick={() => {
                     handleMenuClick('mypage');
                     setShowProfileDropdown(false);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-foreground hover:bg-accent transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-foreground hover:bg-accent transition-colors"
                 >
                   <User className="w-4 h-4" />
                   <span className="text-sm">마이페이지</span>
@@ -284,7 +284,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
                     onLogout();
                     setShowProfileDropdown(false);
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-destructive hover:bg-destructive/10 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="text-sm">로그아웃</span>
@@ -347,9 +347,9 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-card border-b border-border px-4 md:px-8 py-4">
+        <header className="h-16 bg-card border-b border-border px-4 md:px-8 flex items-center">
           <div
-            className={`flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
+            className={`w-full flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
           >
             <div>
               {/* Breadcrumb */}

@@ -67,7 +67,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
       console.error('User ID is missing');
       return;
     }
-    await authService.changeAuthorPassword(userData.userId, data);
+    await authService.changeAuthorPassword(data);
   };
 
   // Fetch User Profile
@@ -139,7 +139,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
         )}
 
         {/* Logo */}
-        <div className="p-6 border-b border-sidebar-border">
+        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
           <Logo />
         </div>
 
@@ -212,7 +212,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
             }
           >
             <Trophy className="w-5 h-5" />
-            <span className="text-sm font-medium">공모전 템플릿</span>
+            <span className="text-sm font-medium">공모전</span>
           </button>
 
           <button
@@ -239,7 +239,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
           <div className="hidden md:block relative">
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="w-full flex items-center gap-3 p-3 bg-sidebar-accent rounded-lg hover:bg-muted transition-colors"
+              className="w-full flex items-center gap-3 p-3 bg-sidebar-accent hover:bg-muted transition-colors"
             >
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white dark:text-black text-sm font-semibold"
@@ -262,7 +262,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-lg shadow-lg py-1">
+              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border shadow-lg py-1 z-50">
                 <button
                   onClick={() => {
                     handleMenuClick('mypage');
@@ -337,9 +337,9 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="bg-card border-b border-border px-4 md:px-8 py-4">
+        <header className="h-16 bg-card border-b border-border px-4 md:px-8 flex items-center">
           <div
-            className={`flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
+            className={`w-full flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
           >
             {/* Breadcrumb */}
             <Breadcrumb>

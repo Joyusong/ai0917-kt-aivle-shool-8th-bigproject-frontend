@@ -28,18 +28,22 @@ export interface WorkResponseDto {
   id: number;
   title: string;
   writer: string;
+  synopsis?: string;
+  genre?: string;
+  coverImageUrl?: string;
   description: string;
   status: WorkStatus;
   statusDescription: string;
   createdAt: string;
+  universeId?: number;
 }
 
 export interface WorkCreateRequestDto {
   title: string;
-  userIntegrationId: string;
-  writer: string;
+  integrationId: string; // Changed from userIntegrationId to match service
+  writer?: string;
   description: string;
-  status: WorkStatus;
+  status?: WorkStatus;
 }
 
 export interface WorkUpdateRequestDto {
@@ -47,6 +51,8 @@ export interface WorkUpdateRequestDto {
   title: string;
   description: string;
   status: WorkStatus;
+  synopsis?: string;
+  genre?: string;
 }
 
 // Notice DTO (Author View)
@@ -94,13 +100,41 @@ export interface LorebookPlotDto {
   importance?: 'Main' | 'Sub';
 }
 
+export interface LorebookPlaceDto {
+  id: number;
+  name: string;
+  description: string;
+  location?: string;
+}
+
+export interface LorebookItemDto {
+  id: number;
+  name: string;
+  description: string;
+  type?: string;
+}
+
+export interface LorebookGroupDto {
+  id: number;
+  name: string;
+  description: string;
+  members?: string[];
+}
+
 // Episode DTOs
 export interface EpisodeDto {
   id: number;
   workId: number;
+  episodeNumber?: number;
   title: string;
+  subtitle?: string;
   order: number;
   status: WorkStatus;
+  wordCount?: number;
+  isReadOnly?: boolean;
+  isAnalyzed?: boolean;
+  isReviewPending?: boolean;
+  content: string; // Added content for convenience if needed
   updatedAt: string;
 }
 

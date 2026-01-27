@@ -8,8 +8,16 @@ import {
 } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Switch } from '../../components/ui/switch';
 import { Badge } from '../../components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../../components/ui/tabs';
 import {
   Loader2,
   Play,
@@ -19,6 +27,7 @@ import {
   Maximize2,
   X,
   Sparkles,
+  Server,
 } from 'lucide-react';
 import {
   Dialog,
@@ -29,6 +38,41 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '../../components/ui/dialog';
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+
+const PROMPT_TEMPLATES = [
+  {
+    id: 'free',
+    label: '자유 입력 (Free)',
+    description: '빈 화면에서 자유롭게 입력합니다.',
+    content: '',
+  },
+  {
+    id: 'novel_start',
+    label: '📖 소설 도입부 생성',
+    description: '장르와 주인공 설정을 바탕으로 첫 장면을 만듭니다.',
+    content: `장르: 판타지\n주인공 이름: 강민우\n주인공 특징: 마력을 느끼지 못하는 마법사 가문의 장남\n\n위 설정을 바탕으로 독자의 호기심을 자극하는 소설의 첫 도입부(약 500자)를 흥미진진하게 작성해줘.`,
+  },
+  {
+    id: 'character_creation',
+    label: '👤 입체적 캐릭터 빌딩',
+    description: '단순한 설정을 깊이 있는 캐릭터로 확장합니다.',
+    content: `이름: \n나이: \n직업: \n성격 키워드: \n\n위 정보를 바탕으로 입체적인 등장인물 설정을 상세히 만들어줘.\n1. 외모 묘사\n2. 말투와 습관\n3. 남들에게 말 못 할 비밀\n4. 이 캐릭터의 치명적인 약점`,
+  },
+  {
+    id: 'plot_twist',
+    label: '⚡ 반전 전개 아이디어',
+    description: '위기 상황을 타개할 반전 아이디어를 제안받습니다.',
+    content: `현재 상황: 주인공이 믿었던 동료에게 배신당해 절벽 끝에 몰림.\n\n이 상황에서 독자가 전혀 예상하지 못한 충격적인 반전 전개 아이디어 3가지를 제안해줘. (각 아이디어는 개연성이 있어야 함)`,
+  },
+];
 
 /**
  * AI Lab Page (Ver 2.0 - 아지트 에디션)
@@ -47,18 +91,42 @@ export default function AILabPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [jsonData, setJsonData] = useState<any>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState('friend');
+  const [selectedTemplate, setSelectedTemplate] = useState('free');
+
+  // API 설정 상태
+  const [useRealApi, setUseRealApi] = useState(false);
+  const [apiUrl, setApiUrl] = useState(
+    'http://localhost:8000/api/v1/ai/generate',
+  );
 
   // 타자기 효과를 위한 Ref
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 2. AI 응답 시뮬레이션 (Streaming Effect)
-  const handleGenerate = () => {
+  // 2. AI 응답 처리 (Simulation or Real API)
+  const handleGenerate = async () => {
     if (!prompt.trim()) return;
 
     setIsStreaming(true);
     setResult('');
     setJsonData(null);
 
+    // 이전 요청 취소
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    if (useRealApi) {
+      await handleRealApiCall();
+    } else {
+      handleSimulation();
+    }
+  };
+
+  // 2-1. 시뮬레이션 모드
+  const handleSimulation = () => {
     // AI 페르소나에 따른 응답 변화 (재미 요소!)
     const dummyResponse = `[AI 친구]: 안녕! 네가 입력한 "${prompt}"에 대해 생각해봤어.\n\n이건 정말 흥미로운 주제인걸? 내가 분석한 내용을 알려줄게.\n\n1. ✨ 핵심은 바로 이것!\n2. 💡 이런 아이디어는 어때?\n3. 🚀 당장 시도해보자!\n\n(이 응답은 실제 AI가 아니라, 우리가 만든 시뮬레이션이야. 멋지지?)`;
 
@@ -89,11 +157,83 @@ export default function AILabPage() {
     }, 30);
   };
 
+  // 2-2. Real API 모드 (FastAPI 연동)
+  const handleRealApiCall = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // 토큰이 있다면 추가 (없으면 무시됨)
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          // 필요한 다른 파라미터들도 여기에 추가 가능
+          temperature: 0.7,
+        }),
+        signal: abortControllerRef.current?.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
+      // 스트리밍 응답 처리 (Server-Sent Events or Chunked Transfer)
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let fullText = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+
+          // JSON 응답인 경우와 텍스트 스트림인 경우 구분 필요
+          // 여기서는 단순 텍스트 스트리밍 또는 줄바꿈된 JSON 스트림이라고 가정
+          // 실제 백엔드 구현에 따라 파싱 로직을 조정해야 함
+
+          // 1. 단순 텍스트 누적
+          fullText += chunk;
+          setResult((prev) => prev + chunk);
+        }
+
+        setJsonData({
+          status: 'success',
+          source: 'FastAPI',
+          rawResponse: 'Streaming Completed',
+        });
+      } else {
+        // 스트리밍이 아닌 단일 JSON 응답일 경우
+        const data = await response.json();
+        setResult(data.answer || JSON.stringify(data, null, 2));
+        setJsonData(data);
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('Request aborted');
+      } else {
+        setResult(`❌ 오류 발생: ${error.message}`);
+        setJsonData({ error: error.message });
+      }
+    } finally {
+      setIsStreaming(false);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, []);
+
+  function handleTemplateChange(value: string): void {
+    throw new Error('Function not implemented.');
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-5xl space-y-8 animate-in fade-in duration-500">
@@ -154,6 +294,59 @@ export default function AILabPage() {
               <CardDescription>AI 친구에게 말을 걸어보자</CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  AI 페르소나 (말투 선택)
+                </Label>
+                <Select
+                  value={selectedPersona}
+                  onValueChange={setSelectedPersona}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="페르소나 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="friend">다정한 친구 (반말)</SelectItem>
+                    <SelectItem value="expert">
+                      냉철한 전문가 (존댓말)
+                    </SelectItem>
+                    <SelectItem value="writer">
+                      감성적인 소설가 (문학적)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground">
+                  프롬프트 템플릿 (빠른 시작)
+                </Label>
+                <Select
+                  value={selectedTemplate}
+                  onValueChange={handleTemplateChange}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="템플릿 선택" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PROMPT_TEMPLATES.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTemplate !== 'free' && (
+                  <p className="text-[10px] text-muted-foreground ml-1">
+                    *{' '}
+                    {
+                      PROMPT_TEMPLATES.find((t) => t.id === selectedTemplate)
+                        ?.description
+                    }
+                  </p>
+                )}
+              </div>
+
               <Textarea
                 placeholder="오늘 기분은 어때? AI에게 하고 싶은 말을 적어봐..."
                 className="min-h-[200px] resize-none focus-visible:ring-purple-500"
@@ -191,17 +384,44 @@ export default function AILabPage() {
             </CardHeader>
             <CardContent className="text-xs text-muted-foreground space-y-2">
               <p>
-                <span className="font-bold text-foreground">💡 꿀팁:</span>{' '}
-                모달(Dialog)은
-                <code>shadcn/ui</code>에서 가져온 컴포넌트야.
-                <code>open</code> 상태를 <code>useState</code>로 관리해서 열고
-                닫을 수 있어.
+                <span className="font-bold text-foreground">
+                  💡 멘토의 조언:
+                </span>{' '}
+                POSTMAN은 JSON 데이터를 날것으로 보여주지만, 여기서는
+                <strong> 스트리밍 응답을 실시간 타자기 효과</strong>로 볼 수
+                있고, 위의 <strong>페르소나 선택</strong>처럼 미리 정의된 시스템
+                프롬프트를 쉽게 주입해서 테스트할 수 있어! 시나리오 검증에 훨씬
+                유리하지. 😉
               </p>
-              <p>
-                <span className="font-bold text-foreground">🎨 스타일:</span>
-                <code>bg-gradient-to-r</code> 클래스로 버튼에 그라데이션을 주면
-                훨씬 고급스러워 보여!
-              </p>
+              <div className="pt-2 border-t border-yellow-200 dark:border-yellow-800/30 mt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <Label
+                    htmlFor="api-mode"
+                    className="font-bold text-foreground flex items-center gap-2"
+                  >
+                    <Server className="h-3 w-3" /> Real API 모드
+                  </Label>
+                  <Switch
+                    id="api-mode"
+                    checked={useRealApi}
+                    onCheckedChange={setUseRealApi}
+                  />
+                </div>
+
+                {useRealApi && (
+                  <div className="space-y-2 animate-in slide-in-from-top-2">
+                    <Label className="text-[10px]">
+                      API Endpoint (FastAPI)
+                    </Label>
+                    <Input
+                      value={apiUrl}
+                      onChange={(e) => setApiUrl(e.target.value)}
+                      className="h-7 text-xs bg-white dark:bg-black"
+                      placeholder="http://..."
+                    />
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

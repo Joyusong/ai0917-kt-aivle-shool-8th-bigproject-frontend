@@ -94,9 +94,9 @@ export const authService = {
     return response.data;
   },
 
-  changeAuthorPassword: async (userId: number, data: any) => {
+  changeAuthorPassword: async (data: any) => {
     const response = await apiClient.patch(
-      `/api/v1/author/${userId}/mypage/pwd`,
+      `/api/v1/signup/password/reset`,
       data,
     );
     return response.data;

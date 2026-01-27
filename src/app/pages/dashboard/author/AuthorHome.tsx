@@ -1,4 +1,11 @@
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../../../components/ui/dialog';
+import {
   BookOpen,
   Database,
   CheckCircle,
@@ -91,10 +98,19 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
   const currentNotice = notices[currentNoticeIndex];
   const currentContest = contestList[currentContestIndex];
 
+  // Notice Detail State
+  const [selectedNotice, setSelectedNotice] = useState<any>(null);
+  const [isNoticeDetailOpen, setIsNoticeDetailOpen] = useState(false);
+
+  const handleNoticeClick = (notice: any) => {
+    setSelectedNotice(notice);
+    setIsNoticeDetailOpen(true);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
       {/* Header removed */}
-      
+
       {/* 1. 상단 통계 카드 (기존 유지) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-border">
@@ -174,7 +190,10 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
           </CardHeader>
           <CardContent className="h-[140px] flex flex-col justify-center relative">
             {currentNotice ? (
-              <div className="space-y-2 px-8 transition-all duration-300">
+              <div
+                className="space-y-2 px-8 transition-all duration-300 hover:opacity-80 cursor-pointer"
+                onClick={() => handleNoticeClick(currentNotice)}
+              >
                 <Badge
                   variant={
                     currentNotice.category === 'URGENT'
@@ -292,71 +311,41 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
         </Card>
       </div>
 
-      {/* 3. 추가 유용 위젯 (바로가기 & 통계 등) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* 빠른 작업 실행 */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <PenTool className="w-5 h-5" />
-              빠른 작업
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col gap-2 hover:bg-accent/50 hover:border-primary/50 transition-all"
-                onClick={() => onNavigate('works')}
-              >
-                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-blue-600" />
-                </div>
-                <span>새 작품 만들기</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-24 flex flex-col gap-2 hover:bg-accent/50 hover:border-primary/50 transition-all"
-                onClick={() => onNavigate('contest-templates')}
-              >
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-purple-600" />
-                </div>
-                <span>공모전 도전하기</span>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 집필 통계 (Placeholder) */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              이번 주 집필 현황
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[120px] flex items-end justify-between px-2 pb-2">
-              {[40, 70, 30, 85, 50, 20, 60].map((height, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 group">
-                  <div
-                    className="w-8 bg-primary/20 rounded-t-sm transition-all group-hover:bg-primary/40 relative"
-                    style={{ height: `${height}%` }}
+      {/* Notice Detail Dialog */}
+      <Dialog open={isNoticeDetailOpen} onOpenChange={setIsNoticeDetailOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>공지사항 상세</DialogTitle>
+          </DialogHeader>
+          {selectedNotice && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={
+                      selectedNotice.category === 'URGENT'
+                        ? 'destructive'
+                        : 'default'
+                    }
                   >
-                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                      {height * 100}자
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {['월', '화', '수', '목', '금', '토', '일'][i]}
+                    {selectedNotice.category === 'URGENT' ? '긴급' : '공지'}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {new Date(selectedNotice.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-              ))}
+                <h3 className="text-xl font-bold">{selectedNotice.title}</h3>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg text-sm leading-relaxed whitespace-pre-wrap min-h-[200px]">
+                {selectedNotice.content}
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsNoticeDetailOpen(false)}>닫기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
