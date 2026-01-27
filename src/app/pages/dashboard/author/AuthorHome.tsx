@@ -93,21 +93,8 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <LayoutDashboard className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">홈</h1>
-            <p className="text-sm text-muted-foreground">
-              작가님의 창작 활동 현황을 한눈에 확인하세요.
-            </p>
-          </div>
-        </div>
-      </div>
-
+      {/* Header removed */}
+      
       {/* 1. 상단 통계 카드 (기존 유지) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-border">
@@ -251,7 +238,7 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
               <div className="space-y-2 px-8 transition-all duration-300">
                 <div className="flex justify-between items-start">
                   <Badge variant="outline" className="bg-background/80">
-                    {currentContest.dDay}
+                    {currentContest.deadline}
                   </Badge>
                   <Badge className="bg-amber-500 hover:bg-amber-600">
                     {currentContest.prize}

@@ -228,20 +228,9 @@ export function AdminNotices({ readOnly = false }: AdminNoticesProps) {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Megaphone className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">공지사항 관리</h1>
-            <p className="text-sm text-muted-foreground">
-              공지사항을 등록하고 관리합니다.
-            </p>
-          </div>
-        </div>
-        {!readOnly && (
+      {/* Header - Title removed as per request */}
+      {!readOnly && (
+        <div className="flex justify-end mb-4">
           <Button
             onClick={() => {
               setModalMode('create');
@@ -252,8 +241,8 @@ export function AdminNotices({ readOnly = false }: AdminNoticesProps) {
           >
             <Plus className="w-4 h-4 mr-2" /> 새 공지
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       <Card className="border-border shadow-sm gap-0">
         <CardHeader className="flex flex-col md:flex-row justify-between items-center gap-4 border-b">

@@ -5,13 +5,20 @@ import {
   FileText,
   X as CloseIcon,
   Search,
-  Trash2,
+  UserX,
   Plus,
   ChevronLeft,
   ChevronRight,
   Edit2,
+  Clock,
+  Trash2,
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
 import { Button } from '../../../components/ui/button';
 import {
   Card,
@@ -28,13 +35,14 @@ import {
   UserCreateRequestDto,
   UserListResponseDto,
 } from '../../../types/admin';
-import { maskName } from '../../../utils/format';
+import { authService } from '../../../services/authService';
 
 // Role Labels and Helpers
 const ROLE_LABELS: Record<UserRole, string> = {
   Admin: '관리자',
   Manager: '매니저',
   Author: '작가',
+  Deactivated: '비활성화',
 };
 
 const getRoleBadge = (role: UserRole) => {
@@ -42,6 +50,7 @@ const getRoleBadge = (role: UserRole) => {
     Admin: 'bg-red-500 text-white hover:bg-red-600',
     Manager: 'bg-blue-500 text-white hover:bg-blue-600',
     Author: 'bg-green-500 text-white hover:bg-green-600',
+    Deactivated: 'bg-gray-500 text-white hover:bg-gray-600',
   };
   return styles[role] || 'bg-gray-500 text-white';
 };
@@ -51,8 +60,42 @@ const getGradient = (role: UserRole) => {
     Admin: 'from-red-500 to-pink-600',
     Manager: 'from-blue-500 to-purple-600',
     Author: 'from-green-500 to-teal-600',
+    Deactivated: 'from-gray-400 to-gray-500',
   };
   return gradients[role] || 'from-gray-500 to-gray-600';
+};
+
+const getDDayBadge = (dateStr: string, role: UserRole) => {
+  if (role !== 'Deactivated') return null;
+
+  const lastActivityDate = new Date(dateStr);
+  const deletionDate = new Date(lastActivityDate);
+  deletionDate.setDate(deletionDate.getDate() + 7); // 7 days grace period
+  deletionDate.setHours(0, 0, 0, 0);
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const diffTime = deletionDate.getTime() - now.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  let colorClass = 'bg-green-100 text-green-700 hover:bg-green-200';
+  if (diffDays <= 3)
+    colorClass = 'bg-orange-100 text-orange-700 hover:bg-orange-200';
+  if (diffDays <= 1) colorClass = 'bg-red-100 text-red-700 hover:bg-red-200';
+
+  const label =
+    diffDays > 0
+      ? `D-${diffDays}`
+      : diffDays === 0
+        ? 'D-Day'
+        : `D+${Math.abs(diffDays)}`;
+
+  return (
+    <Badge variant="outline" className={`${colorClass} border-none`}>
+      {label}
+    </Badge>
+  );
 };
 
 export function AdminPermissions() {
@@ -94,6 +137,7 @@ export function AdminPermissions() {
   const { data: userPage } = useQuery({
     queryKey: ['adminUsers', page, searchQuery, roleFilter],
     queryFn: () => adminService.getUsers(page, 10, searchQuery, roleFilter),
+    placeholderData: keepPreviousData,
   });
 
   const users = (userPage?.content || []).sort((a, b) => {
@@ -101,6 +145,7 @@ export function AdminPermissions() {
       Admin: 0,
       Manager: 1,
       Author: 2,
+      Deactivated: 3,
     };
     const roleA = roleOrder[a.role] ?? 99;
     const roleB = roleOrder[b.role] ?? 99;
@@ -124,23 +169,28 @@ export function AdminPermissions() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: adminService.deleteUser,
+    mutationFn: ({ id }: { id: number }) => adminService.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       queryClient.invalidateQueries({ queryKey: ['adminSummary'] });
-      alert('사용자가 삭제되었습니다.');
+      alert('사용자 계정이 삭제되었습니다.');
     },
     onError: () => {
-      alert('삭제 실패');
+      alert('계정 삭제에 실패했습니다.');
     },
   });
 
   // Handlers
   const handleDelete = (user: UserListResponseDto) => {
     if (user.role === 'Admin')
-      return alert('관리자 권한은 삭제할 수 없습니다.');
-    if (!confirm(`${user.name} 사용자를 삭제하시겠습니까?`)) return;
-    deleteMutation.mutate(user.id);
+      return alert('관리자 계정은 삭제할 수 없습니다.');
+    if (
+      !confirm(
+        `${user.name} 사용자를 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
+      )
+    )
+      return;
+    deleteMutation.mutate({ id: user.id });
   };
 
   const handleUpdate = (role: UserRole) => {
@@ -150,23 +200,10 @@ export function AdminPermissions() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-            <Shield className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">권한 관리</h1>
-            <p className="text-sm text-muted-foreground">
-              사용자별 시스템 접근 권한을 관리합니다.
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Header removed as per request */}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <StatCard
           title="관리자"
           count={summary?.adminCount || 0}
@@ -187,6 +224,13 @@ export function AdminPermissions() {
           icon={<FileText />}
           color="text-green-600"
           bg="bg-green-100 dark:bg-green-900/20"
+        />
+        <StatCard
+          title="비활성화"
+          count={summary?.deactivatedCount || 0}
+          icon={<Users className="opacity-50" />}
+          color="text-gray-600"
+          bg="bg-gray-100 dark:bg-gray-900/20"
         />
       </div>
 
@@ -221,6 +265,7 @@ export function AdminPermissions() {
               <option value="Admin">관리자</option>
               <option value="Manager">매니저</option>
               <option value="Author">작가</option>
+              <option value="Deactivated">비활성화</option>
             </select>
           </div>
         </CardHeader>
@@ -233,6 +278,8 @@ export function AdminPermissions() {
                   <th className="px-6 py-4">사용자</th>
                   <th className="px-6 py-4">이메일</th>
                   <th className="px-6 py-4">역할</th>
+                  <th className="px-6 py-4">마지막 활동일</th>
+                  <th className="px-6 py-4">생성일</th>
                   <th className="px-6 py-4 text-center">관리</th>
                 </tr>
               </thead>
@@ -251,7 +298,7 @@ export function AdminPermissions() {
                             {user.name[0]}
                           </div>
                           <span className="font-medium text-foreground">
-                            {maskName(user.name)}
+                            {user.name}
                           </span>
                         </div>
                       </td>
@@ -264,6 +311,25 @@ export function AdminPermissions() {
                         >
                           {ROLE_LABELS[user.role]}
                         </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.lastActivityAt ? (
+                          <div className="flex items-center gap-2">
+                            {getDDayBadge(user.lastActivityAt, user.role)}
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(
+                                user.lastActivityAt,
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground/30">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground text-xs">
+                        {user.createdAt
+                          ? new Date(user.createdAt).toLocaleDateString()
+                          : '-'}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex justify-center gap-1">
@@ -285,6 +351,7 @@ export function AdminPermissions() {
                             disabled={user.role === 'Admin'}
                             className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                             onClick={() => handleDelete(user)}
+                            title="계정 삭제"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -295,7 +362,7 @@ export function AdminPermissions() {
                 ) : (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={6}
                       className="p-12 text-center text-muted-foreground"
                     >
                       검색된 사용자가 없습니다.
@@ -320,7 +387,7 @@ export function AdminPermissions() {
                       </div>
                       <div>
                         <div className="font-medium text-foreground">
-                          {maskName(user.name)}
+                          {user.name}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {user.siteEmail || '-'}
@@ -332,6 +399,16 @@ export function AdminPermissions() {
                     </Badge>
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
+                    {user.lastActivityAt && (
+                      <div className="flex items-center gap-2 mr-auto">
+                        {getDDayBadge(user.lastActivityAt, user.role)}
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {new Date(user.lastActivityAt).toLocaleDateString()}
+                          {user.role === 'Deactivated' && ' 삭제 예정'}
+                        </span>
+                      </div>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -351,7 +428,8 @@ export function AdminPermissions() {
                       disabled={user.role === 'Admin'}
                       onClick={() => handleDelete(user)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      계정 삭제
                     </Button>
                   </div>
                 </div>
@@ -482,9 +560,7 @@ export function AdminPermissions() {
                   {selectedUser.name[0]}
                 </div>
                 <div>
-                  <div className="font-medium">
-                    {maskName(selectedUser.name)}
-                  </div>
+                  <div className="font-medium">{selectedUser.name}</div>
                   <div className="text-sm text-muted-foreground">
                     {selectedUser.email}
                   </div>
@@ -497,8 +573,10 @@ export function AdminPermissions() {
                   value={editRole}
                   onChange={(e) => setEditRole(e.target.value as UserRole)}
                 >
-                  <option value="Manager">매니저 (Manager)</option>
-                  <option value="Author">작가 (Author)</option>
+                  <option value="Admin">관리자</option>
+                  <option value="Manager">매니저</option>
+                  <option value="Author">작가</option>
+                  <option value="Deactivated">비활성화</option>
                 </select>
                 <p className="text-xs text-muted-foreground">
                   * 관리자(Admin) 권한은 변경할 수 없습니다.

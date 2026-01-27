@@ -176,10 +176,7 @@ export function ManagerNotice() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Megaphone className="text-blue-600 w-7 h-7" /> 공지사항 관리
-        </h2>
+      <div className="flex justify-end mb-4">
         <Button
           onClick={() => setModalMode('create')}
           className="bg-blue-600 w-full sm:w-auto"

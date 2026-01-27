@@ -1,4 +1,4 @@
-export type UserRole = 'Admin' | 'Manager' | 'Author';
+export type UserRole = 'Admin' | 'Manager' | 'Author' | 'Deactivated';
 
 export interface PageResponse<T> {
   content: T[];

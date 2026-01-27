@@ -17,11 +17,13 @@ import { useNavigate } from 'react-router-dom';
 interface PasswordChangeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSubmit?: (data: any) => Promise<void>;
 }
 
 export function PasswordChangeModal({
   open,
   onOpenChange,
+  onSubmit,
 }: PasswordChangeModalProps) {
   const navigate = useNavigate();
   const [passwordForm, setPasswordForm] = useState({
@@ -75,11 +77,19 @@ export function PasswordChangeModal({
 
     setIsLoading(true);
     try {
-      await authService.changePassword({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-        newPasswordConfirm: passwordForm.confirmPassword,
-      });
+      if (onSubmit) {
+        await onSubmit({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          newPasswordConfirm: passwordForm.confirmPassword,
+        });
+      } else {
+        await authService.changePassword({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          newPasswordConfirm: passwordForm.confirmPassword,
+        });
+      }
       alert('비밀번호가 성공적으로 변경되었습니다. 다시 로그인해주세요.');
       onOpenChange(false);
       setPasswordForm({

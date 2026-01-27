@@ -23,12 +23,22 @@ import {
   ChevronRight,
   Loader2,
   Share2,
+  CheckCircle,
 } from 'lucide-react';
 import { Input } from '../../../components/ui/input';
 import { useQuery } from '@tanstack/react-query';
 import { authorService } from '../../../services/authorService';
 import { IPProposalDto, IPMatchingDto } from '../../../types/author';
 import { format } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '../../../components/ui/dialog';
+import { toast } from 'sonner';
 
 interface AuthorIPExpansionProps {
   defaultTab?: string;
@@ -40,6 +50,9 @@ export function AuthorIPExpansion({
   const { setBreadcrumbs, onNavigate } = useContext(AuthorBreadcrumbContext);
 
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [selectedProposal, setSelectedProposal] =
+    useState<IPProposalDto | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   useEffect(() => {
     const breadcrumbs: { label: string; onClick?: () => void }[] = [
@@ -62,32 +75,23 @@ export function AuthorIPExpansion({
     queryFn: authorService.getIPProposals,
   });
 
+  const proposalList = proposals || [];
+
   // Fetch Matching
   const { data: matchings, isLoading: isMatchingsLoading } = useQuery({
     queryKey: ['author', 'ip-matching'],
     queryFn: authorService.getIPMatching,
   });
 
-  const proposalList = (proposals as unknown as IPProposalDto[]) || [];
-  const matchingList = (matchings as unknown as IPMatchingDto[]) || [];
+  const matchingList = matchings || [];
+
+  const handleOpenDetail = (proposal: IPProposalDto) => {
+    setSelectedProposal(proposal);
+    setIsDetailOpen(true);
+  };
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Share2 className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">IP 확장</h1>
-            <p className="text-sm text-muted-foreground">
-              내 작품의 OSMU(One Source Multi Use) 제안서를 검토하고 담당자와
-              매칭합니다.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-[400px]">
           <TabsTrigger value="proposals">제안서 검토</TabsTrigger>
@@ -121,6 +125,7 @@ export function AuthorIPExpansion({
                   <Card
                     key={proposal.id}
                     className="hover:border-primary/50 transition-colors cursor-pointer group"
+                    onClick={() => handleOpenDetail(proposal)}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
@@ -149,12 +154,9 @@ export function AuthorIPExpansion({
                       <CardDescription>{proposal.sender}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-sm text-muted-foreground line-clamp-2 mb-4 min-h-[40px]">
+                      <div className="text-sm text-muted-foreground line-clamp-2 min-h-[40px]">
                         {proposal.content}
                       </div>
-                      <Button variant="ghost" className="w-full text-xs h-8">
-                        상세 보기 <ChevronRight className="ml-1 w-3 h-3" />
-                      </Button>
                     </CardContent>
                   </Card>
                 ))
@@ -241,6 +243,72 @@ export function AuthorIPExpansion({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Proposal Detail Modal */}
+      <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>제안서 상세 내용</DialogTitle>
+            <DialogDescription>
+              {selectedProposal?.sender}에서 보낸 제안서입니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-4 gap-4 items-center">
+              <span className="font-semibold text-sm">제목</span>
+              <div className="col-span-3 font-medium">
+                {selectedProposal?.title}
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-4 items-center">
+              <span className="font-semibold text-sm">보낸 사람</span>
+              <div className="col-span-3">{selectedProposal?.sender}</div>
+            </div>
+            <div className="grid grid-cols-4 gap-4 items-center">
+              <span className="font-semibold text-sm">받은 날짜</span>
+              <div className="col-span-3">
+                {selectedProposal?.receivedAt
+                  ? format(new Date(selectedProposal.receivedAt), 'yyyy.MM.dd')
+                  : '-'}
+              </div>
+            </div>
+            <div className="space-y-2 mt-2">
+              <span className="font-semibold text-sm">제안 내용</span>
+              <div className="p-4 bg-muted/50 rounded-lg text-sm leading-relaxed whitespace-pre-wrap h-[200px] overflow-y-auto">
+                {selectedProposal?.content}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md text-sm text-blue-700 dark:text-blue-300">
+              <CheckCircle className="w-4 h-4 text-blue-600" />
+              <span>
+                제안을 수락하면 자동으로 계약 단계로 넘어가며, 담당자가
+                배정됩니다.
+              </span>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast.info('추후 업데이트 예정입니다.');
+                setIsDetailOpen(false);
+              }}
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+            >
+              거절하기
+            </Button>
+            <Button
+              onClick={() => {
+                toast.info('추후 업데이트 예정입니다.');
+                setIsDetailOpen(false);
+              }}
+            >
+              수락하기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

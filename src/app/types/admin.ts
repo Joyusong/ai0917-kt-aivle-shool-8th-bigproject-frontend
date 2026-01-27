@@ -7,6 +7,7 @@ export interface UserListResponseDto {
   siteEmail?: string;
   role: UserRole;
   createdAt: string;
+  lastActivityAt?: string;
 }
 
 export interface UserCreateRequestDto {
@@ -26,6 +27,8 @@ export interface AccessSummaryResponseDto {
   adminCount: number;
   managerCount: number;
   authorCount: number;
+  userCount: number;
+  deactivatedCount: number;
 }
 
 export interface UserDetailResponseDto {

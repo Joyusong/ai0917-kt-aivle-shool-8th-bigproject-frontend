@@ -175,12 +175,15 @@ export function ManagerAuthorManagement() {
                 <TableHead>작품 수</TableHead>
                 <TableHead>가입일</TableHead>
                 <TableHead>상태</TableHead>
-                <TableHead>관리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {authorPage?.content?.map((author: Author) => (
-                <TableRow key={author.id}>
+                <TableRow
+                  key={author.id}
+                  className="cursor-pointer hover:bg-slate-50"
+                  onClick={() => setSelectedAuthorId(author.id)}
+                >
                   <TableCell className="font-medium">{author.name}</TableCell>
                   <TableCell>{author.email}</TableCell>
                   <TableCell>{author.workCount}</TableCell>
@@ -196,20 +199,11 @@ export function ManagerAuthorManagement() {
                       {author.status === 'ACTIVE' ? '활동중' : '휴면'}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSelectedAuthorId(author.id)}
-                    >
-                      상세보기
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
               {(!authorPage?.content || authorPage.content.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24">
+                  <TableCell colSpan={5} className="text-center h-24">
                     데이터가 없습니다.
                   </TableCell>
                 </TableRow>

@@ -17,7 +17,7 @@ import TermsPage from './pages/legal/TermsPage';
 import { authService } from './services/authService';
 import AILabPage from './pages/lab/AILabPage';
 
-type UserType = 'Manager' | 'Author' | 'Admin' | null;
+type UserType = 'Manager' | 'Author' | 'Admin' | 'Deactivated' | null;
 
 export default function App() {
   const [userType, setUserType] = useState<UserType>(() => {

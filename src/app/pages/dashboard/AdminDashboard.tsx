@@ -28,7 +28,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '../../services/adminService';
 import { authService } from '../../services/authService';
 import { format } from 'date-fns';
-import { MockDataGenerator } from '../../components/dev/MockDataGenerator';
 import { Logo } from '../../components/common/Logo';
 
 interface AdminDashboardProps {
@@ -265,7 +264,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
         </nav>
 
         {/* Profile Section */}
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="border-t border-sidebar-border">
           {/* Desktop: Dropdown style */}
           <div className="hidden md:block relative">
             <button
@@ -293,7 +292,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
+              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
@@ -307,7 +306,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
 
           {/* Mobile: Expanded style */}
           <div className="md:hidden space-y-2">
-            <div className="flex items-center gap-3 px-4 py-3 bg-sidebar-accent rounded-lg">
+            <div className="flex items-center gap-3 bg-sidebar-accent rounded-lg">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white dark:text-black text-sm font-semibold"
                 style={{ backgroundColor: 'var(--role-primary)' }}
@@ -489,7 +488,6 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
         open={showPasswordModal}
         onOpenChange={setShowPasswordModal}
       />
-      {import.meta.env.DEV && <MockDataGenerator />}
     </div>
   );
 }

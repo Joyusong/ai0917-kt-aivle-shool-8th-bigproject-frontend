@@ -27,7 +27,7 @@ import {
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { authService } from '../../services/authService';
@@ -62,6 +62,14 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   // Password Change State
   const [showPasswordModal, setShowPasswordModal] = useState(false);
 
+  const handlePasswordChangeSubmit = async (data: any) => {
+    if (!userData || !userData.userId) {
+      console.error('User ID is missing');
+      return;
+    }
+    await authService.changeAuthorPassword(userData.userId, data);
+  };
+
   // Fetch User Profile
   const { data: userData } = useQuery({
     queryKey: ['auth', 'me'],
@@ -74,13 +82,13 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const integrationId =
     userData && 'userId' in userData ? String(userData.userId) : '';
 
-  const handleMenuClick = (menu: string) => {
+  const handleMenuClick = useCallback((menu: string) => {
     setActiveMenu(menu);
     // Close sidebar on mobile when menu is clicked
     if (window.innerWidth < 768) {
       setSidebarOpen(false);
     }
-  };
+  }, []);
 
   const handleSubMenuClick = (menu: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -93,10 +101,13 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const [breadcrumbs, setBreadcrumbs] = useState<any[]>([]);
 
   // Context value
-  const breadcrumbContextValue = {
-    setBreadcrumbs,
-    onNavigate: handleMenuClick,
-  };
+  const breadcrumbContextValue = useMemo(
+    () => ({
+      setBreadcrumbs,
+      onNavigate: handleMenuClick,
+    }),
+    [handleMenuClick],
+  );
 
   return (
     <div className="flex h-screen bg-background" data-role="author">
@@ -303,13 +314,6 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
               <User className="w-4 h-4" />
               <span className="text-sm">마이페이지</span>
             </button>
-            <button
-              onClick={() => handleMenuClick('account-settings')}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sidebar-foreground hover:bg-sidebar-accent rounded-lg transition-colors"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="text-sm">설정</span>
-            </button>
             <div className="border-t border-sidebar-border my-2"></div>
             <button
               onClick={onLogout}
@@ -465,6 +469,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
       <PasswordChangeModal
         open={showPasswordModal}
         onOpenChange={setShowPasswordModal}
+        onSubmit={handlePasswordChangeSubmit}
       />
     </div>
   );

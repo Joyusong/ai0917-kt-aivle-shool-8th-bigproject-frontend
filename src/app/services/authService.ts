@@ -1,3 +1,4 @@
+import { id } from 'date-fns/locale';
 import apiClient from '../api/axios';
 import {
   AuthMeResponse,
@@ -61,8 +62,8 @@ export const authService = {
     return response.data;
   },
 
-  deleteAccount: async () => {
-    const response = await apiClient.delete('/api/v1/auth/me');
+  deactivateUser: async (data: { id: number }) => {
+    const response = await apiClient.post('/api/v1/auth/deactivated', data);
     return response.data;
   },
 
@@ -90,6 +91,14 @@ export const authService = {
 
   changePassword: async (data: any) => {
     const response = await apiClient.patch('/api/v1/auth/password', data);
+    return response.data;
+  },
+
+  changeAuthorPassword: async (userId: number, data: any) => {
+    const response = await apiClient.patch(
+      `/api/v1/author/${userId}/mypage/pwd`,
+      data,
+    );
     return response.data;
   },
 };

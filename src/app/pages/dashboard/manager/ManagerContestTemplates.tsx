@@ -144,14 +144,6 @@ export function ManagerContestTemplates() {
                 >
                   {template.status}
                 </Badge>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-slate-500 hover:text-purple-600"
-                >
-                  상세보기
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
               </div>
             </CardContent>
           </Card>

@@ -135,7 +135,7 @@ export interface ContestTemplateDto {
   organizer: string;
   category: string;
   prize: string;
-  dDay: string;
+  deadline: string;
   description: string;
   isAiSupported: boolean;
 }

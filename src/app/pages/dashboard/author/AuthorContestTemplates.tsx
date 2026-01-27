@@ -1,13 +1,19 @@
-import { Card, CardContent, CardFooter } from '../../../components/ui/card';
+import { useState, useContext, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import {
+  Trophy,
+  Loader2,
+  Search,
+  Star,
+  ArrowRight,
+  Download,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
 import { Button } from '../../../components/ui/button';
-import { Badge } from '../../../components/ui/badge';
-import { Search, Trophy, ArrowRight, Star, Loader2, Plus } from 'lucide-react';
 import { Input } from '../../../components/ui/input';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authorService } from '../../../services/authorService';
-import { ContestTemplateDto } from '../../../types/author';
-import { useContext, useEffect, useState } from 'react';
-import { AuthorBreadcrumbContext } from './AuthorBreadcrumbContext';
+import { Badge } from '../../../components/ui/badge';
+import { Card, CardContent, CardFooter } from '../../../components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -27,19 +33,12 @@ import {
   SelectValue,
 } from '../../../components/ui/select';
 
+import { authorService } from '../../../services/authorService';
+import { AuthorBreadcrumbContext } from './AuthorBreadcrumbContext';
+import { ContestTemplateDto } from '../../../types/author';
+
 export function AuthorContestTemplates() {
   const { setBreadcrumbs, onNavigate } = useContext(AuthorBreadcrumbContext);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const queryClient = useQueryClient();
-
-  const [formData, setFormData] = useState({
-    title: '',
-    organizer: '',
-    category: '',
-    prize: '300만원',
-    deadline: '',
-    description: '',
-  });
 
   useEffect(() => {
     setBreadcrumbs([
@@ -53,51 +52,18 @@ export function AuthorContestTemplates() {
     queryFn: authorService.getContestTemplates,
   });
 
-  const createMutation = useMutation({
-    mutationFn: authorService.createContestTemplate,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['author', 'contest-templates'],
-      });
-      setIsCreateModalOpen(false);
-      setFormData({
-        title: '',
-        organizer: '',
-        category: '',
-        prize: '300만원',
-        deadline: '',
-        description: '',
-      });
-    },
-  });
+  const templateList = templates || [];
 
-  const handleCreateSubmit = () => {
-    if (!formData.title || !formData.category) {
-      alert('필수 정보를 입력해주세요.');
-      return;
-    }
-    createMutation.mutate(formData);
+  const handleDownload = (templateTitle: string) => {
+    toast.success(`${templateTitle} 템플릿을 다운로드합니다.`);
+    // Mock download behavior
+    setTimeout(() => {
+      // In a real app, this would trigger a file download
+    }, 1000);
   };
-
-  const templateList = (templates as unknown as ContestTemplateDto[]) || [];
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Trophy className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">공모전 템플릿</h1>
-            <p className="text-sm text-muted-foreground">
-              진행 중인 공모전에 맞춰 작품을 준비할 수 있는 AI 템플릿을
-              제공합니다.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -145,9 +111,9 @@ export function AuthorContestTemplates() {
               >
                 <div className="h-32 bg-gradient-to-r from-purple-500 to-indigo-600 relative p-6 flex flex-col justify-between">
                   <Badge className="self-start bg-white/20 hover:bg-white/30 text-white border-none backdrop-blur-sm">
-                    {template.dDay}
+                    {template.deadline}
                   </Badge>
-                  <div className="text-white font-bold text-lg drop-shadow-md">
+                  <div className="text-white font-bold text-lg drop-shadow-md line-clamp-1">
                     {template.title}
                   </div>
                   <Trophy className="absolute right-4 bottom-4 text-white/20 w-16 h-16 rotate-12" />
@@ -176,15 +142,20 @@ export function AuthorContestTemplates() {
                         <span>AI 분석 템플릿 제공</span>
                       </div>
                     )}
-                    <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
-                      {template.description}
-                    </p>
+                    <Button className="w-full group" variant="default">
+                      템플릿 사용하기{' '}
+                      <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
                   </div>
                 </CardContent>
                 <CardFooter className="p-4 bg-muted/30 border-t">
-                  <Button className="w-full group" variant="default">
-                    템플릿 사용하기{' '}
-                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <Button
+                    className="w-full group"
+                    variant="outline"
+                    onClick={() => handleDownload(template.title)}
+                  >
+                    <Download className="mr-2 w-4 h-4" />
+                    다운로드
                   </Button>
                 </CardFooter>
               </Card>

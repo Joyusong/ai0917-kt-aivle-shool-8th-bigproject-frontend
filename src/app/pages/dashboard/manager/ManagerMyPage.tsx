@@ -1,4 +1,4 @@
-import { User, Mail, Shield, Calendar } from 'lucide-react';
+import { User, Mail, Shield, Calendar, UserX } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import {
   Card,
@@ -24,19 +24,22 @@ export function ManagerMyPage({
   const navigate = useNavigate();
 
   const handleDeleteAccount = async () => {
+    if (!userData?.userId) return;
     if (
       confirm(
-        '정말로 계정을 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없으며 모든 데이터가 삭제됩니다.',
+        '정말로 계정 탈퇴(비활성화)를 신청하시겠습니까?\n이 작업은 되돌릴 수 없으며, 탈퇴 후 7일의 유예기간이 적용됩니다.',
       )
     ) {
       try {
-        await authService.deleteAccount();
-        alert('계정이 탈퇴되었습니다.');
+        await authService.deactivateUser(userData.userId);
+        alert(
+          '계정이 비활성화(탈퇴) 처리되었습니다.\n7일 후 데이터가 영구 삭제됩니다.',
+        );
         await authService.logout();
         navigate('/');
       } catch (error) {
         console.error('Account deletion failed', error);
-        alert('계정 탈퇴에 실패했습니다. 다시 시도해주세요.');
+        alert('계정 탈퇴 처리에 실패했습니다. 다시 시도해주세요.');
       }
     }
   };
@@ -47,15 +50,6 @@ export function ManagerMyPage({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          마이페이지
-        </h2>
-        <p className="text-slate-500 dark:text-slate-400">
-          내 정보를 확인하고 계정을 관리합니다.
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>기본 정보</CardTitle>
@@ -114,7 +108,8 @@ export function ManagerMyPage({
           <div className="flex flex-col sm:flex-row gap-4">
             <Button onClick={onChangePassword}>비밀번호 변경</Button>
             <Button variant="destructive" onClick={handleDeleteAccount}>
-              계정 탈퇴
+              <UserX className="w-4 h-4 mr-2" />
+              회원 탈퇴 (비활성화)
             </Button>
           </div>
         </CardContent>

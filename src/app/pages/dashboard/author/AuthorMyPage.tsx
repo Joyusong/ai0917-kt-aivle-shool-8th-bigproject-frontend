@@ -6,7 +6,7 @@ import {
   Calendar,
   Phone,
   Lock,
-  Trash2,
+  UserX,
   BadgeCheck,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
@@ -30,6 +30,7 @@ import {
 } from '../../../components/ui/avatar';
 import { Badge } from '../../../components/ui/badge';
 import { Separator } from '../../../components/ui/separator';
+import { id } from 'date-fns/locale';
 
 interface AuthorMyPageProps {
   onChangePassword: () => void;
@@ -53,18 +54,19 @@ export function AuthorMyPage({
 
   const handleDeleteAccount = async () => {
     if (
+      authUserData &&
       confirm(
-        '정말로 계정 탈퇴를 신청하시겠습니까?\n이 작업은 되돌릴 수 없으며, 탈퇴 후 7일의 유예기간이 적용됩니다.',
+        '정말로 계정 탈퇴(비활성화)를 신청하시겠습니까?\n이 작업은 되돌릴 수 없으며, 탈퇴 후 7일의 유예기간이 적용됩니다.',
       )
     ) {
       try {
-        await authService.deleteAccount();
+        await authService.deactivateUser({ id: authUserData.userId! });
         alert('계정이 탈퇴되었습니다.');
         await authService.logout();
-        navigate('/');
+        navigate('/login');
       } catch (error) {
         console.error('Account deletion failed', error);
-        alert('계정 탈퇴에 실패했습니다. 다시 시도해주세요.');
+        alert('계정 탈퇴 처리에 실패했습니다. 다시 시도해주세요.');
       }
     }
   };
@@ -205,8 +207,8 @@ export function AuthorMyPage({
                   onClick={handleDeleteAccount}
                   className="flex-1 border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  계정 탈퇴
+                  <UserX className="w-4 h-4 mr-2" />
+                  회원 탈퇴
                 </Button>
               </div>
             </CardContent>

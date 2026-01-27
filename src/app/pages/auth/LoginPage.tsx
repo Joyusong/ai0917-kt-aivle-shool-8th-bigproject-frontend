@@ -28,8 +28,10 @@ import {
   DialogDescription,
 } from '../../components/ui/dialog';
 
+import { UserRole } from '../../types/common';
+
 interface LoginPageProps {
-  onLogin: (userType: 'Manager' | 'Author' | 'Admin') => void;
+  onLogin: (userType: UserRole) => void;
   onBack: () => void;
 }
 
@@ -52,6 +54,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
   });
   const [resetLoading, setResetLoading] = useState(false);
   const [showResetPwd, setShowResetPwd] = useState(false);
+  const [isDeactivatedModalOpen, setIsDeactivatedModalOpen] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -90,6 +93,10 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
           // 백엔드에 현재 쿠키를 기반으로 내 정보 조회
           const res = await authService.me();
           if (res.role) {
+            if (res.role === 'Deactivated') {
+              setIsDeactivatedModalOpen(true);
+              return;
+            }
             onLogin(res.role);
           }
         } catch (err) {
@@ -118,6 +125,10 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
       // 세션 확인 (쿠키가 잘 설정되었는지 확인)
       const user = await authService.me();
       if (user.role) {
+        if (user.role === 'Deactivated') {
+          setIsDeactivatedModalOpen(true);
+          return;
+        }
         onLogin(user.role);
       } else {
         // Role이 없는 경우 (예: 승인 대기 등)
@@ -129,7 +140,11 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
       }
     } catch (error: any) {
       const message = error.response?.data?.message || '로그인에 실패했습니다.';
-      alert(message);
+      if (message.includes('비활성화') || message.includes('Deactivated')) {
+        setIsDeactivatedModalOpen(true);
+      } else {
+        alert(message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -609,6 +624,33 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                 </Button>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Deactivated Account Modal */}
+      <Dialog
+        open={isDeactivatedModalOpen}
+        onOpenChange={setIsDeactivatedModalOpen}
+      >
+        <DialogContent className="sm:max-w-md bg-white dark:bg-card rounded-2xl border-0 shadow-2xl dark:shadow-primary/5">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-center pb-2 flex items-center justify-center gap-2 dark:text-foreground text-destructive">
+              <ShieldCheck className="w-6 h-6" />
+              계정 비활성화 알림
+            </DialogTitle>
+            <DialogDescription className="text-center text-sm text-muted-foreground pt-2">
+              비활성화된 계정입니다.
+              <br />
+              관리자에게 문의해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center p-4">
+            <Button
+              onClick={() => setIsDeactivatedModalOpen(false)}
+              className="w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+            >
+              닫기
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -132,7 +132,7 @@ let contestTemplates = generateList(10, (i) => ({
     '조아라',
   ]),
   prize: `${(i + 1) * 1000}만원`,
-  dDay: `D-${i * 3}`,
+  deadline: `2026-12-${31 - i}`,
   category: getRandomItem(GENRES),
   status: 'OPEN',
   description:
@@ -253,10 +253,10 @@ export const handlers = [
   // 3.2 Access
   http.get(`${BACKEND_URL}/api/v1/admin/access/summary`, () =>
     HttpResponse.json({
-      totalAdmins: 5,
-      totalManagers: 12,
-      totalAuthors: 1232,
-      pendingApprovals: 3,
+      adminCount: 5,
+      managerCount: 12,
+      authorCount: 1232,
+      deactivatedCount: 45, // Added mock data
     }),
   ),
   http.get(`${BACKEND_URL}/api/v1/admin/access/users`, ({ request }) => {
@@ -266,14 +266,27 @@ export const handlers = [
     const total = 120;
 
     return HttpResponse.json({
-      content: generateList(size, (i) => ({
-        id: page * size + i,
-        email: `user${page * size + i}@test.com`,
-        name: `User ${page * size + i}`,
-        role: getRandomItem(['Author', 'Manager', 'Admin']),
-        status: 'ACTIVE',
-        lastLoginAt: new Date().toISOString(),
-      })),
+      content: generateList(size, (i) => {
+        const role = getRandomItem([
+          'Author',
+          'Manager',
+          'Admin',
+          'DEACTIVATED',
+        ]);
+        return {
+          id: page * size + i,
+          email: `user${page * size + i}@test.com`,
+          name: `User ${page * size + i}`,
+          role: role,
+          status: role === 'DEACTIVATED' ? 'INACTIVE' : 'ACTIVE',
+          lastLoginAt: new Date().toISOString(),
+          lastAt:
+            role === 'DEACTIVATED'
+              ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days later
+              : undefined,
+          createdAt: new Date().toISOString(),
+        };
+      }),
       page,
       size,
       totalElements: total,
@@ -626,9 +639,12 @@ export const handlers = [
       generateList(8, (i) => ({
         id: i,
         title: `웹툰화 제안 - ${getRandomItem(TITLES)}`,
-        status: getRandomItem(['PENDING', 'APPROVED', 'REJECTED']),
+        status: i < 3 ? 'ACCEPTED' : i < 5 ? 'REJECTED' : 'PENDING',
+        statusDescription: i < 3 ? '계약 완료' : i < 5 ? '거절됨' : '검토 중',
         sender: getRandomItem(['네이버웹툰', '카카오페이지', '리디북스']),
-        receivedAt: new Date().toISOString(),
+        content: `안녕하세요, ${getRandomItem(TITLES)} 작품을 웹툰으로 제작하고 싶습니다. \n\n상세 조건은 다음과 같습니다.\n1. 계약금: 1억원\n2. 러닝개런티: 5%\n3. 제작사: 스튜디오A`,
+        receivedAt: new Date(Date.now() - i * 86400000).toISOString(),
+        acceptedAt: i < 3 ? new Date().toISOString() : undefined,
       })),
     ),
   ),
@@ -638,10 +654,33 @@ export const handlers = [
         id: i,
         managerName: `김매니저${i}`,
         department: 'IP사업팀',
+        role: '담당 매니저',
         tags: ['웹툰', '영화', '드라마'],
-        status: 'MATCHED',
+        matchedAt: new Date().toISOString(),
       })),
     ),
+  ),
+
+  http.post(
+    `${BACKEND_URL}/api/v1/author/ip-expansion/proposals/:id/accept`,
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+        id: params.id,
+        status: 'ACCEPTED',
+      });
+    },
+  ),
+
+  http.post(
+    `${BACKEND_URL}/api/v1/author/ip-expansion/proposals/:id/reject`,
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+        id: params.id,
+        status: 'REJECTED',
+      });
+    },
   ),
 
   // 5.6 Contest Templates
@@ -659,7 +698,7 @@ export const handlers = [
         organizer: body.organizer || 'User',
         prize: body.prize,
         category: body.category,
-        dDay: 'D-NEW',
+        deadline: `2026-12-${31}`, // Default deadline
         status: 'OPEN',
         description: body.description,
         isAiSupported: true,
