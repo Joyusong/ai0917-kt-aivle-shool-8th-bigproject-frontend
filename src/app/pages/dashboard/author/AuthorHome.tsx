@@ -22,7 +22,6 @@ import {
 } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Badge } from '../../../components/ui/badge';
-import { Button } from '../../../components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { authorService } from '../../../services/authorService';
 import { useNavigate } from 'react-router-dom';
