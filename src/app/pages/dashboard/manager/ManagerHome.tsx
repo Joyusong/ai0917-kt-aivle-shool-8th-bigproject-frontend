@@ -11,6 +11,7 @@ import {
 import { Badge } from "../../../components/ui/badge";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale/ko";
+import { adminService } from "../../../services/adminService";
 import {
   Dialog,
   DialogContent,
@@ -70,12 +71,8 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
 
   const fetchDashboardNotices = useCallback(async () => {
     try {
-      const res = await authAxios.get(
-        `/api/v1/admin/notice`, {
-          params: { page: 0, size: 5 }
-        }
-      );
-      const list = res.data.content || [];
+      const data = await adminService.getNotices(0, 5);
+      const list = data?.content || [];
       setNotices(
         list.map((n: any) => ({
           id: n.id,
@@ -83,13 +80,13 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
           createdAt: n.createdAt,
           content: n.content,
           writer: n.writer,
-          isNew: false, // Admin API might not have this, or we can calculate based on date
+          isNew: false,
         }))
       );
     } catch {
       setNotices([]);
     }
-  }, [authAxios]);
+  }, []);
 
   const fetchDashboardContests = useCallback(async () => {
     try {

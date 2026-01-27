@@ -82,7 +82,7 @@ export function ManagerNotice() {
   const fetchNotices = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get<PageResponse>('/api/v1/admin/notice', {
+      const res = await apiClient.get<PageResponse>('/api/v1/notice', {
         params: { keyword, page, size: 10 },
       });
       setNotices(res.data.content || []);
@@ -123,14 +123,14 @@ export function ManagerNotice() {
       setLoading(true);
       if (modalMode === 'edit' && selectedNotice) {
         await apiClient.patch(
-          `/api/v1/admin/notice/${selectedNotice.id}`,
+          `/api/v1/notice/${selectedNotice.id}`,
           formData,
           {
             headers: { 'Content-Type': 'multipart/form-data' },
           },
         );
       } else {
-        await apiClient.post('/api/v1/admin/notice', formData, {
+        await apiClient.post('/api/v1/notice', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
@@ -146,7 +146,7 @@ export function ManagerNotice() {
 
   const handleDelete = (id: number) => {
     if (!confirm('정말 삭제하시겠습니까?')) return;
-    apiClient.delete(`/api/v1/admin/notice/${id}`).then(() => fetchNotices());
+    apiClient.delete(`/api/v1/notice/${id}`).then(() => fetchNotices());
   };
 
   const closeModal = () => {

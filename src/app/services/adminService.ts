@@ -76,17 +76,17 @@ export const adminService = {
   getNotices: async (page: number, size: number, keyword?: string) => {
     const params: any = { page, size };
     if (keyword) params.keyword = keyword;
-    const response = await apiClient.get('/api/v1/admin/notice', { params });
+    const response = await apiClient.get('/api/v1/notice', { params });
     return response.data;
   },
 
   getNoticeDetail: async (id: number) => {
-    const response = await apiClient.get(`/api/v1/admin/notice/${id}`);
+    const response = await apiClient.get(`/api/v1/notice/${id}`);
     return response.data;
   },
 
   createNotice: async (formData: FormData) => {
-    const response = await apiClient.post('/api/v1/admin/notice', formData, {
+    const response = await apiClient.post('/api/v1/notice', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -96,7 +96,7 @@ export const adminService = {
 
   updateNotice: async (id: number, formData: FormData) => {
     const response = await apiClient.patch(
-      `/api/v1/admin/notice/${id}`,
+      `/api/v1/notice/${id}`,
       formData,
       {
         headers: {
@@ -108,16 +108,16 @@ export const adminService = {
   },
 
   deleteNotice: async (id: number) => {
-    await apiClient.delete(`/api/v1/admin/notice/${id}`);
+    await apiClient.delete(`/api/v1/notice/${id}`);
   },
 
   deleteNoticeFile: async (id: number) => {
-    await apiClient.delete(`/api/v1/admin/notice/${id}/file`);
+    await apiClient.delete(`/api/v1/notice/${id}/file`);
   },
 
   downloadNoticeFile: async (id: number) => {
     const response = await apiClient.get(
-      `/api/v1/admin/notice/${id}/download`,
+      `/api/v1/notice/${id}/download`,
       {
         responseType: 'blob',
       },

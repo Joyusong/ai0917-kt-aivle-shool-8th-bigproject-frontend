@@ -295,22 +295,33 @@ export const handlers = [
   }),
 
   // 3.3 Notice
-  http.get(`${BACKEND_URL}/api/v1/admin/notice`, ({ request }) => {
+  http.get(`${BACKEND_URL}/api/v1/notice`, ({ request }) => {
     const url = new URL(request.url);
     const page = Number(url.searchParams.get('page') || 0);
     const size = Number(url.searchParams.get('size') || 10);
-
+    const keyword = url.searchParams.get('keyword') || '';
+ 
+    const content = generateList(size, (i) => {
+      const id = page * size + i;
+      const titleBase = `[공지] 시스템 점검 안내 ${id}`;
+      const title =
+        keyword && !titleBase.includes(keyword) ? `${titleBase} (${keyword})` : titleBase;
+      return {
+        id,
+        title,
+        content:
+          '시스템 점검이 예정되어 있습니다. 점검 시간 동안 서비스 이용이 제한될 수 있습니다.',
+        originalFilename: i % 3 === 0 ? `notice_${id}.pdf` : null,
+        writer: 'Admin',
+        createdAt: new Date(Date.now() - id * 86400000).toISOString(),
+      };
+    });
+ 
     return HttpResponse.json({
-      content: generateList(size, (i) => ({
-        id: page * size + i,
-        title: `[공지] 시스템 점검 안내 ${page * size + i}`,
-        author: 'Admin',
-        createdAt: new Date().toISOString(),
-        viewCount: Math.floor(Math.random() * 500),
-        status: 'POSTED',
-      })),
+      content,
       totalElements: 50,
       totalPages: 5,
+      number: page,
     });
   }),
 

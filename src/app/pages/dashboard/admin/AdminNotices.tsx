@@ -194,18 +194,31 @@ export function AdminNotices({ readOnly = false }: AdminNoticesProps) {
     }
   };
 
-  const openView = (notice: Notice) => {
-    setSelectedNotice(notice);
+  const openView = async (notice: Notice) => {
+    try {
+      const detail = await adminService.getNoticeDetail(notice.id);
+      setSelectedNotice(detail);
+    } catch {
+      setSelectedNotice(notice);
+    }
     setModalMode('view');
   };
 
-  const openEdit = (e: React.MouseEvent, notice: Notice) => {
-    e.stopPropagation(); // 제목 클릭 이벤트 방지
-    setSelectedNotice(notice);
-    setTitle(notice.title);
-    setContent(notice.content);
-    setWriter(notice.writer);
-    setExistingFileName(notice.originalFilename);
+  const openEdit = async (e: React.MouseEvent, notice: Notice) => {
+    e.stopPropagation();
+    let detail: Notice | null = null;
+    try {
+      detail = await adminService.getNoticeDetail(notice.id);
+    } catch {
+      detail = notice;
+    }
+    if (detail) {
+      setSelectedNotice(detail);
+      setTitle(detail.title);
+      setContent(detail.content);
+      setWriter(detail.writer);
+      setExistingFileName(detail.originalFilename);
+    }
     setModalMode('edit');
   };
 
