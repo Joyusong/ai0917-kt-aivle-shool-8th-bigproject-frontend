@@ -56,7 +56,7 @@ export const authService = {
 
   completeSignup: async (data: SignupCompleteRequest) => {
     const response = await apiClient.post<SignupCompleteResponse>(
-      '/api/v1/signup/complete',
+      '/api/v1/signup/naver/complete',
       data,
     );
     return response.data;
@@ -90,7 +90,10 @@ export const authService = {
   },
 
   changePassword: async (data: any) => {
-    const response = await apiClient.patch('/api/v1/auth/password', data);
+    const response = await apiClient.patch(
+      '/api/v1/signup/password/reset',
+      data,
+    );
     return response.data;
   },
 };
