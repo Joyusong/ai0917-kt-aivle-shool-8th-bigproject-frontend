@@ -6,6 +6,12 @@ import {
   ResizablePanelGroup,
 } from '../../../components/ui/resizable';
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '../../../components/ui/tabs';
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -56,6 +62,7 @@ import {
   Package,
   Users2,
   Check,
+  ClipboardCheck,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authorService } from '../../../services/authorService';
@@ -75,7 +82,14 @@ import { toast } from 'sonner';
 import { Checkbox } from '../../../components/ui/checkbox';
 import { ScrollArea } from '../../../components/ui/scroll-area';
 import { Badge } from '../../../components/ui/badge';
-import { Loader2, Plus, Trash2, Edit2 } from 'lucide-react';
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  Edit2,
+  PlusCircle,
+  RefreshCw,
+} from 'lucide-react';
 
 interface AuthorWorksProps {
   integrationId: string;
@@ -666,7 +680,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       return;
     }
 
-    if (confirm('연재하시겠습니까?')) {
+    if (confirm('AI 분석을 요청하시겠습니까?')) {
       setIsPublishPasswordOpen(true);
     }
   };
@@ -755,29 +769,6 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       '설정집 변경사항을 분석 중입니다... (시간이 소요될 수 있습니다)',
     );
     analysisMutation.mutate();
-  };
-
-  // Helper to handle diff changes in final review
-  const handleDiffChange = (
-    id: string,
-    field: keyof SettingBookDiffDto,
-    value: any,
-  ) => {
-    if (!settingBookDiff) return;
-    setSettingBookDiff({
-      ...settingBookDiff,
-      after: settingBookDiff.after.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item,
-      ),
-    });
-  };
-
-  const handleDiffDelete = (id: string) => {
-    if (!settingBookDiff) return;
-    setSettingBookDiff({
-      ...settingBookDiff,
-      after: settingBookDiff.after.filter((item) => item.id !== id),
-    });
   };
 
   // Update Work Mutation
@@ -907,11 +898,11 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                     ) : (
                       <Button
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700"
+                        className="bg-blue-600 hover:bg-blue-700"
                         onClick={handlePublishClick}
                       >
-                        <Send className="w-4 h-4 mr-2" />
-                        연재
+                        <ClipboardCheck className="w-4 h-4 mr-2" />
+                        분석
                       </Button>
                     )}
                   </>
@@ -1096,9 +1087,9 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       >
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>연재를 위한 보안 확인</DialogTitle>
+            <DialogTitle>AI 분석을 위한 보안 확인</DialogTitle>
             <DialogDescription>
-              연재를 진행하려면 비밀번호를 입력해주세요.
+              AI 분석을 진행하려면 비밀번호를 입력해주세요.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -1155,7 +1146,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
               </div>
             </DialogTitle>
             <DialogDescription>
-              AI가 추출한 키워드 중 설정집에 반영할 항목을 선택해주세요.
+              AI가 추출한 키워드 중 설정집으로 생성할 항목을 선택해주세요.
             </DialogDescription>
           </DialogHeader>
 
@@ -1251,7 +1242,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                   htmlFor="confirm-publish"
                   className="text-sm text-muted-foreground cursor-pointer"
                 >
-                  위 내용으로 설정집 분석을 진행합니다.
+                  위 내용으로 AI 분석을 진행합니다.
                 </label>
               </div>
               <div className="flex gap-2">
@@ -1332,428 +1323,233 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
 
       {/* Final Review Modal */}
       <Dialog open={isFinalReviewOpen} onOpenChange={setIsFinalReviewOpen}>
-        <DialogContent className="sm:max-w-5xl max-h-[85vh] flex flex-col p-0 gap-0 rounded-xl border shadow-2xl">
+        <DialogContent className="sm:max-w-5xl max-h-[85vh] flex flex-col p-0 gap-0 rounded-xl border shadow-2xl overflow-hidden">
           <DialogHeader className="p-6 pb-4 shrink-0 border-b bg-background z-10">
             <DialogTitle>설정집 변경 사항 확인 (최종 검수)</DialogTitle>
             <DialogDescription>
-              AI가 생성한 설정집 변경 사항을 확인하세요. 카테고리별로 상세
-              내용을 검토하고 수정할 수 있습니다.
+              AI가 생성한 설정집 변경 사항을 확인하세요. 충돌 항목은 반드시
+              검토가 필요합니다.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Category Tabs */}
-          <div className="px-6 py-4 shrink-0 bg-background border-b z-10">
-            <div className="flex gap-2 p-1 bg-muted/50 rounded-lg overflow-x-auto w-max">
-              {categories.map((cat) => (
-                <Button
-                  key={cat.id}
-                  variant={activeDiffCategory === cat.id ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setActiveDiffCategory(cat.id)}
-                  className={cn(
-                    'flex items-center gap-2 px-4',
-                    activeDiffCategory === cat.id && 'shadow-sm',
-                  )}
+          <Tabs
+            defaultValue="충돌"
+            className="flex-1 flex flex-col overflow-hidden"
+          >
+            <div className="px-6 py-4 shrink-0 bg-background border-b z-10">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger
+                  value="충돌"
+                  className="data-[state=active]:text-red-600 data-[state=active]:bg-red-50"
                 >
-                  <cat.icon className="w-4 h-4" />
-                  {cat.label}
-                </Button>
-              ))}
+                  충돌 (
+                  {Object.values(settingBookDiff?.['충돌'] || {}).flat().length}
+                  )
+                </TabsTrigger>
+                <TabsTrigger value="설정 결합">
+                  설정 결합 (
+                  {
+                    Object.values(settingBookDiff?.['설정 결합'] || {}).flat()
+                      .length
+                  }
+                  )
+                </TabsTrigger>
+                <TabsTrigger value="신규 업로드">
+                  신규 업로드 (
+                  {
+                    Object.values(settingBookDiff?.['신규 업로드'] || {}).flat()
+                      .length
+                  }
+                  )
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </div>
 
-          {/* Unified Scroll Container (Grid Layout) */}
-          <div className="flex-1 overflow-y-auto p-8 scroll-auto bg-muted/5">
-            <div className="max-w-[1800px] mx-auto space-y-8">
-              {/* Column Headers */}
-              <div className="grid grid-cols-2 gap-12 mb-6 px-1">
-                <h4 className="font-bold text-lg flex items-center gap-3 text-muted-foreground">
-                  <span className="w-3 h-3 rounded-full bg-muted-foreground/30" />
-                  이전 설정집
-                </h4>
-                <h4 className="font-bold text-lg flex items-center gap-3 text-foreground">
-                  <span className="w-3 h-3 rounded-full bg-primary" />
-                  업데이트된 설정집
-                </h4>
-              </div>
+            <div className="flex-1 overflow-y-auto bg-muted/5 p-6">
+              {['충돌', '설정 결합', '신규 업로드'].map((tabKey) => {
+                const categoryMap =
+                  settingBookDiff?.[
+                    tabKey as keyof PublishAnalysisResponseDto
+                  ] || {};
+                const hasItems = Object.values(categoryMap).some(
+                  (items) => items.length > 0,
+                );
 
-              {/* Rows */}
-              {settingBookDiff?.after
-                .filter((item) => item.category === activeDiffCategory)
-                .map((afterItem) => {
-                  const beforeItem = settingBookDiff.before.find(
-                    (b) => b.id === afterItem.id,
-                  );
-                  return (
-                    <div
-                      key={afterItem.id}
-                      className="grid grid-cols-2 gap-12 items-stretch group"
-                    >
-                      {/* Left: Before (Read-only) */}
-                      <div>
-                        {beforeItem ? (
-                          <div className="border bg-card/50 rounded-xl p-6 h-full opacity-60 hover:opacity-100 transition-opacity">
-                            <div className="flex items-start justify-between mb-4">
-                              <h5 className="font-bold text-lg text-muted-foreground">
-                                {beforeItem.name || beforeItem.title}
-                              </h5>
-                            </div>
-
-                            {/* Specific Fields Display (Read-only) */}
-                            {beforeItem.category === 'characters' && (
-                              <div className="flex flex-wrap gap-2 mb-4">
-                                {beforeItem.role && (
-                                  <Badge variant="secondary" className="px-2">
-                                    {beforeItem.role}
-                                  </Badge>
-                                )}
-                                {beforeItem.age && (
-                                  <Badge variant="outline" className="px-2">
-                                    {beforeItem.age}
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                            {beforeItem.category === 'places' &&
-                              beforeItem.location && (
-                                <div className="mb-4 text-sm text-muted-foreground flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" />
-                                  {beforeItem.location}
-                                </div>
-                              )}
-                            {beforeItem.category === 'items' &&
-                              beforeItem.type && (
-                                <div className="mb-4">
-                                  <Badge variant="outline">
-                                    {beforeItem.type}
-                                  </Badge>
-                                </div>
-                              )}
-                            {beforeItem.category === 'groups' &&
-                              beforeItem.members &&
-                              beforeItem.members.length > 0 && (
-                                <div className="mb-4 flex flex-wrap gap-1">
-                                  {beforeItem.members.map((m, i) => (
-                                    <Badge
-                                      key={i}
-                                      variant="secondary"
-                                      className="text-xs"
-                                    >
-                                      {m}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words leading-relaxed">
-                              {beforeItem.description}
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="h-full border-2 border-dashed border-muted rounded-xl flex flex-col items-center justify-center text-muted-foreground bg-muted/5 min-h-[200px]">
-                            <Plus className="w-8 h-8 mb-2 opacity-20" />
-                            <span className="text-sm font-medium opacity-50">
-                              신규 추가 항목
-                            </span>
-                          </div>
-                        )}
+                return (
+                  <TabsContent
+                    key={tabKey}
+                    value={tabKey}
+                    className="mt-0 space-y-8"
+                  >
+                    {!hasItems ? (
+                      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-50">
+                        <BookOpen className="w-16 h-16 mb-4 stroke-1" />
+                        <p className="text-lg">해당 항목이 없습니다.</p>
                       </div>
+                    ) : (
+                      Object.entries(categoryMap).map(([category, items]) => {
+                        if (items.length === 0) return null;
+                        return (
+                          <div key={category} className="space-y-4">
+                            <h3 className="text-lg font-semibold flex items-center gap-2 text-foreground/80">
+                              <span className="w-1 h-6 bg-primary rounded-full"></span>
+                              {category}
+                              <span className="text-sm font-normal text-muted-foreground">
+                                ({items.length})
+                              </span>
+                            </h3>
+                            <div className="grid grid-cols-1 gap-4">
+                              {items.map((item, idx) => {
+                                const [name, description] = item;
+                                return (
+                                  <div
+                                    key={`${category}-${idx}`}
+                                    className="border rounded-xl p-5 bg-card shadow-sm hover:shadow-md transition-all"
+                                  >
+                                    <div className="flex flex-col gap-3">
+                                      <div className="flex items-center justify-between">
+                                        <h4 className="font-bold text-lg text-primary">
+                                          {name}
+                                        </h4>
+                                        {tabKey === '충돌' && (
+                                          <div className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">
+                                            CONFLICT
+                                          </div>
+                                        )}
+                                        {tabKey === '설정 결합' && (
+                                          <div className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded">
+                                            UPDATED
+                                          </div>
+                                        )}
+                                        {tabKey === '신규 업로드' && (
+                                          <div className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">
+                                            NEW
+                                          </div>
+                                        )}
+                                      </div>
 
-                      {/* Right: After (Editable) */}
-                      <div>
-                        <div
-                          className={cn(
-                            'border rounded-xl p-6 h-full relative group transition-all bg-card shadow-sm hover:shadow-md',
-                            afterItem.status === 'NEW' &&
-                              'border-green-500/50 bg-green-500/5',
-                            afterItem.status === 'MODIFIED' &&
-                              'border-orange-500/50 bg-orange-500/5',
-                            afterItem.status === 'DELETED' &&
-                              'border-red-500/50 bg-red-500/5 opacity-70',
-                          )}
-                        >
-                          {/* Badge at Top-Left */}
-                          <div className="absolute top-4 left-4 flex gap-2 z-10">
-                            {afterItem.status !== 'UNCHANGED' && (
-                              <Badge
-                                variant={
-                                  afterItem.status === 'NEW'
-                                    ? 'default'
-                                    : afterItem.status === 'MODIFIED'
-                                      ? 'secondary'
-                                      : 'destructive'
-                                }
-                                className={cn(
-                                  'text-[10px] px-2 py-0.5 font-bold shadow-none',
-                                  afterItem.status === 'NEW' && 'bg-green-600',
-                                  afterItem.status === 'MODIFIED' &&
-                                    'bg-orange-500 text-white',
-                                )}
-                              >
-                                {afterItem.status}
-                              </Badge>
-                            )}
-                          </div>
-
-                          {/* Buttons at Top-Right */}
-                          <div className="absolute top-4 right-4 flex gap-2 z-10">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => toggleEditItem(afterItem.id)}
-                            >
-                              {editingItems.has(afterItem.id) ? (
-                                <Check className="w-4 h-4 text-green-600" />
-                              ) : (
-                                <Edit2 className="w-4 h-4 text-muted-foreground hover:text-primary" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleDiffDelete(afterItem.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                            </Button>
-                          </div>
-
-                          <div className="space-y-4 pt-4 mt-2">
-                            <div>
-                              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block uppercase tracking-wider">
-                                {afterItem.category === 'worldviews' ||
-                                afterItem.category === 'plots'
-                                  ? '제목'
-                                  : '이름'}
-                              </Label>
-                              <Input
-                                value={afterItem.name}
-                                readOnly={!editingItems.has(afterItem.id)}
-                                onChange={(e) =>
-                                  handleDiffChange(
-                                    afterItem.id,
-                                    'name',
-                                    e.target.value,
-                                  )
-                                }
-                                className={cn(
-                                  'font-bold text-lg px-2 -mx-2 h-auto py-1 transition-colors',
-                                  editingItems.has(afterItem.id)
-                                    ? 'bg-background border-input'
-                                    : 'bg-transparent border-transparent hover:border-transparent cursor-default',
-                                )}
-                              />
-                            </div>
-
-                            {/* Specific Fields Inputs */}
-                            {afterItem.category === 'characters' && (
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <Label className="text-xs text-muted-foreground mb-1.5 block">
-                                    역할
-                                  </Label>
-                                  <Input
-                                    value={afterItem.role || ''}
-                                    readOnly={!editingItems.has(afterItem.id)}
-                                    onChange={(e) =>
-                                      handleDiffChange(
-                                        afterItem.id,
-                                        'role',
-                                        e.target.value,
-                                      )
-                                    }
-                                    className={cn(
-                                      'px-2 -mx-2 transition-colors',
-                                      editingItems.has(afterItem.id)
-                                        ? 'bg-background border-input'
-                                        : 'bg-transparent border-transparent hover:border-transparent cursor-default',
-                                    )}
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs text-muted-foreground mb-1.5 block">
-                                    나이
-                                  </Label>
-                                  <Input
-                                    value={afterItem.age || ''}
-                                    readOnly={!editingItems.has(afterItem.id)}
-                                    onChange={(e) =>
-                                      handleDiffChange(
-                                        afterItem.id,
-                                        'age',
-                                        e.target.value,
-                                      )
-                                    }
-                                    className={cn(
-                                      'px-2 -mx-2 transition-colors',
-                                      editingItems.has(afterItem.id)
-                                        ? 'bg-background border-input'
-                                        : 'bg-transparent border-transparent hover:border-transparent cursor-default',
-                                    )}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                            {afterItem.category === 'places' && (
-                              <div>
-                                <Label className="text-xs text-muted-foreground mb-1.5 block">
-                                  위치
-                                </Label>
-                                <Input
-                                  value={afterItem.location || ''}
-                                  readOnly={!editingItems.has(afterItem.id)}
-                                  onChange={(e) =>
-                                    handleDiffChange(
-                                      afterItem.id,
-                                      'location',
-                                      e.target.value,
-                                    )
-                                  }
-                                  className={cn(
-                                    'px-2 -mx-2 transition-colors',
-                                    editingItems.has(afterItem.id)
-                                      ? 'bg-background border-input'
-                                      : 'bg-transparent border-transparent hover:border-transparent cursor-default',
-                                  )}
-                                />
-                              </div>
-                            )}
-                            {afterItem.category === 'items' && (
-                              <div>
-                                <Label className="text-xs text-muted-foreground mb-1.5 block">
-                                  종류
-                                </Label>
-                                <Input
-                                  value={afterItem.type || ''}
-                                  readOnly={!editingItems.has(afterItem.id)}
-                                  onChange={(e) =>
-                                    handleDiffChange(
-                                      afterItem.id,
-                                      'type',
-                                      e.target.value,
-                                    )
-                                  }
-                                  className={cn(
-                                    'px-2 -mx-2 transition-colors',
-                                    editingItems.has(afterItem.id)
-                                      ? 'bg-background border-input'
-                                      : 'bg-transparent border-transparent hover:border-transparent cursor-default',
-                                  )}
-                                />
-                              </div>
-                            )}
-                            {afterItem.category === 'groups' && (
-                              <div>
-                                <Label className="text-xs text-muted-foreground mb-1.5 block">
-                                  구성원 (쉼표로 구분)
-                                </Label>
-                                <Input
-                                  value={afterItem.members?.join(', ') || ''}
-                                  readOnly={!editingItems.has(afterItem.id)}
-                                  onChange={(e) =>
-                                    handleDiffChange(
-                                      afterItem.id,
-                                      'members',
-                                      e.target.value
-                                        .split(',')
-                                        .map((s) => s.trim()),
-                                    )
-                                  }
-                                  className={cn(
-                                    'px-2 -mx-2 transition-colors',
-                                    editingItems.has(afterItem.id)
-                                      ? 'bg-background border-input'
-                                      : 'bg-transparent border-transparent hover:border-transparent cursor-default',
-                                  )}
-                                />
-                              </div>
-                            )}
-
-                            <div>
-                              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block uppercase tracking-wider">
-                                설명
-                              </Label>
-                              <Textarea
-                                value={afterItem.description}
-                                readOnly={!editingItems.has(afterItem.id)}
-                                onChange={(e) =>
-                                  handleDiffChange(
-                                    afterItem.id,
-                                    'description',
-                                    e.target.value,
-                                  )
-                                }
-                                className={cn(
-                                  'min-h-[120px] resize-none leading-relaxed px-2 -mx-2 transition-colors',
-                                  editingItems.has(afterItem.id)
-                                    ? 'bg-background border-input'
-                                    : 'bg-transparent border-transparent hover:border-transparent cursor-default resize-none focus-visible:ring-0',
-                                )}
-                              />
+                                      <div className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg leading-relaxed whitespace-pre-wrap">
+                                        {description}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-
-              {/* Empty State */}
-              {!settingBookDiff?.after.filter(
-                (item) => item.category === activeDiffCategory,
-              ).length && (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-50">
-                  <BookOpen className="w-16 h-16 mb-4 stroke-1" />
-                  <p className="text-lg">변경 사항이 없습니다.</p>
-                </div>
-              )}
+                        );
+                      })
+                    )}
+                  </TabsContent>
+                );
+              })}
             </div>
-          </div>
+          </Tabs>
 
           <DialogFooter className="flex-col sm:flex-col gap-4 border-t pt-4 px-6 pb-6 bg-background z-10">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="confirm-final-review"
-                  checked={isFinalReviewConfirmed}
-                  onCheckedChange={(checked) =>
-                    setIsFinalReviewConfirmed(checked === true)
-                  }
-                />
-                <label
-                  htmlFor="confirm-final-review"
-                  className="text-sm text-muted-foreground cursor-pointer"
-                >
-                  <span className="text-yellow-600 font-bold mr-1">주의:</span>
-                  변경 사항을 확인하였으며, 설정집 업데이트 및 연재 진행에
-                  동의합니다.
-                </label>
+            {Object.values(settingBookDiff?.['충돌'] || {}).flat().length >
+            0 ? (
+              // Conflict State
+              <div className="flex items-center justify-between w-full p-4 bg-red-50 border border-red-100 rounded-lg">
+                <div className="flex items-center gap-3 text-red-700">
+                  <AlertTriangle className="w-5 h-5 shrink-0" />
+                  <div className="flex flex-col">
+                    <span className="font-bold">
+                      충돌 사항이 발견되었습니다.
+                    </span>
+                    <span className="text-xs opacity-90">
+                      충돌 내용을 확인하고 원문을 수정한 뒤 다시 시도하거나,
+                      무시하고 진행할 수 있습니다.
+                    </span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsFinalReviewOpen(false);
+                      if (selectedEpisode) {
+                        setProcessingStatus((prev) => {
+                          const next = { ...prev };
+                          delete next[selectedEpisode.id];
+                          return next;
+                        });
+                      }
+                    }}
+                  >
+                    닫기
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsFinalReviewOpen(false)}
-                >
-                  취소
-                </Button>
-                <Button
-                  onClick={() => confirmPublishMutation.mutate()}
-                  disabled={
-                    confirmPublishMutation.isPending || !isFinalReviewConfirmed
-                  }
-                >
-                  {confirmPublishMutation.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      생성 중...
-                    </>
-                  ) : (
-                    '생성'
-                  )}
-                </Button>
+            ) : (
+              // Non-Conflict State
+              <div className="flex flex-col gap-4 w-full">
+                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700 flex items-start gap-2">
+                  <div className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5">
+                    TIP
+                  </div>
+                  <p>
+                    AI 분석 결과가 완벽하지 않을 수 있습니다.
+                    <span className="font-bold mx-1">설정 결합</span> 및
+                    <span className="font-bold mx-1">신규 업로드</span>
+                    내용을 꼼꼼히 확인해 주세요.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between w-full mt-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="confirm-final-review"
+                      checked={isFinalReviewConfirmed}
+                      onCheckedChange={(checked) =>
+                        setIsFinalReviewConfirmed(checked === true)
+                      }
+                    />
+                    <label
+                      htmlFor="confirm-final-review"
+                      className="text-sm text-muted-foreground cursor-pointer select-none"
+                    >
+                      <span className="text-primary font-bold mr-1">확인:</span>
+                      위 변경 사항을 모두 확인하였으며, 설정집 업데이트에
+                      동의합니다.
+                    </label>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setIsFinalReviewOpen(false);
+                        if (selectedEpisode) {
+                          setProcessingStatus((prev) => {
+                            const next = { ...prev };
+                            delete next[selectedEpisode.id];
+                            return next;
+                          });
+                        }
+                      }}
+                    >
+                      취소
+                    </Button>
+                    <Button
+                      onClick={() => confirmPublishMutation.mutate()}
+                      disabled={
+                        confirmPublishMutation.isPending ||
+                        !isFinalReviewConfirmed
+                      }
+                      className="min-w-[100px]"
+                    >
+                      {confirmPublishMutation.isPending ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          진행 중...
+                        </>
+                      ) : (
+                        '업데이트 적용'
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

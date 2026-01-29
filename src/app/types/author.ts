@@ -173,6 +173,18 @@ export interface PublishAnalysisRequestDto {
   };
 }
 
+// New API Structure for Analysis Response
+export type AnalysisCategoryMap = {
+  [key: string]: string[][]; // [name, description][]
+};
+
+export interface PublishAnalysisResponseDto {
+  충돌: AnalysisCategoryMap;
+  '설정 결합': AnalysisCategoryMap;
+  '신규 업로드': AnalysisCategoryMap;
+}
+
+// Legacy types (kept for compatibility if needed, but likely replaced)
 export interface SettingBookDiffDto {
   id: string;
   category: string;
@@ -180,7 +192,7 @@ export interface SettingBookDiffDto {
   description: string;
   status: 'NEW' | 'MODIFIED' | 'DELETED' | 'UNCHANGED' | 'UPDATED';
   // Specific fields
-  title?: string; // for worldview, plot
+  title?: string;
   role?: string;
   age?: string;
   traits?: string[];
@@ -190,11 +202,6 @@ export interface SettingBookDiffDto {
   tags?: string[];
   importance?: 'Main' | 'Sub';
   order?: number;
-}
-
-export interface PublishAnalysisResponseDto {
-  before: SettingBookDiffDto[];
-  after: SettingBookDiffDto[];
 }
 
 // IP Expansion

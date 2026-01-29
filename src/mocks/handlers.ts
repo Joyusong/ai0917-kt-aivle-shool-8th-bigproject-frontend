@@ -300,12 +300,14 @@ export const handlers = [
     const page = Number(url.searchParams.get('page') || 0);
     const size = Number(url.searchParams.get('size') || 10);
     const keyword = url.searchParams.get('keyword') || '';
- 
+
     const content = generateList(size, (i) => {
       const id = page * size + i;
       const titleBase = `[공지] 시스템 점검 안내 ${id}`;
       const title =
-        keyword && !titleBase.includes(keyword) ? `${titleBase} (${keyword})` : titleBase;
+        keyword && !titleBase.includes(keyword)
+          ? `${titleBase} (${keyword})`
+          : titleBase;
       return {
         id,
         title,
@@ -316,7 +318,7 @@ export const handlers = [
         createdAt: new Date(Date.now() - id * 86400000).toISOString(),
       };
     });
- 
+
     return HttpResponse.json({
       content,
       totalElements: 50,
@@ -344,16 +346,6 @@ export const handlers = [
         id: i,
         title: `[운영] ${i}월 운영 가이드라인`,
         createdAt: '2026-01-25',
-      })),
-    ),
-  ),
-  http.get(`${BACKEND_URL}/api/v1/manager/dashboard/contest`, () =>
-    HttpResponse.json(
-      generateList(3, (i) => ({
-        id: i,
-        title: `제${i}회 SF 공모전`,
-        status: 'ONGOING',
-        endDate: '2026-02-28',
       })),
     ),
   ),
@@ -420,16 +412,6 @@ export const handlers = [
       { genre: '로맨스판타지', growth: 8.2 },
       { genre: '무협', growth: -2.1 },
     ]),
-  ),
-  http.get(`${BACKEND_URL}/api/v1/manager/contest/list`, () =>
-    HttpResponse.json({
-      content: generateList(5, (i) => ({
-        id: i,
-        title: `2026 ${getRandomItem(GENRES)} 공모전`,
-        prize: '1억원',
-        status: 'OPEN',
-      })),
-    }),
   ),
 
   // Manager Author Management
@@ -509,51 +491,81 @@ export const handlers = [
       const body = (await request.json()) as any;
       const selected = body.selectedKeywords || {};
 
-      // Generate dummy changes based on selection
-      const after = [
-        {
-          id: '1',
-          category: 'characters',
-          name: '강민우',
-          description: 'S급 헌터로 각성함 (Updated)',
-          status: 'UPDATED',
-        },
-        {
-          id: 'new-1',
-          category: 'items',
-          name: '마석',
-          description: '마력을 담은 돌 (New)',
-          status: 'NEW',
-        },
-      ];
+      // New Response Structure based on User Request
+      // '충돌', '설정 결합', '신규 업로드'
 
-      // Add selected keywords as new items if not already present
-      Object.keys(selected).forEach((cat) => {
-        selected[cat]?.forEach((kw: string, idx: number) => {
-          if (kw !== '강민우') {
-            after.push({
-              id: `gen-${cat}-${idx}`,
-              category: cat,
-              name: kw,
-              description: `AI가 추출한 ${kw} 설정입니다.`,
-              status: 'NEW',
-            });
-          }
-        });
-      });
+      const response = {
+        충돌: {
+          인물: [
+            [
+              '강민우',
+              "[결과: 충돌]\n[판단사유: 기존 설정에서는 '평범한 대학생'이었으나, 신규 설정에서는 'S급 헌터'로 각성하였습니다. 역할 및 능력치에 대한 직접적인 충돌이 발생했습니다.]",
+            ],
+            [
+              '김철수',
+              "[결과: 충돌]\n[판단사유: 기존 설정의 '조력자' 역할과 상충되는 '배신자' 속성이 발견되었습니다.]",
+            ],
+          ],
+          세계: [],
+          장소: [],
+          사건: [],
+          물건: [],
+          집단: [],
+        },
+        '설정 결합': {
+          인물: [],
+          세계: [
+            [
+              '마력 각성 시대',
+              "[결과: 설정 결합]\n[판단사유: 기존 '대격변' 설정에 '마력 농도 증가'라는 새로운 속성이 추가되어 기존 설정을 보강합니다.]",
+            ],
+          ],
+          장소: [
+            [
+              '서울 타워',
+              "[결과: 설정 결합]\n[판단사유: 기존 위치 정보에 '던전 입구 생성'이라는 새로운 상태 변화가 감지되어 업데이트되었습니다.]",
+            ],
+          ],
+          사건: [],
+          물건: [],
+          집단: [],
+        },
+        '신규 업로드': {
+          인물: [
+            [
+              '박영희',
+              "[결과: 신규]\n[판단사유: 기존 설정집에 존재하지 않는 새로운 인물입니다. '길드 접수원' 역할로 식별됩니다.]",
+            ],
+          ],
+          세계: [],
+          장소: [
+            [
+              '지하 벙커',
+              '[결과: 신규]\n[판단사유: 새롭게 등장한 주요 장소입니다.]',
+            ],
+          ],
+          사건: [
+            [
+              '게이트 발생',
+              '[결과: 신규]\n[판단사유: 스토리 전개의 핵심 사건으로 새롭게 추가되었습니다.]',
+            ],
+          ],
+          물건: [
+            [
+              '엑스칼리버',
+              '[결과: 신규]\n[판단사유: 주인공이 획득한 새로운 아이템입니다.]',
+            ],
+          ],
+          집단: [
+            [
+              '헌터 협회',
+              '[결과: 신규]\n[판단사유: 주인공이 소속된 새로운 조직입니다.]',
+            ],
+          ],
+        },
+      };
 
-      return HttpResponse.json({
-        before: [
-          {
-            id: '1',
-            category: 'characters',
-            name: '강민우',
-            description: '평범한 대학생',
-            status: 'UNCHANGED',
-          },
-        ],
-        after,
-      });
+      return HttpResponse.json(response);
     },
   ),
 

@@ -480,9 +480,13 @@ export function AuthorManuscripts() {
                               variant="ghost"
                               className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
                               onClick={() => {
-                                setEditFiles((prev) =>
-                                  prev.filter((_, idx) => idx !== i),
-                                );
+                                if (
+                                  confirm('정말 이 파일을 삭제하시겠습니까?')
+                                ) {
+                                  setEditFiles((prev) =>
+                                    prev.filter((_, idx) => idx !== i),
+                                  );
+                                }
                               }}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -510,9 +514,13 @@ export function AuthorManuscripts() {
                               variant="ghost"
                               className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
                               onClick={() => {
-                                setEditFiles((prev) =>
-                                  prev.filter((_, idx) => idx !== i),
-                                );
+                                if (
+                                  confirm('정말 이 파일을 삭제하시겠습니까?')
+                                ) {
+                                  setEditFiles((prev) =>
+                                    prev.filter((_, idx) => idx !== i),
+                                  );
+                                }
                               }}
                             >
                               <Trash2 className="w-3 h-3" />

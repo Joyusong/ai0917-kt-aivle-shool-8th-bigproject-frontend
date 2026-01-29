@@ -185,7 +185,7 @@ function WorkItem({
   processingStatus,
 }: WorkItemProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Fetch episodes when opened
   const { data: episodes, isLoading } = useQuery({
@@ -257,7 +257,7 @@ function WorkItem({
             </span>
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-48">
+        <ContextMenuContent className="w-32">
           <ContextMenuItem
             onClick={(e) => {
               e.stopPropagation();
@@ -397,24 +397,25 @@ function WorkItem({
                     )}
                   </div>
                 </ContextMenuTrigger>
-                <ContextMenuContent className="w-48">
+                <ContextMenuContent className="w-32">
                   <ContextMenuItem
+                    className="text-xs"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRenameEpisode?.(work.id, episode);
                     }}
                   >
-                    <Edit2 className="w-4 h-4 mr-2" />
+                    <Edit2 className="w-3 h-3 mr-2" />
                     이름 변경
                   </ContextMenuItem>
                   <ContextMenuItem
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                    className="text-red-600 focus:text-red-600 focus:bg-red-50 text-xs"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDeleteEpisode?.(work.id, episode.id);
                     }}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
+                    <Trash2 className="w-3 h-3 mr-2" />
                     원문 삭제
                   </ContextMenuItem>
                 </ContextMenuContent>
