@@ -10,8 +10,8 @@ AIVLE SCHOOL 8th Big Project - AI 기반 웹소설 창작 및 관리 플랫폼 �
 
 - **역할별 대시보드 (Role-Based Dashboards)**:
   - **Admin (관리자)**: 시스템 모니터링, 사용자 권한 관리(비활성화 포함), 시스템 공지 관리.
-  - **Manager (운영자)**: 작가 및 작품 관리, 공모전 템플릿 생성, IP 확장(OSMU) 제안 및 관리.
-  - **Author (작가)**: 웹소설 집필 스튜디오, AI 설정집(Lorebook) 관리, 원고 분석 및 IP 제안 확인.
+  - **Manager (운영자)**: 작가 및 작품 관리, IP 확장(OSMU) 제안 및 관리.
+  - **Author (작가)**: 웹소설 집필 스튜디오, AI 설정집(Lorebook) 관리, 원고 분석 및 IP 제안 확인, 작품/원문 관리(우클릭 메뉴).
 
 - **AI 통합 (AI Integration)**:
   - AI 보조 집필 및 설정 오류 탐지.
@@ -45,7 +45,7 @@ src/
 │   │   ├── auth/       # 로그인, 회원가입 등 인증 관련 페이지
 │   │   ├── dashboard/  # 대시보드 메인
 │   │   │   ├── admin/  # 관리자 전용 페이지 (권한, 로그, 공지 등)
-│   │   │   ├── manager/# 운영자 전용 페이지 (IP확장, 공모전, 작가관리 등)
+│   │   │   ├── manager/# 운영자 전용 페이지 (IP확장, 작가관리 등)
 │   │   │   └── author/ # 작가 전용 페이지 (집필, 설정집, 마이페이지 등)
 │   │   └── landing/    # 랜딩 페이지
 │   ├── services/       # API 통신 로직 (authService, adminService 등)
