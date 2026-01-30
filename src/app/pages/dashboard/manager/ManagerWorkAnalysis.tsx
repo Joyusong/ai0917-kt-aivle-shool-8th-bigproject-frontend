@@ -9,6 +9,20 @@ import {
 } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../../components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "../../../components/ui/select";
+import {
   Card,
   CardContent,
   CardHeader,
@@ -17,6 +31,9 @@ import {
 import { Input } from "../../../components/ui/input";
 import { Badge } from "../../../components/ui/badge";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import apiClient from "../../../api/axios";
+import { toast } from "sonner";
 
 export function ManagerWorkAnalysis() {
   const [viewMode, setViewMode] = useState<"grid" | "list">(
@@ -25,6 +42,9 @@ export function ManagerWorkAnalysis() {
   const [filterBy, setFilterBy] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [selectedWork, setSelectedWork] = useState<any>(null);
+  const [showAnalysisModal, setShowAnalysisModal] = useState(false);
+  const [selectedAuthorId, setSelectedAuthorId] = useState<string>("");
+  const [selectedAuthorWorkId, setSelectedAuthorWorkId] = useState<string>("");
 
   const works = [
     {
@@ -101,6 +121,9 @@ export function ManagerWorkAnalysis() {
             <option value="characters">인물</option>
             <option value="world">세계관</option>
             <option value="narrative">서사</option>
+            <option value="place">장소</option>
+            <option value="item">물건</option>
+            <option value="group">집단</option>
           </select>
 
           <Button
@@ -114,7 +137,10 @@ export function ManagerWorkAnalysis() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex-1 sm:flex-initial">
+          <Button
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex-1 sm:flex-initial"
+            onClick={() => setShowAnalysisModal(true)}
+          >
             <Sparkles className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">AI 작품 분석</span>
             <span className="sm:hidden">분석</span>
@@ -177,6 +203,50 @@ export function ManagerWorkAnalysis() {
           ))}
         </div>
       )}
+
+      {/* AI 작품 분석 Modal */}
+      <Dialog open={showAnalysisModal} onOpenChange={setShowAnalysisModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>작품 분석</DialogTitle>
+          </DialogHeader>
+          {/* Linked Authors */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">작가 선택</div>
+              <LinkedAuthorsSelect
+                value={selectedAuthorId}
+                onChange={(v) => {
+                  setSelectedAuthorId(v);
+                  setSelectedAuthorWorkId("");
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="text-sm text-muted-foreground">작품 선택</div>
+              <AuthorWorksSelect
+                authorId={selectedAuthorId}
+                value={selectedAuthorWorkId}
+                onChange={(v) => setSelectedAuthorWorkId(v)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAnalysisModal(false)}>
+              취소
+            </Button>
+            <Button
+              disabled={!selectedAuthorId || !selectedAuthorWorkId}
+              onClick={() => {
+                toast.info("AI 서버 준비 중입니다. 서버 가동 후 분석을 시작할게요.");
+                setShowAnalysisModal(false);
+              }}
+            >
+              분석
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Work Detail Modal */}
       {selectedWork && (
@@ -367,5 +437,88 @@ export function ManagerWorkAnalysis() {
         </div>
       )}
     </div>
+  );
+}
+
+function LinkedAuthorsSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const { data } = useQuery({
+    queryKey: ["manager", "authors", "linked", "list"],
+    queryFn: async () => {
+      const res = await apiClient.get("/api/v1/manager/authors", {
+        params: { size: 100, sort: "name,asc", linked: true },
+      });
+      const page = res.data as any;
+      const items = page?.content ?? [];
+      return items.map((a: any) => ({ id: a.id, name: a.name })) as {
+        id: number;
+        name: string;
+      }[];
+    },
+  });
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="연동된 작가를 선택하세요" />
+      </SelectTrigger>
+      <SelectContent>
+        {data?.map((a) => (
+          <SelectItem key={a.id} value={String(a.id)}>
+            {a.name}
+          </SelectItem>
+        ))}
+        {!data || data.length === 0 ? (
+          <SelectItem value="__empty" disabled>
+            연동된 작가 없음
+          </SelectItem>
+        ) : null}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function AuthorWorksSelect({
+  authorId,
+  value,
+  onChange,
+}: {
+  authorId: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const { data } = useQuery({
+    queryKey: ["manager", "authors", "works", authorId],
+    queryFn: async () => {
+      if (!authorId) return [];
+      const res = await apiClient.get(
+        `/api/v1/manager/authors/${authorId}/works`,
+      );
+      return res.data as { id: number; title: string }[];
+    },
+    enabled: !!authorId,
+  });
+  return (
+    <Select value={value} onValueChange={onChange} disabled={!authorId}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder={authorId ? "작품을 선택하세요" : "작가를 먼저 선택하세요"} />
+      </SelectTrigger>
+      <SelectContent>
+        {data?.map((w) => (
+          <SelectItem key={w.id} value={String(w.id)}>
+            {w.title}
+          </SelectItem>
+        ))}
+        {authorId && (!data || data.length === 0) ? (
+          <SelectItem value="__empty" disabled>
+            선택된 작가의 작품이 없습니다
+          </SelectItem>
+        ) : null}
+      </SelectContent>
+    </Select>
   );
 }
