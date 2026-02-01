@@ -515,6 +515,7 @@ export const handlers = [
     const size = Number(url.searchParams.get('size') || 10);
     const keyword = (url.searchParams.get('keyword') || '').toLowerCase();
     const sort = url.searchParams.get('sort') || 'name,asc';
+    const linked = url.searchParams.get('linked') || 'false';
     const total = 120;
 
     const all = generateList(total, (i) => {
@@ -527,9 +528,13 @@ export const handlers = [
       return { id, name, email, workCount, createdAt, status };
     });
 
-    const filtered = keyword
+    let filtered = keyword
       ? all.filter((a) => a.name.toLowerCase().includes(keyword))
       : all;
+
+    if (linked === 'true') {
+      filtered = filtered.filter((a) => a.status === 'ACTIVE' && a.id % 3 !== 0);
+    }
 
     const [field, direction] = sort.split(',');
     const sorted = [...filtered].sort((a, b) => {
@@ -578,6 +583,25 @@ export const handlers = [
       })),
       lastLogin: new Date().toISOString(),
     });
+  }),
+  // Linked authors for Manager
+  http.get(`${BACKEND_URL}/api/v1/manager/authors/linked`, () =>
+    HttpResponse.json(
+      generateList(6, (i) => ({
+        id: i,
+        name: NAMES[i % NAMES.length],
+      })),
+    ),
+  ),
+  // Works for a specific author (Manager view)
+  http.get(`${BACKEND_URL}/api/v1/manager/authors/:id/works`, ({ params }) => {
+    const id = Number(params.id);
+    return HttpResponse.json(
+      generateList(8, (i) => ({
+        id: id * 100 + i,
+        title: `${TITLES[(id + i) % TITLES.length]} (작품 ${i})`,
+      })),
+    );
   }),
 
   http.post(`${BACKEND_URL}/api/v1/manager/authors/:pwd`, ({ params }) => {

@@ -25,7 +25,6 @@ import { useQuery } from '@tanstack/react-query';
 import { authService } from '../../services/authService';
 
 import { ManagerHome } from './manager/ManagerHome';
-import { ManagerWorkAnalysis } from './manager/ManagerWorkAnalysis';
 import { ManagerIPTrend } from './manager/ManagerIPTrend';
 import { ManagerIPExpansion } from './manager/ManagerIPExpansion';
 import { ManagerAuthorManagement } from './manager/ManagerAuthorManagement';
@@ -139,22 +138,9 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
             <span className="text-sm font-medium">IP 확장</span>
           </button>
 
-          <button
-            onClick={() => handleMenuClick('work-analysis')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-              activeMenu === 'work-analysis'
-                ? 'text-white dark:text-black'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
-            style={
-              activeMenu === 'work-analysis'
-                ? { backgroundColor: 'var(--role-primary)' }
-                : {}
-            }
-          >
-            <BarChart3 className="w-5 h-5" />
-            <span className="text-sm font-medium">작품 분석</span>
-          </button>
+          
+
+          
 
           <button
             onClick={() => handleMenuClick('ip-trend-analysis')}
@@ -324,7 +310,6 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
                   <>
                     <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     <span className="text-foreground">
-                      {activeMenu === 'work-analysis' && '작품 분석'}
                       {activeMenu === 'ip-trend-analysis' && 'IP 트렌드 분석'}
                       {activeMenu === 'ip-expansion' && 'IP 확장'}
                       {activeMenu === 'author-management' && '작가'}
@@ -371,7 +356,6 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
           {activeMenu === 'home' && (
             <ManagerHome onNavigate={handleMenuClick} />
           )}
-          {activeMenu === 'work-analysis' && <ManagerWorkAnalysis />}
           {activeMenu === 'notice' && <ManagerNotice />}
           {activeMenu === 'ip-trend-analysis' && <ManagerIPTrend />}
           {activeMenu === 'ip-expansion' && <ManagerIPExpansion />}
