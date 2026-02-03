@@ -30,6 +30,7 @@ import {
   Zap,
   AlertCircle,
   Check,
+  TrendingUp,
 } from 'lucide-react';
 import { useContext, useEffect, useState } from 'react';
 import {
@@ -45,11 +46,7 @@ import { managerService } from '../../../services/managerService';
 import { adminService } from '../../../services/adminService';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from '../../../components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 
 interface ManagerHomeProps {
   onNavigate?: (menu: string) => void;
@@ -61,6 +58,23 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
   // Notice State
   const [isNoticeDetailOpen, setIsNoticeDetailOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState<any>(null);
+
+  // Project State
+  const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
+  const [isProjectDetailOpen, setIsProjectDetailOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [projectDetailTab, setProjectDetailTab] = useState<
+    'summary' | 'roadmap' | 'assets'
+  >('summary');
+
+  // Fetch Recent Projects
+  const { data: recentProjectsData } = useQuery({
+    queryKey: ['manager', 'ip-expansion', 'recent'],
+    queryFn: () => managerService.getIPProposals(0, 5),
+  });
+
+  const recentProjects = recentProjectsData?.content || [];
+  const currentProject = recentProjects[currentProjectIndex];
 
   // Fetch Manager Dashboard Summary
   const { data: summaryData, isLoading: isSummaryLoading } = useQuery({
@@ -75,16 +89,17 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
   });
 
   // Fetch Linked Authors (for count and chart)
-  const { data: linkedAuthorsData, isLoading: isLinkedAuthorsLoading } = useQuery({
-    queryKey: ['manager', 'authors', 'linked', 'list'], // Changed key to reflect list
-    queryFn: () => managerService.getAuthors({ linked: true, size: 100 }), // Fetch up to 100 for stats
-  });
+  const { data: linkedAuthorsData, isLoading: isLinkedAuthorsLoading } =
+    useQuery({
+      queryKey: ['manager', 'authors', 'linked', 'list'], // Changed key to reflect list
+      queryFn: () => managerService.getAuthors({ linked: true, size: 100 }), // Fetch up to 100 for stats
+    });
 
   // Calculate Chart Data
   const totalLinkedAuthors = linkedAuthorsData?.totalElements ?? 0;
   const linkedAuthorsList = linkedAuthorsData?.content ?? [];
   const activeLinkedAuthors = linkedAuthorsList.filter(
-    (a) => a.status === 'ACTIVE'
+    (a) => a.status === 'ACTIVE',
   ).length;
   const inactiveLinkedAuthors = totalLinkedAuthors - activeLinkedAuthors;
 
@@ -100,11 +115,36 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
   });
 
   const notices = noticesData?.content || [];
+  const nonLaunchedCount = summaryData?.pendingProposals || 0;
 
   // Handlers
   const handleNoticeClick = (notice: any) => {
     setSelectedNotice(notice);
     setIsNoticeDetailOpen(true);
+  };
+
+  const handlePrevProject = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentProjectIndex((prev) =>
+      prev > 0 ? prev - 1 : recentProjects.length - 1,
+    );
+  };
+
+  const handleNextProject = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentProjectIndex((prev) =>
+      prev < recentProjects.length - 1 ? prev + 1 : 0,
+    );
+  };
+
+  const handlePrevNotice = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Notice carousel logic if needed
+  };
+
+  const handleNextNotice = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Notice carousel logic if needed
   };
 
   return (
@@ -195,7 +235,9 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                 <Megaphone className="w-5 h-5 text-primary" />
                 주요 공지사항
               </div>
-            </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
             <div className="text-2xl font-bold">
               {isSystemLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -257,7 +299,9 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                 </ResponsiveContainer>
               </div>
             ) : (
-              <div className="text-xs text-muted-foreground">현재 대기 중인 작가 활동 데이터가 없습니다</div>
+              <div className="text-xs text-muted-foreground">
+                현재 대기 중인 작가 활동 데이터가 없습니다
+              </div>
             )}
             <div className="absolute top-3 left-4 text-xs font-semibold text-muted-foreground">
               작가 활동 현황
@@ -306,7 +350,7 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                 className="space-y-2 px-8 transition-all duration-300 hover:opacity-90 cursor-pointer"
                 onClick={() => {
                   setSelectedProject(currentProject);
-                  setProjectDetailTab("summary");
+                  setProjectDetailTab('summary');
                   setIsProjectDetailOpen(true);
                 }}
               >
@@ -317,19 +361,19 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                       currentProject.format === 'drama'
                         ? 'text-purple-600 border-purple-200 bg-purple-50'
                         : currentProject.format === 'game'
-                        ? 'text-green-600 border-green-200 bg-green-50'
-                        : currentProject.format === 'movie'
-                        ? 'text-orange-600 border-orange-200 bg-orange-50'
-                        : 'text-blue-600 border-blue-200 bg-blue-50'
+                          ? 'text-green-600 border-green-200 bg-green-50'
+                          : currentProject.format === 'movie'
+                            ? 'text-orange-600 border-orange-200 bg-orange-50'
+                            : 'text-blue-600 border-blue-200 bg-blue-50'
                     }`}
                   >
                     {currentProject.format === 'drama'
                       ? '드라마화'
                       : currentProject.format === 'game'
-                      ? '게임화'
-                      : currentProject.format === 'movie'
-                      ? '영화화'
-                      : '웹툰화'}
+                        ? '게임화'
+                        : currentProject.format === 'movie'
+                          ? '영화화'
+                          : '웹툰화'}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
                     {new Date(currentProject.id).toLocaleDateString()}
@@ -351,15 +395,18 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                         currentProject.format === 'drama'
                           ? 'bg-purple-500'
                           : currentProject.format === 'game'
-                          ? 'bg-green-500'
-                          : currentProject.format === 'movie'
-                          ? 'bg-orange-500'
-                          : 'bg-blue-500'
+                            ? 'bg-green-500'
+                            : currentProject.format === 'movie'
+                              ? 'bg-orange-500'
+                              : 'bg-blue-500'
                       }`}
                       style={{ width: `${currentProject.progress ?? 0}%` }}
                     />
                   </div>
-                  <Badge variant="outline" className="text-slate-700 border-slate-200 bg-white">
+                  <Badge
+                    variant="outline"
+                    className="text-slate-700 border-slate-200 bg-white"
+                  >
                     진행률 {currentProject.progress ?? 0}%
                   </Badge>
                 </div>
@@ -503,26 +550,26 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span className="font-bold break-keep">
-                {selectedProject?.projectName || "프로젝트 상세"}
+                {selectedProject?.title || '프로젝트 상세'}
               </span>
               <Badge
                 className={`${
-                  selectedProject?.format === "drama"
-                    ? "bg-purple-100 text-purple-700"
-                    : selectedProject?.format === "game"
-                    ? "bg-green-100 text-green-700"
-                    : selectedProject?.format === "movie"
-                    ? "bg-orange-100 text-orange-700"
-                    : "bg-blue-100 text-blue-700"
+                  selectedProject?.format === 'drama'
+                    ? 'bg-purple-100 text-purple-700'
+                    : selectedProject?.format === 'game'
+                      ? 'bg-green-100 text-green-700'
+                      : selectedProject?.format === 'movie'
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-blue-100 text-blue-700'
                 }`}
               >
-                {selectedProject?.format === "drama"
-                  ? "드라마화"
-                  : selectedProject?.format === "game"
-                  ? "게임화"
-                  : selectedProject?.format === "movie"
-                  ? "영화화"
-                  : "웹툰화"}
+                {selectedProject?.format === 'drama'
+                  ? '드라마화'
+                  : selectedProject?.format === 'game'
+                    ? '게임화'
+                    : selectedProject?.format === 'movie'
+                      ? '영화화'
+                      : '웹툰화'}
               </Badge>
             </DialogTitle>
             <DialogDescription>
@@ -532,13 +579,13 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
 
           <div
             className={`rounded-xl p-5 mb-6 ${
-              selectedProject?.format === "drama"
-                ? "bg-purple-50"
-                : selectedProject?.format === "game"
-                ? "bg-green-50"
-                : selectedProject?.format === "movie"
-                ? "bg-orange-50"
-                : "bg-blue-50"
+              selectedProject?.format === 'drama'
+                ? 'bg-purple-50'
+                : selectedProject?.format === 'game'
+                  ? 'bg-green-50'
+                  : selectedProject?.format === 'movie'
+                    ? 'bg-orange-50'
+                    : 'bg-blue-50'
             }`}
           >
             <div className="flex flex-wrap items-center gap-2">
@@ -556,7 +603,9 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
 
           <Tabs
             value={projectDetailTab}
-            onValueChange={(v) => setProjectDetailTab(v as "summary" | "roadmap" | "assets")}
+            onValueChange={(v) =>
+              setProjectDetailTab(v as 'summary' | 'roadmap' | 'assets')
+            }
             className="mb-4"
           >
             <TabsList>
@@ -566,7 +615,7 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
             </TabsList>
           </Tabs>
 
-          {projectDetailTab === "summary" && (
+          {projectDetailTab === 'summary' && (
             <div className="space-y-6">
               <div className="border border-slate-200 rounded-xl p-5 bg-slate-50">
                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -575,7 +624,7 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                       원작
                     </span>
                     <span className="font-bold text-slate-900 break-keep tracking-tighter">
-                      {selectedProject?.workTitle || "-"}
+                      {selectedProject?.workTitle || '-'}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -583,7 +632,7 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                       작가
                     </span>
                     <span className="font-bold text-slate-900 break-keep tracking-tighter">
-                      {selectedProject?.authorName || "-"}
+                      {selectedProject?.authorName || '-'}
                     </span>
                   </div>
                 </div>
@@ -601,14 +650,14 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                       </div>
                       <div className="font-semibold text-slate-900 text-sm mt-1 break-keep tracking-tighter">
                         {(selectedProject?.targetAges || []).length > 0
-                          ? selectedProject?.targetAges.join(", ")
-                          : "전연령"}{" "}
-                        /{" "}
-                        {selectedProject?.targetGender === "male"
-                          ? "남성"
-                          : selectedProject?.targetGender === "female"
-                          ? "여성"
-                          : "남녀무관"}
+                          ? selectedProject?.targetAges.join(', ')
+                          : '전연령'}{' '}
+                        /{' '}
+                        {selectedProject?.targetGender === 'male'
+                          ? '남성'
+                          : selectedProject?.targetGender === 'female'
+                            ? '여성'
+                            : '남녀무관'}
                       </div>
                       <div className="text-xs text-slate-500 mt-1 break-keep">
                         설정된 타겟에 따른 선호도 지표
@@ -629,10 +678,12 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                       <div className="font-semibold text-slate-900 text-sm mt-1 break-keep tracking-tighter">
                         {selectedProject?.budget
                           ? `${Number(selectedProject.budget).toLocaleString()}원`
-                          : "미정"}
+                          : '미정'}
                       </div>
                       <div className="text-xs text-slate-500 mt-1 break-keep">
-                        {selectedProject?.budget ? "총 예산 대비 집행 비용" : "예산 수립 필요"}
+                        {selectedProject?.budget
+                          ? '총 예산 대비 집행 비용'
+                          : '예산 수립 필요'}
                       </div>
                     </div>
                   </div>
@@ -660,12 +711,14 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
             </div>
           )}
 
-          {projectDetailTab === "roadmap" && (
+          {projectDetailTab === 'roadmap' && (
             <div className="space-y-6">
               <div className="border border-slate-200 rounded-xl p-5">
-                <div className="font-semibold text-slate-900 mb-3">마일스톤 및 로드맵</div>
+                <div className="font-semibold text-slate-900 mb-3">
+                  마일스톤 및 로드맵
+                </div>
                 {(() => {
-                  const stages = ["기획", "계약", "제작", "검수", "런칭"];
+                  const stages = ['기획', '계약', '제작', '검수', '런칭'];
                   const currentStageIndex = 1;
                   return (
                     <div className="flex items-center gap-4 mb-6">
@@ -674,13 +727,15 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                               i === currentStageIndex
-                                ? "bg-slate-200 text-slate-900 ring-2 ring-blue-200 shadow-sm"
-                                : "bg-slate-200 text-slate-700"
+                                ? 'bg-slate-200 text-slate-900 ring-2 ring-blue-200 shadow-sm'
+                                : 'bg-slate-200 text-slate-700'
                             }`}
                           >
                             {i + 1}
                           </div>
-                          <span className="mt-1 text-[10px] text-slate-500">{stage}</span>
+                          <span className="mt-1 text-[10px] text-slate-500">
+                            {stage}
+                          </span>
                           {i < stages.length - 1 && (
                             <div className="w-10 h-px bg-slate-200 mx-2 hidden md:block" />
                           )}
@@ -691,7 +746,9 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                 })()}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="rounded-lg border border-slate-200 p-4">
-                    <div className="font-semibold text-slate-900 mb-2">체크리스트</div>
+                    <div className="font-semibold text-slate-900 mb-2">
+                      체크리스트
+                    </div>
                     <ul className="text-sm text-slate-700 space-y-1">
                       <li>기획안 작성</li>
                       <li>원작자 협의</li>
@@ -699,11 +756,17 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                     </ul>
                   </div>
                   <div className="rounded-lg border border-slate-200 p-4">
-                    <div className="font-semibold text-slate-900 mb-2">팀 협업 현황</div>
+                    <div className="font-semibold text-slate-900 mb-2">
+                      팀 협업 현황
+                    </div>
                     <div className="flex items-center gap-3">
                       <Badge className="bg-slate-100 text-slate-700">PD</Badge>
-                      <Badge className="bg-slate-100 text-slate-700">작가</Badge>
-                      <Badge className="bg-slate-100 text-slate-700">디자이너</Badge>
+                      <Badge className="bg-slate-100 text-slate-700">
+                        작가
+                      </Badge>
+                      <Badge className="bg-slate-100 text-slate-700">
+                        디자이너
+                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -711,34 +774,56 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
             </div>
           )}
 
-          {projectDetailTab === "assets" && (
+          {projectDetailTab === 'assets' && (
             <div className="space-y-6">
               <div className="border border-slate-200 rounded-xl p-5">
-                <div className="font-semibold text-slate-900 mb-3">IP 자산 동기화</div>
+                <div className="font-semibold text-slate-900 mb-3">
+                  IP 자산 동기화
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="rounded-lg bg-slate-50 p-4">
                     <div className="text-xs text-slate-500">캐릭터 시트</div>
-                    <div className="font-bold text-slate-900 mt-1">시각화 비교 뷰</div>
-                    <div className="text-xs text-slate-500 mt-1">엘레나, 루미나스 등 주요 캐릭터</div>
+                    <div className="font-bold text-slate-900 mt-1">
+                      시각화 비교 뷰
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      엘레나, 루미나스 등 주요 캐릭터
+                    </div>
                     <div className="flex items-center gap-2 mt-3">
                       <div className="w-8 h-8 rounded-full bg-slate-200" />
                       <div className="w-8 h-8 rounded-full bg-slate-300" />
                       <div className="w-8 h-8 rounded-full bg-slate-100" />
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      <Badge className="bg-white text-slate-700 border border-slate-200">#주인공</Badge>
-                      <Badge className="bg-white text-slate-700 border border-slate-200">#라이벌</Badge>
-                      <Badge className="bg-white text-slate-700 border border-slate-200">#조력자</Badge>
+                      <Badge className="bg-white text-slate-700 border border-slate-200">
+                        #주인공
+                      </Badge>
+                      <Badge className="bg-white text-slate-700 border border-slate-200">
+                        #라이벌
+                      </Badge>
+                      <Badge className="bg-white text-slate-700 border border-slate-200">
+                        #조력자
+                      </Badge>
                     </div>
                   </div>
                   <div className="rounded-lg bg-slate-50 p-4">
                     <div className="text-xs text-slate-500">세계관 설정집</div>
-                    <div className="font-bold text-slate-900 mt-1">매체별 각색 데이터</div>
-                    <div className="text-xs text-slate-500 mt-1">중세 판타지, 마법 체계</div>
+                    <div className="font-bold text-slate-900 mt-1">
+                      매체별 각색 데이터
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      중세 판타지, 마법 체계
+                    </div>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      <Badge className="bg-white text-slate-700 border border-slate-200">#중세</Badge>
-                      <Badge className="bg-white text-slate-700 border border-slate-200">#마법</Badge>
-                      <Badge className="bg-white text-slate-700 border border-slate-200">#왕국</Badge>
+                      <Badge className="bg-white text-slate-700 border border-slate-200">
+                        #중세
+                      </Badge>
+                      <Badge className="bg-white text-slate-700 border border-slate-200">
+                        #마법
+                      </Badge>
+                      <Badge className="bg-white text-slate-700 border border-slate-200">
+                        #왕국
+                      </Badge>
                     </div>
                   </div>
                 </div>

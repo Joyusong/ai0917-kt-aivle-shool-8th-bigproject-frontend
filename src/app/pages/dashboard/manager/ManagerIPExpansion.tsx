@@ -19,12 +19,10 @@ import {
   Monitor,
   Smartphone,
   Clapperboard,
-  Calendar,
   Users,
   Clock,
   Target,
   Loader2,
-  Trash2,
   Wand2,
   Music,
   Video,
@@ -78,17 +76,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from "../../../components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "../../../components/ui/alert-dialog";
+} from '../../../components/ui/dropdown-menu';
 import {
   Tabs,
   TabsContent,
@@ -1759,23 +1747,31 @@ function CreateIPExpansionDialog({
 
                 {/* Step 2: Conflict Check */}
                 {currentStep === 2 && (
-                  <div className="w-full max-w-[95%] mx-auto space-y-10">
-                    <Card className="border-slate-200 shadow-lg overflow-hidden bg-white">
-                      <CardHeader className="border-b bg-slate-50/50 py-6 px-10">
+                  <div className="w-full max-w-5xl mx-auto space-y-8">
+                    <Card className="border-none shadow-xl bg-white overflow-hidden ring-1 ring-slate-900/5">
+                      <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b py-8 px-10">
                         <div className="flex items-center justify-between">
-                          <CardTitle className="flex items-center gap-3 text-slate-800 text-xl">
-                            <AlertTriangle className="w-8 h-8 text-amber-500" />
-                            <span className="font-bold">AI 분석 결과</span>
+                          <div>
+                            <CardTitle className="flex items-center gap-3 text-2xl font-bold text-slate-900">
+                              <Sparkles className="w-7 h-7 text-indigo-600" />
+                              AI 분석 결과
+                            </CardTitle>
+                            <p className="text-slate-500 mt-2 text-lg">
+                              선택하신 작품과 설정집을 분석하여 충돌 요소를 감지했습니다.
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
                             <Badge
                               variant="secondary"
-                              className="ml-2 bg-amber-50 text-amber-700 border-amber-200 px-3 py-1 text-sm"
+                              className="bg-amber-100 text-amber-700 hover:bg-amber-200 px-4 py-1.5 text-base font-medium rounded-full"
                             >
+                              <AlertTriangle className="w-4 h-4 mr-1.5" />
                               3건의 충돌 감지
                             </Badge>
-                          </CardTitle>
-                          <span className="text-sm font-mono text-slate-400 bg-slate-100 px-3 py-1.5 rounded">
-                            Analysis ID: #EXP-2024-001
-                          </span>
+                            <span className="text-sm font-mono text-slate-400">
+                              ID: #EXP-2024-001
+                            </span>
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="p-0">
@@ -1786,51 +1782,60 @@ function CreateIPExpansionDialog({
                               severity: 'high',
                               title: '설정 충돌 감지: 마법 체계',
                               desc: "선택한 설정집 '고대 마법'과 '현대 마법학' 간의 마나 운영 방식이 상충됩니다.",
+                              solution: "AI 제안: '고대 마법'을 원류로 하는 파생 설정으로 통합",
                             },
                             {
                               type: 'Character',
                               severity: 'medium',
                               title: '캐릭터 성격 불일치 가능성',
                               desc: "주인공의 성격 키워드 '냉철함'이 개그 장르 확장에 부적합할 수 있습니다.",
+                              solution: "AI 제안: 개그 씬에서는 '망가짐' 허용 설정 추가",
                             },
                             {
                               type: 'Timeline',
                               severity: 'low',
                               title: '타임라인 정합성 확인 필요',
                               desc: '프리퀄 제작 시 원작 3권의 회상 장면과 충돌할 가능성이 있습니다.',
+                              solution: "AI 제안: 회상 장면을 '왜곡된 기억'으로 재해석",
                             },
                           ].map((item, i) => (
                             <div
                               key={i}
-                              className="p-10 flex gap-8 hover:bg-slate-50 transition-colors"
+                              className="p-8 flex gap-8 hover:bg-slate-50/80 transition-colors group"
                             >
                               <div
                                 className={cn(
-                                  'w-16 h-16 rounded-full flex items-center justify-center shrink-0',
+                                  'w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ring-1 ring-inset',
                                   item.severity === 'high'
-                                    ? 'bg-red-100 text-red-600'
+                                    ? 'bg-red-50 text-red-600 ring-red-100'
                                     : item.severity === 'medium'
-                                      ? 'bg-amber-100 text-amber-600'
-                                      : 'bg-blue-100 text-blue-600',
+                                      ? 'bg-amber-50 text-amber-600 ring-amber-100'
+                                      : 'bg-blue-50 text-blue-600 ring-blue-100',
                                 )}
                               >
                                 <AlertCircle className="w-8 h-8" />
                               </div>
-                              <div>
-                                <div className="flex items-center gap-4 mb-3">
-                                  <h4 className="font-bold text-slate-900 text-xl">
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-bold text-slate-900 text-xl group-hover:text-indigo-700 transition-colors">
                                     {item.title}
                                   </h4>
                                   <Badge
                                     variant="outline"
-                                    className="text-sm px-2.5 py-0.5"
+                                    className="text-sm px-3 py-1 font-medium bg-white"
                                   >
                                     {item.type}
                                   </Badge>
                                 </div>
-                                <p className="text-lg text-slate-600 leading-relaxed">
+                                <p className="text-lg text-slate-600 leading-relaxed mb-4">
                                   {item.desc}
                                 </p>
+                                <div className="bg-indigo-50/50 rounded-lg p-4 flex items-start gap-3 text-indigo-900">
+                                  <Wand2 className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+                                  <span className="font-medium text-base">
+                                    {item.solution}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -1838,24 +1843,45 @@ function CreateIPExpansionDialog({
                       </CardContent>
                     </Card>
 
-                    <div className="bg-slate-100 p-10 rounded-xl border border-slate-200 flex items-start gap-6">
-                      <Checkbox
-                        id="conflict-confirm"
-                        checked={conflictConfirmed}
-                        onCheckedChange={(c) => setConflictConfirmed(!!c)}
-                        className="mt-1 w-7 h-7 border-slate-400 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
-                      />
-                      <div className="space-y-3">
+                    <div
+                      className={cn(
+                        'p-8 rounded-2xl border-2 flex items-start gap-6 transition-all cursor-pointer',
+                        conflictConfirmed
+                          ? 'bg-slate-900 border-slate-900 shadow-xl'
+                          : 'bg-white border-slate-200 hover:border-slate-300',
+                      )}
+                      onClick={() => setConflictConfirmed(!conflictConfirmed)}
+                    >
+                      <div
+                        className={cn(
+                          'mt-1 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all',
+                          conflictConfirmed
+                            ? 'border-white bg-white text-slate-900'
+                            : 'border-slate-300 bg-white text-transparent',
+                        )}
+                      >
+                        <Check className="w-5 h-5" strokeWidth={3} />
+                      </div>
+                      <div className="space-y-2">
                         <Label
-                          htmlFor="conflict-confirm"
-                          className="font-bold text-slate-900 text-xl cursor-pointer"
+                          className={cn(
+                            'font-bold text-xl cursor-pointer',
+                            conflictConfirmed ? 'text-white' : 'text-slate-900',
+                          )}
                         >
-                          위 충돌 내용을 확인하였으며, 이에 대한 수정 제안을
-                          받아들이겠습니다.
+                          위 충돌 내용을 확인하였으며, AI의 수정 제안을
+                          수용합니다.
                         </Label>
-                        <p className="text-lg text-slate-500">
-                          AI가 제안하는 수정 방향을 기반으로 기획서를
-                          작성합니다.
+                        <p
+                          className={cn(
+                            'text-lg',
+                            conflictConfirmed
+                              ? 'text-slate-300'
+                              : 'text-slate-500',
+                          )}
+                        >
+                          AI가 제안하는 수정 방향을 기반으로 기획서를 자동으로
+                          보정합니다.
                         </p>
                       </div>
                     </div>
@@ -2232,11 +2258,22 @@ function CreateIPExpansionDialog({
                       </div>
                       <div className="mt-3 space-y-2">
                         <div>
-                          <div className="text-[10px] text-slate-500 mb-1">Age</div>
+                          <div className="text-[10px] text-slate-500 mb-1">
+                            Age
+                          </div>
                           <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-                            <div className="h-full bg-blue-500" style={{ width: "45%" }} />
-                            <div className="h-full bg-green-500" style={{ width: "40%" }} />
-                            <div className="h-full bg-slate-400" style={{ width: "15%" }} />
+                            <div
+                              className="h-full bg-blue-500"
+                              style={{ width: '45%' }}
+                            />
+                            <div
+                              className="h-full bg-green-500"
+                              style={{ width: '40%' }}
+                            />
+                            <div
+                              className="h-full bg-slate-400"
+                              style={{ width: '15%' }}
+                            />
                           </div>
                           <div className="flex justify-between mt-1 text-[10px] text-slate-500">
                             <span>20대 45%</span>
@@ -2245,14 +2282,16 @@ function CreateIPExpansionDialog({
                           </div>
                         </div>
                         <div>
-                          <div className="text-[10px] text-slate-500 mb-1">Gender</div>
+                          <div className="text-[10px] text-slate-500 mb-1">
+                            Gender
+                          </div>
                           {(() => {
                             const maleRatio =
-                              createdProject?.targetGender === "male"
+                              business.targetGender === 'male'
                                 ? 70
-                                : createdProject?.targetGender === "female"
-                                ? 30
-                                : 50;
+                                : business.targetGender === 'female'
+                                  ? 30
+                                  : 50;
                             const femaleRatio = 100 - maleRatio;
                             return (
                               <>
@@ -2292,44 +2331,44 @@ function CreateIPExpansionDialog({
                         </Label>
                       </div>
                       {(() => {
-                        const budgetValue = createdProject?.budget
-                          ? Number(createdProject.budget)
+                        const budgetValue = business.budgetRange
+                          ? Number(business.budgetRange)
                           : undefined;
                         const scale =
                           budgetValue == null
-                            ? "mid"
+                            ? 'mid'
                             : budgetValue < 50_000_000
-                            ? "low"
-                            : budgetValue < 200_000_000
-                            ? "mid"
-                            : "high";
+                              ? 'low'
+                              : budgetValue < 200_000_000
+                                ? 'mid'
+                                : 'high';
                         const base =
-                          "flex items-center gap-2 mt-3 text-[10px] text-slate-600";
+                          'flex items-center gap-2 mt-3 text-[10px] text-slate-600';
                         return (
                           <div className={base}>
                             <div
                               className={`px-2 py-1 rounded-md border ${
-                                scale === "low"
-                                  ? "bg-blue-50 border-blue-200 text-blue-700"
-                                  : "bg-white border-slate-200"
+                                scale === 'low'
+                                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                  : 'bg-white border-slate-200'
                               }`}
                             >
                               Low
                             </div>
                             <div
                               className={`px-2 py-1 rounded-md border ${
-                                scale === "mid"
-                                  ? "bg-blue-50 border-blue-200 text-blue-700"
-                                  : "bg-white border-slate-200"
+                                scale === 'mid'
+                                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                  : 'bg-white border-slate-200'
                               }`}
                             >
                               Mid
                             </div>
                             <div
                               className={`px-2 py-1 rounded-md border ${
-                                scale === "high"
-                                  ? "bg-blue-50 border-blue-200 text-blue-700"
-                                  : "bg-white border-slate-200"
+                                scale === 'high'
+                                  ? 'bg-blue-50 border-blue-200 text-blue-700'
+                                  : 'bg-white border-slate-200'
                               }`}
                             >
                               High
