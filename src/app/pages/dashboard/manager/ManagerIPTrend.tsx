@@ -35,14 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../../../components/ui/select';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '../../../components/ui/pagination';
 import { managerService } from '../../../services/managerService';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -81,7 +73,6 @@ function PdfThumbnail({ fileUrl }: { fileUrl: string }) {
 export function ManagerIPTrend() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear.toString());
-  const [page, setPage] = useState(0);
   const [previewId, setPreviewId] = useState<number | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -117,11 +108,9 @@ export function ManagerIPTrend() {
 
   // Fetch Reports List
   const { data: reportsData, isLoading: isReportsLoading } = useQuery({
-    queryKey: ['manager', 'iptrend', 'list', selectedYear, page],
-    queryFn: () => managerService.getIPTrendList(page, 12),
+    queryKey: ['manager', 'iptrend', 'list', selectedYear],
+    queryFn: () => managerService.getIPTrendList(0, 10), // Pagination TODO
   });
-
-  const totalPages = reportsData?.totalPages || 1;
 
   // Fetch Preview Data when ID is selected
   const { data: previewData, isLoading: isPreviewLoading } = useQuery({
@@ -331,56 +320,6 @@ export function ManagerIPTrend() {
           </Card>
         ))}
       </div>
-
-      {/* Pagination */}
-      {reportsData?.content && reportsData.content.length > 0 && (
-        <div className="mt-8">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPage((p) => Math.max(0, p - 1));
-                  }}
-                  className={
-                    page === 0
-                      ? 'pointer-events-none opacity-50'
-                      : 'cursor-pointer'
-                  }
-                />
-              </PaginationItem>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <PaginationItem key={i}>
-                  <PaginationLink
-                    isActive={page === i}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPage(i);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    {i + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setPage((p) => Math.min(totalPages - 1, p + 1));
-                  }}
-                  className={
-                    page === totalPages - 1
-                      ? 'pointer-events-none opacity-50'
-                      : 'cursor-pointer'
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
 
       {/* Preview Modal (Full Screen Support) */}
       <Dialog

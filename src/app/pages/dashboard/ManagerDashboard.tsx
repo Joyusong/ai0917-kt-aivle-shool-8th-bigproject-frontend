@@ -30,6 +30,7 @@ import { ManagerIPExpansion } from './manager/ManagerIPExpansion';
 import { ManagerAuthorManagement } from './manager/ManagerAuthorManagement';
 import { ManagerNotice } from './manager/ManagerNotice';
 import { ManagerMyPage } from './manager/ManagerMyPage';
+// import { ManagerSettings } from './manager/ManagerSettings';
 import { PasswordChangeModal } from '../../components/dashboard/PasswordChangeModal';
 import { Logo } from '../../components/common/Logo';
 
@@ -381,6 +382,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
               onChangePassword={() => setShowPasswordModal(true)}
             />
           )}
+          {/* {activeMenu === 'settings' && <ManagerSettings />} */}
         </main>
       </div>
 

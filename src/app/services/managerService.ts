@@ -7,19 +7,10 @@ import {
   AuthorSummaryDto,
   ManagerAuthorDto,
   ManagerAuthorDetailDto,
-  ManagerDashboardSummaryDto,
 } from '../types/manager';
 import { LorebookDto, IPProposalDto, IPMatchingDto } from '../types/author';
 
 export const managerService = {
-  // Dashboard Summary
-  getDashboardSummary: async () => {
-    const response = await apiClient.get<ManagerDashboardSummaryDto>(
-      '/api/v1/manager/dashboard/summary',
-    );
-    return response.data;
-  },
-
   // IP Trend Analysis
   getIPTrend: async () => {
     const response = await apiClient.get<IPTrendDashboardDto>(
@@ -76,7 +67,6 @@ export const managerService = {
     sort?: string;
     page?: number;
     size?: number;
-    linked?: boolean;
   }) => {
     const response = await apiClient.get<PageResponse<ManagerAuthorDto>>(
       '/api/v1/manager/authors',
@@ -115,10 +105,9 @@ export const managerService = {
   },
 
   // IP Expansion
-  getIPProposals: async (page = 0, size = 12) => {
-    const response = await apiClient.get<PageResponse<IPProposalDto>>(
+  getIPProposals: async () => {
+    const response = await apiClient.get<IPProposalDto[]>(
       '/api/v1/manager/ip-expansion/proposals',
-      { params: { page, size } },
     );
     return response.data;
   },

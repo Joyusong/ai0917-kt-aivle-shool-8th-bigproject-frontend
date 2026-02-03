@@ -99,9 +99,7 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
                     summary?.ongoingCount || 0
                   )}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  진행 중인 작품
-                </div>
+                <div className="text-sm text-muted-foreground">전체 작품</div>
               </div>
             </div>
           </CardContent>
@@ -121,9 +119,7 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
                     summary?.settingBookCount || 0
                   )}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  생성된 설정집
-                </div>
+                <div className="text-sm text-muted-foreground">전체 설정집</div>
               </div>
             </div>
           </CardContent>

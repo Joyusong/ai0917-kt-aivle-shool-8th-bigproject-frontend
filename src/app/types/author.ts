@@ -8,13 +8,7 @@ export interface AuthorDashboardSummaryDto {
 }
 
 // Work Status Enum
-export type WorkStatus =
-  | 'ONGOING'
-  | 'COMPLETED'
-  | 'HIATUS'
-  | 'DROPPED'
-  | 'NEW'
-  | 'DELETED';
+export type WorkStatus = 'ONGOING' | 'COMPLETED' | 'HIATUS' | 'DROPPED' | 'NEW' | 'DELETED';
 
 // Work DTOs
 export interface WorkResponseDto {
@@ -29,7 +23,7 @@ export interface WorkResponseDto {
   coverImageUrl?: string;
   createdAt: string;
   // Legacy fields support if needed, otherwise remove
-  writer?: string;
+  writer?: string; 
   description?: string;
 }
 
@@ -188,13 +182,8 @@ export interface SettingBookDiffDto {
 export interface IPProposalDto {
   id: number;
   title: string;
-  projectName?: string; // Add optional if used interchangeably
   sender?: string;
   authorName?: string;
-  workTitle?: string;
-  budget?: string | number;
-  format?: string;
-  progress?: number;
   status:
     | 'PENDING'
     | 'REVIEWING'
@@ -206,8 +195,6 @@ export interface IPProposalDto {
   content?: string;
   receivedAt?: string;
   createdAt?: string;
-  mediaDetails?: any;
-  contentStrategy?: any;
 }
 
 export interface IPMatchingDto {

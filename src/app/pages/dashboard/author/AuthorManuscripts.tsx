@@ -287,7 +287,7 @@ export function AuthorManuscripts() {
               <Textarea
                 value={txt}
                 onChange={(e) => setTxt(e.target.value)}
-                className="min-h-32"
+                className="min-h-32 whitespace-pre-wrap"
               />
             </div>
             <div>
