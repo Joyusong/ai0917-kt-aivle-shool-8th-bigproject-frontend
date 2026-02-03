@@ -369,14 +369,18 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
         integrationId,
         work.title,
         selectedManuscript.id,
+        selectedManuscript.workId,
+        selectedManuscript.episode,
+        selectedManuscript.subtitle,
       );
     },
     onSuccess: (data) => {
-      if (data && data.check) {
-        setExtractedKeywords(data.check);
+      if (data) {
+        const checkData = data.check || {};
+        setExtractedKeywords(checkData);
         setIsKeywordSelectionOpen(true);
         // Select all keywords by default
-        setSelectedKeywords(data.check);
+        setSelectedKeywords(checkData);
         setIsKeywordSelectionConfirmed(false);
       }
     },
@@ -400,6 +404,17 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
         setSettingBookDiff(data);
         setIsKeywordSelectionOpen(false);
         setIsFinalReviewOpen(true);
+
+        if (selectedManuscript) {
+          setProcessingStatus((prev) => ({
+            ...prev,
+            [selectedManuscript.id]: 'REVIEW_READY',
+          }));
+          setAnalysisResults((prev) => ({
+            ...prev,
+            [selectedManuscript.id]: data,
+          }));
+        }
       }
     },
     onError: () => {
@@ -471,6 +486,62 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       toast.error('원문 수정에 실패했습니다.');
     },
   });
+
+  // Rename Manuscript Mutation (Inline)
+  const renameManuscriptMutation = useMutation({
+    mutationFn: async ({
+      workId,
+      manuscriptId,
+      subtitle,
+    }: {
+      workId: number;
+      manuscriptId: number;
+      subtitle: string;
+    }) => {
+      const work = works?.find((w) => w.id === workId);
+      if (!work) throw new Error('Work not found');
+
+      // Assuming we keep the existing episode number
+      // We need to fetch the manuscript to get the episode number if the API requires it
+      // For now, let's assume updateManuscript allows partial updates or we just send what we have.
+      // The service definition: updateManuscript: async (..., data: { subtitle?: string; epNum?: number })
+      // So sending just subtitle is fine.
+      return authorService.updateManuscript(
+        integrationId,
+        work.title,
+        manuscriptId,
+        {
+          subtitle,
+        },
+      );
+    },
+    onSuccess: (_, variables) => {
+      // toast.success('원문 이름이 변경되었습니다.'); // User might want silent update, but success feedback is usually good.
+      // "화면 상에서는 사용자가 알아채지 못하도록 반짝임 같은 게 없어야 해" refers to the list refresh flickering.
+      // React Query's invalidateQueries usually handles this gracefully if keys match.
+      const work = works?.find((w) => w.id === variables.workId);
+      if (work) {
+        queryClient.invalidateQueries({
+          queryKey: ['author', 'manuscript', integrationId, work.title],
+        });
+      }
+    },
+    onError: () => {
+      toast.error('원문 이름 변경에 실패했습니다.');
+    },
+  });
+
+  const handleRenameManuscript = (
+    workId: number,
+    manuscriptId: number,
+    newTitle: string,
+  ) => {
+    renameManuscriptMutation.mutate({
+      workId,
+      manuscriptId,
+      subtitle: newTitle,
+    });
+  };
 
   // Delete Work Mutation
   const deleteWorkMutation = useMutation({
@@ -556,7 +627,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
 
   // Save Mutation (Update via Upload)
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (options?: { silent?: boolean }) => {
       if (!selectedWorkId || !selectedManuscript) return;
       const work = works?.find((w) => w.id === selectedWorkId);
       if (!work) return;
@@ -569,8 +640,10 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
         txt: editorContent,
       });
     },
-    onSuccess: () => {
-      toast.success('저장되었습니다.');
+    onSuccess: (_, variables) => {
+      if (!variables?.silent) {
+        toast.success('저장되었습니다.');
+      }
       setIsDirty(false);
       const work = works?.find((w) => w.id === selectedWorkId);
       if (work) {
@@ -685,7 +758,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         if (selectedManuscript && isDirty && !saveMutation.isPending) {
-          saveMutation.mutate();
+          saveMutation.mutate({});
         }
       }
     };
@@ -809,14 +882,12 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
 
   const handlePublishClick = async () => {
     if (!selectedManuscript) return;
+
     if (isDirty) {
-      if (confirm('분석을 위해서는 저장이 필요합니다. 저장하시겠습니까?')) {
-        try {
-          await saveMutation.mutateAsync();
-        } catch {
-          return;
-        }
-      } else {
+      try {
+        // Silently save before analysis
+        await saveMutation.mutateAsync({ silent: true });
+      } catch {
         return;
       }
     }
@@ -840,17 +911,16 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       return;
     }
 
-    if (confirm('AI 분석을 요청하시겠습니까?')) {
-      if (selectedManuscript) {
-        setProcessingStatus((prev) => ({
-          ...prev,
-          [selectedManuscript.id]: 'EXTRACTING',
-        }));
-      }
-
-      toast.info('AI가 원문을 분석하여 키워드를 추출하고 있습니다...');
-      keywordExtractionMutation.mutate();
+    // Start extraction immediately (no confirmation dialog as requested for smoother flow)
+    if (selectedManuscript) {
+      setProcessingStatus((prev) => ({
+        ...prev,
+        [selectedManuscript.id]: 'EXTRACTING',
+      }));
     }
+
+    toast.info('AI가 원문을 분석하여 키워드를 추출하고 있습니다...');
+    keywordExtractionMutation.mutate();
   };
 
   const handleOpenReview = (workId: number, manuscript: ManuscriptDto) => {
@@ -1031,6 +1101,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                 onUploadManuscript={handleUploadManuscript}
                 onEditManuscript={handleEditManuscript}
                 onDeleteManuscript={handleDeleteManuscript}
+                onRenameManuscript={handleRenameManuscript}
                 className="h-full"
               />
             </ResizablePanel>
@@ -1081,7 +1152,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => saveMutation.mutate()}
+                      onClick={() => saveMutation.mutate({})}
                       disabled={!isDirty || saveMutation.isPending}
                     >
                       <Save className="w-4 h-4 mr-2" />
@@ -1242,18 +1313,6 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
             <DialogDescription>새로운 에피소드를 등록합니다.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>회차 번호</Label>
-              <Input
-                type="number"
-                min={1}
-                value={newManuscriptEpisode}
-                onChange={(e) =>
-                  setNewManuscriptEpisode(parseInt(e.target.value) || 1)
-                }
-                placeholder="1"
-              />
-            </div>
             <div className="space-y-2">
               <Label>부제 (제목)</Label>
               <Input

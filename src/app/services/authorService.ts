@@ -71,7 +71,7 @@ export const authorService = {
   ) => {
     const response = await apiClient.get<PageResponse<ManuscriptDto>>(
       `/api/v1/author/${userId}/${title}/manuscript/list`,
-      { params: { page, size, workId } },
+      { params: { workId } },
     );
     return response.data;
   },
@@ -170,11 +170,14 @@ export const authorService = {
   getManuscriptCategories: async (
     userId: string,
     title: string,
-    manuscriptId: number,
+    episodeId: number,
+    workId: number,
+    epNum: number,
+    subtitle: string,
   ) => {
     const response = await apiClient.post<KeywordExtractionResponseDto>(
       `/api/v1/author/${userId}/${title}/manuscript/categories`,
-      { manuscriptId },
+      { episodeId, workId, epNum, subtitle },
     );
     return response.data;
   },

@@ -21,6 +21,7 @@ import {
   FileBox,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
 import { ScrollArea } from '../../../components/ui/scroll-area';
 import {
   Collapsible,
@@ -65,6 +66,11 @@ interface AuthorWorkExplorerProps {
   onSelectManuscript?: (manuscript: ManuscriptDto) => void;
   onUploadManuscript?: (workId: number) => void;
   onEditManuscript?: (workId: number, manuscript: ManuscriptDto) => void;
+  onRenameManuscript?: (
+    workId: number,
+    manuscriptId: number,
+    newTitle: string,
+  ) => void;
   onDeleteManuscript?: (workId: number, manuscriptId: number) => void;
   className?: string;
 }
@@ -83,6 +89,7 @@ export function AuthorWorkExplorer({
   onSelectManuscript,
   onUploadManuscript,
   onEditManuscript,
+  onRenameManuscript,
   onDeleteManuscript,
   className,
 }: AuthorWorkExplorerProps) {
@@ -156,6 +163,11 @@ interface WorkItemProps {
   onSelectManuscript?: (manuscript: ManuscriptDto) => void;
   onUploadManuscript?: (workId: number) => void;
   onEditManuscript?: (workId: number, manuscript: ManuscriptDto) => void;
+  onRenameManuscript?: (
+    workId: number,
+    manuscriptId: number,
+    newTitle: string,
+  ) => void;
   onDeleteManuscript?: (workId: number, manuscriptId: number) => void;
 }
 
@@ -172,10 +184,13 @@ function WorkItem({
   onSelectManuscript,
   onUploadManuscript,
   onEditManuscript,
+  onRenameManuscript,
   onDeleteManuscript,
 }: WorkItemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [renameName, setRenameName] = useState('');
 
   // Fetch manuscripts when opened
   const { data: manuscriptsPage } = useQuery({
@@ -183,6 +198,7 @@ function WorkItem({
     queryFn: () =>
       authorService.getManuscripts(userId, work.title, 0, 10, work.id),
     enabled: isOpen && !!userId,
+    placeholderData: (previousData) => previousData,
   });
 
   const manuscripts = manuscriptsPage?.content || [];
@@ -280,52 +296,100 @@ function WorkItem({
         {/* Manuscripts Section */}
         {manuscripts && manuscripts.length > 0 ? (
           <div className="mb-2">
-            {manuscripts.map((manuscript) => (
-              <ContextMenu key={manuscript.id}>
-                <ContextMenuTrigger>
-                  <div
-                    className={cn(
-                      'flex items-center p-2 rounded-md hover:bg-accent/50 cursor-pointer text-xs transition-colors pl-4',
-                      selectedManuscriptId === manuscript.id &&
-                        'bg-accent text-accent-foreground',
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectManuscript?.(manuscript);
-                    }}
-                  >
-                    <File className="w-3 h-3 mr-2 text-muted-foreground" />
-                    <span className="truncate flex-1">
+            {manuscripts.map((manuscript) => {
+              const isRenaming = renamingId === manuscript.id;
+
+              const ManuscriptContent = (
+                <div
+                  className={cn(
+                    'flex items-center w-full p-2 rounded-md hover:bg-accent/50 cursor-pointer text-sm transition-colors whitespace-nowrap',
+                    selectedManuscriptId === manuscript.id &&
+                      'bg-accent text-accent-foreground',
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectManuscript?.(manuscript);
+                  }}
+                >
+                  <FileText className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+                  {isRenaming ? (
+                    <Input
+                      value={renameName}
+                      onChange={(e) => setRenameName(e.target.value)}
+                      onBlur={() => {
+                        if (
+                          renameName.trim() &&
+                          renameName !== manuscript.subtitle
+                        ) {
+                          onRenameManuscript?.(
+                            work.id,
+                            manuscript.id,
+                            renameName,
+                          );
+                        }
+                        setRenamingId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          if (
+                            renameName.trim() &&
+                            renameName !== manuscript.subtitle
+                          ) {
+                            onRenameManuscript?.(
+                              work.id,
+                              manuscript.id,
+                              renameName,
+                            );
+                          }
+                          setRenamingId(null);
+                        } else if (e.key === 'Escape') {
+                          setRenamingId(null);
+                        }
+                      }}
+                      autoFocus
+                      className="h-6 text-sm py-0 px-1"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <span className="truncate flex-1 text-left">
                       {manuscript.subtitle || `원문 ${manuscript.episode}`}
                     </span>
-                    <span className="text-[10px] text-muted-foreground ml-2">
-                      {manuscript.episode}화
-                    </span>
-                  </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent className="w-32">
-                  <ContextMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditManuscript?.(work.id, manuscript);
-                    }}
-                  >
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    원문 수정
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteManuscript?.(work.id, manuscript.id);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    원문 삭제
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
+                  )}
+                </div>
+              );
+
+              if (manuscript.is_read_only) {
+                return <div key={manuscript.id}>{ManuscriptContent}</div>;
+              }
+
+              return (
+                <ContextMenu key={manuscript.id}>
+                  <ContextMenuTrigger>{ManuscriptContent}</ContextMenuTrigger>
+                  <ContextMenuContent className="w-32">
+                    <ContextMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRenamingId(manuscript.id);
+                        setRenameName(manuscript.subtitle || '');
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4 mr-2" />
+                      원문 이름 변경
+                    </ContextMenuItem>
+                    <ContextMenuItem
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteManuscript?.(work.id, manuscript.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      원문 삭제
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+              );
+            })}
           </div>
         ) : (
           <div className="py-2 px-2 text-xs text-muted-foreground italic">

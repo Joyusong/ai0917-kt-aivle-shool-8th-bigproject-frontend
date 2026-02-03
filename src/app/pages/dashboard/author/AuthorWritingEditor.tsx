@@ -110,7 +110,7 @@ export function AuthorWritingEditor({
 }: AuthorWritingEditorProps) {
   const processedInitialContent = useMemo(() => {
     let text = initialContent;
-    if (text.startsWith('"') && text.endsWith('"')) {
+    if (text.startsWith('\"') && text.endsWith('\"')) {
       text = text.slice(1, -1);
     }
     return text.replace(/\\n/g, '\n');
