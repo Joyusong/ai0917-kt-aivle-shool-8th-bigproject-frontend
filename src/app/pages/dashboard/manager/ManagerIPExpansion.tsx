@@ -486,6 +486,31 @@ function ProjectDetailModal({
       '예측 불가능한 반전과 기존 클리셰를 파괴하는 전개로 독자들에게 신선한 충격을 제공합니다.',
   };
 
+  const PdfPreview = ({ className }: { className?: string }) => {
+    return (
+      <div
+        className={cn(
+          'bg-slate-50 rounded-2xl overflow-hidden relative border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center p-6',
+          className,
+        )}
+      >
+        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-xl flex items-center justify-center mb-4">
+          <FileText className="w-8 h-8" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 mb-2">
+          PDF 제안서 미리보기
+        </h3>
+        <p className="text-sm text-slate-500 mb-6 max-w-[200px]">
+          생성된 제안서 내용을 PDF 형식으로 미리 확인할 수 있습니다.
+        </p>
+        <Button variant="outline" className="gap-2 bg-white">
+          <FileText className="w-4 h-4" />
+          PDF 열기
+        </Button>
+      </div>
+    );
+  };
+
   const VisualPreview = ({
     className,
     isFullScreen = false,
@@ -606,7 +631,7 @@ function ProjectDetailModal({
       </AlertDialog>
 
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-[90vw] lg:max-w-7xl max-h-[95vh] p-0 gap-0 rounded-2xl overflow-hidden flex flex-col bg-white shadow-2xl border-0">
+        <DialogContent className="max-w-[90vw] lg:max-w-7xl max-h-[95vh] p-0 gap-0 rounded-2xl overflow-y-auto flex flex-col bg-white shadow-2xl border-0">
           <ScrollArea className="flex-1">
             {/* Hero Header */}
             <div
@@ -657,21 +682,28 @@ function ProjectDetailModal({
               {/* 1. Visual Preview & Summary */}
               <div className="flex flex-col lg:flex-row gap-8 items-stretch">
                 <div className="flex-1 flex flex-col space-y-4">
-                  <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                    <ImageIcon className="w-5 h-5 text-indigo-500" />
-                    비주얼 컨셉 프리뷰
-                  </h3>
-                  <div className="flex-1 relative rounded-xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 min-h-[300px]">
-                    <VisualPreview className="w-full h-full object-cover" />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white rounded-full"
-                      onClick={() => setShowPreviewModal(true)}
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </Button>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800">
+                      <ImageIcon className="w-5 h-5 text-indigo-500" />
+                      비주얼 & PDF 프리뷰
+                    </h3>
                   </div>
+                  <Tabs defaultValue="visual" className="flex-1 flex flex-col">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger value="visual">Visual Concept</TabsTrigger>
+                      <TabsTrigger value="pdf">PDF Report</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="visual" className="flex-1 mt-0">
+                      <div className="flex-1 relative rounded-xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 min-h-[300px] h-full">
+                        <VisualPreview className="w-full h-full object-cover" />
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="pdf" className="flex-1 mt-0">
+                      <div className="flex-1 relative rounded-xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 min-h-[300px] h-full">
+                        <PdfPreview className="w-full h-full" />
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
 
                 <div className="w-full lg:w-[400px] flex flex-col space-y-4 shrink-0">
@@ -1917,7 +1949,7 @@ function CreateIPExpansionDialog({
                               />
                               <Label
                                 htmlFor="g-original"
-                                className="flex flex-col items-center justify-center py-4 px-2 rounded-lg cursor-pointer transition-all border border-slate-200 bg-white peer-data-[state=checked]:bg-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-offset-1 peer-data-[state=checked]:ring-slate-900 peer-data-[state=checked]:text-white text-slate-500 shadow-sm"
+                                className="flex flex-col items-center justify-center py-4 px-2 rounded-lg cursor-pointer transition-all border border-slate-200 bg-white hover:bg-white peer-data-[state=checked]:bg-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-offset-1 peer-data-[state=checked]:ring-slate-900 peer-data-[state=checked]:text-white text-slate-500 shadow-sm"
                               >
                                 <span className="font-bold text-sm">
                                   원작 유지

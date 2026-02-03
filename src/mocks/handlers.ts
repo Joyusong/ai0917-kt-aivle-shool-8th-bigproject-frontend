@@ -499,6 +499,90 @@ export const handlers = [
 
   // 4.6 AI Analysis (Author)
   http.post(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/manuscript/upload`,
+    async () => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return HttpResponse.json({ success: true });
+    },
+  ),
+
+  http.get(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/manuscript/:id`,
+    ({ params }) => {
+      return HttpResponse.json({
+        id: Number(params.id),
+        episode: 1,
+        subtitle: '프롤로그',
+        txt: '원문 내용 텍스트...',
+        createdAt: new Date().toISOString(),
+      });
+    },
+  ),
+
+  http.delete(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/manuscript/:id`,
+    async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return HttpResponse.json({ success: true });
+    },
+  ),
+
+  http.get(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/lorebook`,
+    ({ request }) => {
+      const url = new URL(request.url);
+      const workId = url.searchParams.get('workId');
+      return HttpResponse.json(
+        generateList(20, (i) => ({
+          id: i,
+          workId: Number(workId),
+          name: `설정 ${i}`,
+          category: getRandomItem([
+            'characters',
+            'places',
+            'items',
+            'groups',
+            'worldviews',
+            'plots',
+          ]),
+          description: '설정 설명...',
+          image: null,
+        })),
+      );
+    },
+  ),
+
+  http.get(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/lorebook/:category`,
+    ({ params, request }) => {
+      const category = params.category as string;
+      const url = new URL(request.url);
+      const workId = url.searchParams.get('workId');
+      
+      // Map Korean category names to English if needed, or use as is
+      // The user provided example uses Korean '인물'
+      return HttpResponse.json(
+        generateList(5, (i) => ({
+          id: i,
+          workId: Number(workId),
+          name: `${category} 설정 ${i}`,
+          category: category,
+          description: `${category}에 대한 상세 설정입니다.`,
+          image: null,
+        })),
+      );
+    },
+  ),
+
+  http.delete(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/lorebook/:category/:id`,
+    async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      return HttpResponse.json({ success: true });
+    },
+  ),
+
+  http.post(
     `${BACKEND_URL}/api/v1/ai/author/:userId/:title/manuscript/setting`,
     async () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));

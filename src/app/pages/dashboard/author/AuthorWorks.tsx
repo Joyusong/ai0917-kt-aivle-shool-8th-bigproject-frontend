@@ -1061,14 +1061,6 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
 
                 {selectedManuscript ? (
                   <span className="text-sm font-medium flex items-center gap-2">
-                    <span className="text-muted-foreground">
-                      {works?.find((w) => w.id === selectedWorkId)?.title}
-                    </span>
-                    <span className="text-muted-foreground">/</span>
-                    <span>
-                      {selectedManuscript.subtitle ||
-                        `원문 ${selectedManuscript.episode}`}
-                    </span>
                     {isDirty && (
                       <span className="text-xs text-orange-500 font-normal">
                         (수정됨)

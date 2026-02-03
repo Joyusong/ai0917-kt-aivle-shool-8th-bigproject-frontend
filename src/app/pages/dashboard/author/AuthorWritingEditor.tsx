@@ -195,7 +195,7 @@ export function AuthorWritingEditor({
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                className="w-full h-full min-h-[500px] resize-none border-none focus-visible:ring-0 text-lg leading-relaxed p-0 shadow-none bg-transparent"
+                className="w-full h-full min-h-[500px] resize-none border-none focus-visible:ring-0 text-lg leading-relaxed p-0 shadow-none bg-transparent whitespace-pre-wrap"
                 placeholder="여기에 내용을 작성하세요..."
                 spellCheck={false}
               />
