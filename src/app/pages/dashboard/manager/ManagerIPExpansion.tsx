@@ -4,6 +4,8 @@ import {
   Tv,
   Play,
   Sparkles,
+  Calendar,
+  Trash2,
   Plus,
   Search,
   Filter,
@@ -69,6 +71,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../../../components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "../../../components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "../../../components/ui/alert-dialog";
 import {
   Tabs,
   TabsContent,
@@ -2192,6 +2212,51 @@ function CreateIPExpansionDialog({
                           }
                         />
                       </div>
+                      <div className="mt-3 space-y-2">
+                        <div>
+                          <div className="text-[10px] text-slate-500 mb-1">Age</div>
+                          <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+                            <div className="h-full bg-blue-500" style={{ width: "45%" }} />
+                            <div className="h-full bg-green-500" style={{ width: "40%" }} />
+                            <div className="h-full bg-slate-400" style={{ width: "15%" }} />
+                          </div>
+                          <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+                            <span>20대 45%</span>
+                            <span>30대 40%</span>
+                            <span>기타 15%</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] text-slate-500 mb-1">Gender</div>
+                          {(() => {
+                            const maleRatio =
+                              createdProject?.targetGender === "male"
+                                ? 70
+                                : createdProject?.targetGender === "female"
+                                ? 30
+                                : 50;
+                            const femaleRatio = 100 - maleRatio;
+                            return (
+                              <>
+                                <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                                  <div
+                                    className="h-full bg-blue-500"
+                                    style={{ width: `${maleRatio}%` }}
+                                  />
+                                  <div
+                                    className="h-full bg-pink-500"
+                                    style={{ width: `${femaleRatio}%` }}
+                                  />
+                                </div>
+                                <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+                                  <span>남성 {maleRatio}%</span>
+                                  <span>여성 {femaleRatio}%</span>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="flex justify-end">
@@ -2208,6 +2273,52 @@ function CreateIPExpansionDialog({
                           사업 전략 설정을 완료했습니다.
                         </Label>
                       </div>
+                      {(() => {
+                        const budgetValue = createdProject?.budget
+                          ? Number(createdProject.budget)
+                          : undefined;
+                        const scale =
+                          budgetValue == null
+                            ? "mid"
+                            : budgetValue < 50_000_000
+                            ? "low"
+                            : budgetValue < 200_000_000
+                            ? "mid"
+                            : "high";
+                        const base =
+                          "flex items-center gap-2 mt-3 text-[10px] text-slate-600";
+                        return (
+                          <div className={base}>
+                            <div
+                              className={`px-2 py-1 rounded-md border ${
+                                scale === "low"
+                                  ? "bg-blue-50 border-blue-200 text-blue-700"
+                                  : "bg-white border-slate-200"
+                              }`}
+                            >
+                              Low
+                            </div>
+                            <div
+                              className={`px-2 py-1 rounded-md border ${
+                                scale === "mid"
+                                  ? "bg-blue-50 border-blue-200 text-blue-700"
+                                  : "bg-white border-slate-200"
+                              }`}
+                            >
+                              Mid
+                            </div>
+                            <div
+                              className={`px-2 py-1 rounded-md border ${
+                                scale === "high"
+                                  ? "bg-blue-50 border-blue-200 text-blue-700"
+                                  : "bg-white border-slate-200"
+                              }`}
+                            >
+                              High
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
