@@ -16,6 +16,7 @@ import PrivacyPolicy from './pages/legal/PrivacyPolicy';
 import TermsPage from './pages/legal/TermsPage';
 import { authService } from './services/authService';
 import AILabPage from './pages/lab/AILabPage';
+import { Toaster } from './components/ui/sonner';
 
 type UserType = 'Manager' | 'Author' | 'Admin' | 'Deactivated' | null;
 
@@ -91,6 +92,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Toaster />
       <Routes>
         {/* 권한별 대시보드 */}
         <Route
