@@ -96,20 +96,19 @@ export interface KeywordExtractionResponseDto {
 }
 
 export interface PublishAnalysisRequestDto {
-  check: {
-    인물: string[];
-    세계: string[];
-    장소: string[];
-    사건: string[];
-    물건: string[];
-    집단: string[];
-  };
+  인물: string[];
+  세계: string[];
+  장소: string[];
+  사건: string[];
+  물건: string[];
+  집단: string[];
 }
 
 export interface PublishAnalysisResponseDto {
-  충돌: Record<string, string>[];
-  '설정 결합': any[];
-  '신규 업로드': any[];
+  충돌: Record<string, any[]> | any[];
+  '설정 결합': Record<string, any[]> | any[];
+  '신규 업로드': Record<string, any[]> | any[];
+  기존설정?: Record<string, any[]> | any[];
 }
 
 export interface LorebookSimilarityRequestDto {
