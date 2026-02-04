@@ -380,14 +380,34 @@ export function ManagerIPExpansion() {
                   <div className="flex justify-between items-start mb-2">
                     <Badge
                       variant={
-                        proposal.status === 'PENDING'
-                          ? 'outline'
-                          : proposal.status === 'PROPOSED'
-                            ? 'default'
-                            : 'secondary'
+                        proposal.status === 'APPROVED'
+                          ? 'default'
+                          : proposal.status === 'REVIEWING'
+                            ? 'secondary'
+                            : proposal.status === 'PENDING'
+                              ? 'outline'
+                              : proposal.status === 'REJECTED'
+                                ? 'destructive'
+                                : 'secondary'
                       }
+                      className={cn(
+                        proposal.status === 'APPROVED' &&
+                          'bg-green-600 hover:bg-green-700',
+                        proposal.status === 'REVIEWING' &&
+                          'bg-blue-100 text-blue-700 hover:bg-blue-200',
+                        proposal.status === 'PENDING' &&
+                          'border-amber-500 text-amber-600',
+                      )}
                     >
-                      {proposal.statusDescription || proposal.status}
+                      {proposal.status === 'APPROVED'
+                        ? '승인'
+                        : proposal.status === 'REVIEWING'
+                          ? '검토'
+                          : proposal.status === 'PENDING'
+                            ? '승인 대기'
+                            : proposal.status === 'REJECTED'
+                              ? '반려'
+                              : proposal.statusDescription || proposal.status}
                     </Badge>
                     <span className="text-xs text-slate-400">
                       {new Date(
@@ -496,8 +516,11 @@ function ProjectDetailModal({
   onEdit: (project: any) => void;
   onDelete: (id: number) => void;
 }) {
+  const [showPdfFullScreen, setShowPdfFullScreen] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedLorebookDetail, setSelectedLorebookDetail] =
+    useState<any>(null);
 
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
@@ -508,44 +531,72 @@ function ProjectDetailModal({
     setShowDeleteConfirm(false);
   };
 
-  // Mock Content Strategy if not present
+  // Mock Content Strategy - Updated for 6 Core Elements
   const contentStrategy = project.contentStrategy || {
+    differentiation:
+      project.differentiation ||
+      '기존 장르의 문법을 비트는 반전 요소와 입체적인 캐릭터 관계성을 통해 차별화된 재미를 선사합니다.',
+    keyReason:
+      '현재 트렌드인 "회귀/빙의/환생" 키워드를 독창적으로 해석하여, 2030 타겟층의 강력한 공감을 이끌어낼 수 있는 서사입니다.',
+    successGrounds:
+      '원작의 탄탄한 팬덤 데이터와 유사 성공 사례(예: 재벌집 막내아들)의 흥행 공식을 분석했을 때, 높은 시장 점유율이 예측됩니다.',
     coreNarrative:
       project.content ||
       '주인공의 내면적 갈등과 외부의 위협이 교차하며 전개되는 긴장감 넘치는 서사 구조를 가집니다.',
-    characterArc:
-      '평범했던 인물이 시련을 통해 각성하고, 주변 인물들과의 관계 속에서 성장하는 입체적인 변화를 그립니다.',
     worldBuilding:
       '기존 세계관의 규칙을 비틀어 새로운 마법 체계와 기술이 공존하는 독창적인 디스토피아를 구축합니다.',
-    themeMessage:
-      '희망과 절망 사이에서 인간의 의지가 만들어내는 기적에 대한 철학적인 메시지를 전달합니다.',
     visualStyle:
       '누아르 풍의 어두운 색채와 네온 사인이 대비되는 강렬한 비주얼로 몰입감을 극대화합니다.',
-    differentiation:
-      '예측 불가능한 반전과 기존 클리셰를 파괴하는 전개로 독자들에게 신선한 충격을 제공합니다.',
   };
 
-  const PdfPreview = ({ className }: { className?: string }) => {
+  const PdfPreview = ({
+    className,
+    isFullScreen = false,
+  }: {
+    className?: string;
+    isFullScreen?: boolean;
+  }) => {
     return (
       <div
         className={cn(
-          'bg-slate-50 rounded-2xl overflow-hidden relative border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center p-6',
+          'bg-slate-50 rounded-2xl overflow-hidden relative border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group',
+          isFullScreen ? 'w-full h-full p-10' : 'p-6 h-full min-h-[300px]',
           className,
         )}
       >
-        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-xl flex items-center justify-center mb-4">
-          <FileText className="w-8 h-8" />
+        <div className="absolute inset-0 bg-slate-100/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        <div className="relative z-10 flex flex-col items-center">
+          <div className="w-20 h-20 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+            <FileText className="w-10 h-10" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">
+            IP 확장 기획 제안서.pdf
+          </h3>
+          <p className="text-sm text-slate-500 mb-8 max-w-[240px]">
+            AI가 생성한 기획 제안서의 전체 내용을 PDF 형식으로 미리볼 수
+            있습니다.
+          </p>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="gap-2 bg-white hover:bg-slate-50"
+            >
+              <FileText className="w-4 h-4" />
+              PDF 다운로드
+            </Button>
+            {!isFullScreen && (
+              <Button
+                variant="ghost"
+                className="gap-2"
+                onClick={() => setShowPdfFullScreen(true)}
+              >
+                <Maximize2 className="w-4 h-4" />
+                전체화면
+              </Button>
+            )}
+          </div>
         </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-2">
-          PDF 제안서 미리보기
-        </h3>
-        <p className="text-sm text-slate-500 mb-6 max-w-[200px]">
-          생성된 제안서 내용을 PDF 형식으로 미리 확인할 수 있습니다.
-        </p>
-        <Button variant="outline" className="gap-2 bg-white">
-          <FileText className="w-4 h-4" />
-          PDF 열기
-        </Button>
       </div>
     );
   };
@@ -687,16 +738,32 @@ function ProjectDetailModal({
                     </Badge>
                     <Badge
                       variant={
-                        project.status === 'PROPOSED' ? 'default' : 'outline'
+                        project.status === 'APPROVED'
+                          ? 'default'
+                          : project.status === 'REVIEWING'
+                            ? 'secondary'
+                            : project.status === 'PENDING'
+                              ? 'outline'
+                              : 'destructive'
                       }
                       className={cn(
                         'border-0',
-                        project.status === 'PROPOSED'
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                          : 'bg-slate-200 text-slate-600',
+                        project.status === 'APPROVED'
+                          ? 'bg-emerald-500 text-white hover:bg-emerald-600'
+                          : project.status === 'REVIEWING'
+                            ? 'bg-amber-500 text-white hover:bg-amber-600'
+                            : project.status === 'PENDING'
+                              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                              : 'bg-rose-500 text-white hover:bg-rose-600',
                       )}
                     >
-                      {project.statusDescription}
+                      {project.status === 'APPROVED'
+                        ? '승인'
+                        : project.status === 'REVIEWING'
+                          ? '검토'
+                          : project.status === 'PENDING'
+                            ? '승인 대기'
+                            : '반려'}
                     </Badge>
                   </div>
                   <h2 className="text-4xl font-bold text-slate-900 tracking-tight">
@@ -718,23 +785,15 @@ function ProjectDetailModal({
             </div>
 
             <div className="p-8 space-y-12">
-              {/* 1. Visual Preview & Summary */}
+              {/* 1. PDF Preview & Overview */}
               <div className="flex flex-col lg:flex-row gap-8 items-stretch">
-                <div className="flex-1 flex flex-col space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                      <ImageIcon className="w-5 h-5 text-indigo-500" />
-                      비주얼 & PDF 프리뷰
-                    </h3>
-                  </div>
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex-1 relative rounded-xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 min-h-[300px] h-full">
-                      <PdfPreview className="w-full h-full" />
-                    </div>
-                  </div>
+                {/* Left: PDF Preview */}
+                <div className="w-full lg:w-1/2 shrink-0 h-[500px]">
+                  <PdfPreview isFullScreen={false} className="h-full" />
                 </div>
 
-                <div className="w-full lg:w-[400px] flex flex-col space-y-4 shrink-0">
+                {/* Right: Project Overview */}
+                <div className="w-full lg:w-1/2 flex flex-col space-y-4 shrink-0">
                   <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800">
                     <Target className="w-5 h-5 text-slate-500" />
                     프로젝트 개요
@@ -807,82 +866,41 @@ function ProjectDetailModal({
                 </div>
               </div>
 
-              {/* Reference Lorebooks */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800">
-                  <BookOpen className="w-5 h-5 text-slate-500" />
-                  참조 설정집 ({project.lorebooks?.length || 0})
-                </h3>
-                {project.lorebooks && project.lorebooks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {project.lorebooks.map((lorebook: any, i: number) => (
-                      <div
-                        key={i}
-                        className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-2 hover:shadow-md transition-shadow"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div
-                            className="font-bold text-slate-800 truncate"
-                            title={lorebook.keyword}
-                          >
-                            {lorebook.keyword}
-                          </div>
-                          <Badge
-                            variant="secondary"
-                            className="text-[10px] shrink-0 bg-slate-50 text-slate-600 border-slate-100"
-                          >
-                            {lorebook.category}
-                          </Badge>
-                        </div>
-                        <div className="h-px bg-slate-50" />
-                        <div className="text-xs text-slate-500 space-y-1.5">
-                          <div className="flex justify-between items-center">
-                            <span className="text-slate-400">작가</span>
-                            <span className="font-medium text-slate-700 truncate max-w-[100px]">
-                              {lorebook.authorName}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-slate-400">작품</span>
-                            <span
-                              className="font-medium text-slate-700 truncate max-w-[100px]"
-                              title={lorebook.workTitle}
-                            >
-                              {lorebook.workTitle}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    참조된 설정집이 없습니다.
-                  </div>
-                )}
-              </div>
-
               {/* 2. Core Content Strategy (6 Grid) */}
               <section>
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-slate-900">
                   <Sparkles className="w-6 h-6 text-purple-500" />
-                  IP 확장 기획 제안서
+                  IP 확장 기획 제안서 핵심 내용
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {[
+                    {
+                      title: '차별점 (Differentiation)',
+                      icon: Zap,
+                      content: contentStrategy.differentiation,
+                      color: 'text-indigo-600',
+                      bg: 'bg-indigo-50',
+                    },
+                    {
+                      title: '기획 필요성 (Key Reason)',
+                      icon: Target,
+                      content: contentStrategy.keyReason,
+                      color: 'text-rose-600',
+                      bg: 'bg-rose-50',
+                    },
+                    {
+                      title: '성공 근거 (Success Grounds)',
+                      icon: BarChart,
+                      content: contentStrategy.successGrounds,
+                      color: 'text-emerald-600',
+                      bg: 'bg-emerald-50',
+                    },
                     {
                       title: '핵심 서사 (Core Narrative)',
                       icon: BookOpen,
                       content: contentStrategy.coreNarrative,
                       color: 'text-blue-600',
                       bg: 'bg-blue-50',
-                    },
-                    {
-                      title: '캐릭터 아크 (Character Arc)',
-                      icon: Users,
-                      content: contentStrategy.characterArc,
-                      color: 'text-green-600',
-                      bg: 'bg-green-50',
                     },
                     {
                       title: '세계관 확장 (World Building)',
@@ -892,25 +910,11 @@ function ProjectDetailModal({
                       bg: 'bg-purple-50',
                     },
                     {
-                      title: '주제 및 메시지 (Theme)',
-                      icon: AlertCircle,
-                      content: contentStrategy.themeMessage,
-                      color: 'text-amber-600',
-                      bg: 'bg-amber-50',
-                    },
-                    {
                       title: '비주얼 스타일 (Visual Style)',
                       icon: ImageIcon,
                       content: contentStrategy.visualStyle,
                       color: 'text-pink-600',
                       bg: 'bg-pink-50',
-                    },
-                    {
-                      title: '차별화 요소 (Differentiation)',
-                      icon: Zap,
-                      content: contentStrategy.differentiation,
-                      color: 'text-indigo-600',
-                      bg: 'bg-indigo-50',
                     },
                   ].map((item, i) => (
                     <Card
@@ -934,6 +938,84 @@ function ProjectDetailModal({
                   ))}
                 </div>
               </section>
+
+              {/* 3. Input Setting Summary & Lorebooks */}
+              <div className="space-y-6 pt-6 border-t border-slate-100">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800">
+                  <Settings className="w-5 h-5 text-slate-500" />
+                  입력 설정 요약
+                </h3>
+
+                {/* Summary Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="text-xs text-slate-500 mb-1">
+                      Source Work
+                    </div>
+                    <div className="font-bold">{project.workTitle}</div>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="text-xs text-slate-500 mb-1">Author</div>
+                    <div className="font-bold">{project.authorName}</div>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="text-xs text-slate-500 mb-1">Format</div>
+                    <div className="font-bold capitalize">{project.format}</div>
+                  </div>
+                </div>
+
+                {/* Lorebooks with Expand Icon */}
+                <div className="space-y-3">
+                  <div className="text-sm font-medium text-slate-600">
+                    선택된 설정집
+                  </div>
+                  {project.lorebooks && project.lorebooks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {project.lorebooks.map((lorebook: any, i: number) => (
+                        <div
+                          key={i}
+                          className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-2 relative group"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div
+                              className="font-bold text-slate-800 truncate pr-6"
+                              title={lorebook.keyword}
+                            >
+                              {lorebook.keyword}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 absolute top-3 right-3 text-slate-400 hover:text-slate-600"
+                              onClick={() =>
+                                setSelectedLorebookDetail(lorebook)
+                              }
+                            >
+                              <Maximize2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <div className="h-px bg-slate-50" />
+                          <div className="text-xs text-slate-500 space-y-1.5">
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-400">카테고리</span>
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] h-5"
+                              >
+                                {lorebook.category}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-slate-500 bg-slate-50 rounded-lg border border-dashed">
+                      선택된 설정집이 없습니다.
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </ScrollArea>
 
@@ -987,6 +1069,52 @@ function ProjectDetailModal({
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={!!selectedLorebookDetail}
+        onOpenChange={() => setSelectedLorebookDetail(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>설정집 상세 정보</DialogTitle>
+          </DialogHeader>
+          {selectedLorebookDetail && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold">
+                  {selectedLorebookDetail.keyword}
+                </h3>
+                <Badge>{selectedLorebookDetail.category}</Badge>
+              </div>
+              <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">작가</span>
+                  <span className="font-medium">
+                    {selectedLorebookDetail.authorName}
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">작품</span>
+                  <span className="font-medium">
+                    {selectedLorebookDetail.workTitle}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-bold mb-2 text-sm text-slate-500">내용</h4>
+                <div className="p-4 bg-white border rounded-lg min-h-[100px] text-sm leading-relaxed">
+                  {selectedLorebookDetail.description || '내용이 없습니다.'}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setSelectedLorebookDetail(null)}>
+              닫기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1030,6 +1158,7 @@ function CreateIPExpansionDialog({
   const [lorebookCategoryTab, setLorebookCategoryTab] = useState('all');
   const [showCreateConfirm, setShowCreateConfirm] = useState(false);
   const [showReferenceModal, setShowReferenceModal] = useState(false);
+  const [referenceModalTab, setReferenceModalTab] = useState('all');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const confirmCheckboxRef = useRef<HTMLButtonElement>(null);
 
@@ -1049,9 +1178,7 @@ function CreateIPExpansionDialog({
 
   // Expansion Type & Genre State
   const [selectedFormat, setSelectedFormat] = useState<string | null>(null);
-  const [genreStrategy, setGenreStrategy] = useState<'original' | 'varied'>(
-    'original',
-  );
+  const [genreStrategy, setGenreStrategy] = useState<string>('original');
   const [targetGenre, setTargetGenre] = useState('');
   const [universeSetting, setUniverseSetting] = useState<'shared' | 'parallel'>(
     'shared',
@@ -1245,27 +1372,96 @@ function CreateIPExpansionDialog({
   }, [isOpen, initialData]);
 
   const handleNext = () => {
-    if (currentStep === 1 && selectedLorebooks.length === 0) {
-      toast.error('최소 하나 이상의 설정집을 선택해주세요.');
-      return;
+    if (currentStep === 1) {
+      if (!selectedAuthor || !selectedWork) {
+        toast.error('작가와 작품을 선택해주세요.');
+        return;
+      }
+      if (selectedLorebooks.length === 0) {
+        toast.error('최소 하나 이상의 설정집을 선택해주세요.');
+        return;
+      }
     }
     if (currentStep === 2 && !conflictConfirmed) {
       toast.error('충돌 내용을 확인하고 동의해주세요.');
-      // Optional: Focus logic for step 2 if needed
       return;
     }
-    if (currentStep === 3 && !step3Confirmed) {
-      toast.error('확장 포맷 및 전략 내용을 확인해주세요.');
-      return;
+
+    // Step 3 Validation
+    if (currentStep === 3) {
+      if (!selectedFormat) {
+        toast.error('확장 포맷을 선택해주세요.');
+        return;
+      }
+      if (!step3Confirmed) {
+        toast.error('확장 포맷 및 전략 내용을 확인해주세요.');
+        return;
+      }
     }
-    if (currentStep === 4 && !step4Confirmed) {
-      toast.error('사업 전략 내용을 확인해주세요.');
-      return;
+
+    // Step 4 Validation
+    if (currentStep === 4) {
+      if (business.targetAge.length === 0) {
+        toast.error('타겟 연령대를 선택해주세요.');
+        return;
+      }
+      if (!business.toneManner) {
+        toast.error('톤앤매너 키워드를 입력해주세요.');
+        return;
+      }
+      if (!step4Confirmed) {
+        toast.error('사업 전략 내용을 확인해주세요.');
+        return;
+      }
     }
-    if (currentStep === 5 && !step5Confirmed) {
-      toast.error('매체 상세 설정을 확인해주세요.');
-      return;
+
+    // Step 5 Validation
+    if (currentStep === 5) {
+      if (
+        selectedFormat === 'webtoon' &&
+        (!mediaDetails.style || !mediaDetails.pacing)
+      ) {
+        toast.error('작화 스타일과 연출 호흡을 선택해주세요.');
+        return;
+      }
+      if (
+        selectedFormat === 'drama' &&
+        (!mediaDetails.seasonType || !mediaDetails.episodeDuration)
+      ) {
+        toast.error('편성 전략과 회차당 분량을 선택해주세요.');
+        return;
+      }
+      if (
+        selectedFormat === 'game' &&
+        (!mediaDetails.gameGenre ||
+          !mediaDetails.coreLoop ||
+          !mediaDetails.platform)
+      ) {
+        toast.error('게임 장르, 핵심 재미요소, 플랫폼을 선택해주세요.');
+        return;
+      }
+      if (
+        selectedFormat === 'spinoff' &&
+        (!mediaDetails.spinoffType ||
+          !mediaDetails.targetCharacter ||
+          !mediaDetails.publishPace)
+      ) {
+        toast.error(
+          '스핀오프 방향성, 주인공 캐릭터, 연재 호흡을 선택해주세요.',
+        );
+        return;
+      }
+      if (selectedFormat === 'commercial' && !mediaDetails.visualFormat) {
+        toast.error('비주얼 포맷을 선택해주세요.');
+        return;
+      }
+
+      if (!step5Confirmed) {
+        toast.error('매체 상세 설정을 확인해주세요.');
+        return;
+      }
     }
+
     if (currentStep < 6) setCurrentStep((c) => c + 1);
   };
 
@@ -1609,7 +1805,10 @@ function CreateIPExpansionDialog({
                             설정집 선택
                           </h3>
                           {selectedWork && filteredLorebooks.length > 0 && (
-                            <div className="flex items-center gap-2">
+                            <label
+                              htmlFor="select-all-lorebooks"
+                              className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-1 rounded transition-colors"
+                            >
                               <Checkbox
                                 id="select-all-lorebooks"
                                 checked={
@@ -1624,13 +1823,10 @@ function CreateIPExpansionDialog({
                                   toggleAllLorebooks(!!checked)
                                 }
                               />
-                              <label
-                                htmlFor="select-all-lorebooks"
-                                className="text-sm text-slate-500 cursor-pointer select-none font-medium"
-                              >
+                              <span className="text-sm text-slate-500 font-medium select-none">
                                 전체 선택
-                              </label>
-                            </div>
+                              </span>
+                            </label>
                           )}
                         </div>
                         <div className="relative">
@@ -1694,9 +1890,8 @@ function CreateIPExpansionDialog({
                                 (item) => item.id === lorebook.id,
                               );
                               return (
-                                <div
+                                <label
                                   key={lorebook.id}
-                                  onClick={() => toggleLorebook(lorebook)}
                                   className={cn(
                                     'flex items-start gap-4 p-4 rounded-xl cursor-pointer transition-all border text-base group',
                                     isSelected
@@ -1706,9 +1901,12 @@ function CreateIPExpansionDialog({
                                 >
                                   <Checkbox
                                     checked={isSelected}
+                                    onCheckedChange={() =>
+                                      toggleLorebook(lorebook)
+                                    }
                                     className="mt-1 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
                                   />
-                                  <div className="flex-1 min-w-0">
+                                  <div className="flex-1 min-w-0 select-none">
                                     <div className="font-bold flex items-center gap-2 text-slate-800">
                                       <HighlightText
                                         text={lorebook.keyword}
@@ -1727,7 +1925,7 @@ function CreateIPExpansionDialog({
                                         : JSON.stringify(lorebook.setting)}
                                     </p>
                                   </div>
-                                </div>
+                                </label>
                               );
                             })}
                           </div>
@@ -1873,9 +2071,9 @@ function CreateIPExpansionDialog({
                     </div>
                   </ScrollArea>
                   <CardFooter className="bg-slate-50/80 border-t p-6 shrink-0 backdrop-blur-sm">
-                    <div
+                    <label
+                      htmlFor="conflict-agree"
                       className="flex items-center gap-3 w-full p-4 rounded-xl border border-transparent hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all cursor-pointer group"
-                      onClick={() => setConflictConfirmed(!conflictConfirmed)}
                     >
                       <Checkbox
                         id="conflict-agree"
@@ -1883,15 +2081,11 @@ function CreateIPExpansionDialog({
                         onCheckedChange={(c) => setConflictConfirmed(!!c)}
                         className="w-5 h-5 border-2 border-slate-300 data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900 transition-colors"
                       />
-                      <label
-                        htmlFor="conflict-agree"
-                        className="text-base font-medium text-slate-600 group-hover:text-slate-900 cursor-pointer select-none block w-full transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <span className="text-base font-medium text-slate-600 group-hover:text-slate-900 select-none block w-full transition-colors">
                         위의 잠재적 충돌 내용을 확인하였으며, 이를 인지하고
                         프로젝트를 진행합니다.
-                      </label>
-                    </div>
+                      </span>
+                    </label>
                   </CardFooter>
                 </Card>
               </div>
@@ -1915,10 +2109,8 @@ function CreateIPExpansionDialog({
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-bold text-lg flex items-center gap-2 text-slate-800">
                         <Film className="w-5 h-5 text-slate-500" /> 확장 포맷
+                        <span className="text-red-500 ml-1">*</span>
                       </h3>
-                      <span className="text-xs text-slate-400 font-medium px-2 py-1 bg-slate-100 rounded-full">
-                        필수 선택
-                      </span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -1961,71 +2153,43 @@ function CreateIPExpansionDialog({
 
                   {/* Strategy Selection (Right Column) */}
                   <div className="lg:col-span-5 space-y-8">
-                    {/* Genre Strategy */}
+                    {/* Genre Setting */}
                     <div className="space-y-4">
                       <h3 className="font-bold text-lg flex items-center gap-2 text-slate-800">
-                        <Wand2 className="w-5 h-5 text-slate-500" /> 장르 전략
+                        <Wand2 className="w-5 h-5 text-slate-500" /> 장르 설정
                         <span className="text-red-500 ml-1">*</span>
                       </h3>
-                      <Card className="border-slate-200 shadow-sm overflow-hidden">
-                        <div className="p-1 bg-slate-50/50">
-                          <RadioGroup
-                            value={genreStrategy}
-                            onValueChange={(v: any) => setGenreStrategy(v)}
-                            className="grid grid-cols-2 gap-1"
-                          >
-                            <div className="relative">
-                              <RadioGroupItem
-                                value="original"
-                                id="g-original"
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor="g-original"
-                                className="flex flex-col items-center justify-center py-4 px-2 rounded-lg cursor-pointer transition-all border border-slate-200 bg-white peer-data-[state=checked]:bg-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-offset-1 peer-data-[state=checked]:ring-slate-900 peer-data-[state=checked]:text-white text-slate-500 shadow-sm"
+                      <Card className="border-slate-200 shadow-sm overflow-hidden bg-white">
+                        <div className="p-4">
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { id: 'romance', label: '로맨스' },
+                              { id: 'fantasy', label: '판타지' },
+                              { id: 'martial_arts', label: '무협' },
+                              { id: 'modern', label: '현대물' },
+                              { id: 'thriller', label: '스릴러/공포' },
+                              { id: 'sf', label: 'SF' },
+                              { id: 'sports', label: '스포츠' },
+                              { id: 'comedy', label: '일상/개그' },
+                              { id: 'mystery', label: '추리' },
+                              { id: 'history', label: '역사' },
+                              { id: 'drama', label: '드라마' },
+                            ].map((genre) => (
+                              <div
+                                key={genre.id}
+                                onClick={() => setGenreStrategy(genre.id)}
+                                className={cn(
+                                  'flex items-center justify-center p-3 rounded-lg border text-sm font-medium cursor-pointer transition-all text-center',
+                                  genreStrategy === genre.id
+                                    ? 'bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900 ring-offset-1'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300',
+                                )}
                               >
-                                <span className="font-bold text-sm">
-                                  원작 유지
-                                </span>
-                                <span className="text-[10px] opacity-70 mt-1">
-                                  오리지널리티 강화
-                                </span>
-                              </Label>
-                            </div>
-                            <div className="relative">
-                              <RadioGroupItem
-                                value="varied"
-                                id="g-varied"
-                                className="peer sr-only"
-                              />
-                              <Label
-                                htmlFor="g-varied"
-                                className="flex flex-col items-center justify-center py-4 px-2 rounded-lg cursor-pointer transition-all border border-slate-200 bg-white peer-data-[state=checked]:bg-slate-900 peer-data-[state=checked]:border-slate-900 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-offset-1 peer-data-[state=checked]:ring-slate-900 peer-data-[state=checked]:text-white text-slate-500 shadow-sm"
-                              >
-                                <span className="font-bold text-sm">
-                                  장르 변주
-                                </span>
-                                <span className="text-[10px] opacity-70 mt-1">
-                                  새로운 재미 요소
-                                </span>
-                              </Label>
-                            </div>
-                          </RadioGroup>
-                        </div>
-
-                        {genreStrategy === 'varied' && (
-                          <div className="p-4 bg-white border-t border-slate-100 animate-in fade-in slide-in-from-top-1">
-                            <Label className="text-xs font-bold mb-2 block text-slate-500 uppercase tracking-wider">
-                              Target Genre
-                            </Label>
-                            <Input
-                              placeholder="예: 사이버펑크, 로맨스 판타지..."
-                              value={targetGenre}
-                              onChange={(e) => setTargetGenre(e.target.value)}
-                              className="bg-slate-50 border-slate-200 focus-visible:ring-slate-400"
-                            />
+                                {genre.label}
+                              </div>
+                            ))}
                           </div>
-                        )}
+                        </div>
                       </Card>
                     </div>
 
@@ -2093,9 +2257,9 @@ function CreateIPExpansionDialog({
                 </div>
 
                 <div className="mt-12 pt-6 border-t flex justify-end">
-                  <div
+                  <label
+                    htmlFor="step3-confirm"
                     className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                    onClick={() => setStep3Confirmed(!step3Confirmed)}
                   >
                     <Checkbox
                       id="step3-confirm"
@@ -2103,13 +2267,10 @@ function CreateIPExpansionDialog({
                       onCheckedChange={(c) => setStep3Confirmed(!!c)}
                       className="data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
                     />
-                    <label
-                      htmlFor="step3-confirm"
-                      className="text-sm font-medium cursor-pointer select-none text-slate-700"
-                    >
+                    <span className="text-sm font-medium select-none text-slate-700">
                       위 전략으로 확장을 진행합니다.
-                    </label>
-                  </div>
+                    </span>
+                  </label>
                 </div>
               </div>
             )}
@@ -2288,9 +2449,9 @@ function CreateIPExpansionDialog({
                     </div>
                   </CardContent>
                   <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
-                    <div
+                    <label
+                      htmlFor="step4-confirm"
                       className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => setStep4Confirmed(!step4Confirmed)}
                     >
                       <Checkbox
                         id="step4-confirm"
@@ -2298,13 +2459,10 @@ function CreateIPExpansionDialog({
                         onCheckedChange={(c) => setStep4Confirmed(!!c)}
                         className="data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
                       />
-                      <label
-                        htmlFor="step4-confirm"
-                        className="text-sm font-medium cursor-pointer select-none text-slate-700"
-                      >
+                      <span className="text-sm font-medium select-none text-slate-700">
                         비즈니스 전략 확인 완료
-                      </label>
-                    </div>
+                      </span>
+                    </label>
                   </CardFooter>
                 </Card>
               </div>
@@ -3086,9 +3244,9 @@ function CreateIPExpansionDialog({
                     </div>
                   </ScrollArea>
                   <CardFooter className="bg-slate-50 border-t p-6 flex justify-end shrink-0">
-                    <div
+                    <label
+                      htmlFor="step5-confirm"
                       className="flex items-center gap-2 cursor-pointer group"
-                      onClick={() => setStep5Confirmed(!step5Confirmed)}
                     >
                       <Checkbox
                         id="step5-confirm"
@@ -3096,13 +3254,10 @@ function CreateIPExpansionDialog({
                         onCheckedChange={(c) => setStep5Confirmed(!!c)}
                         className="data-[state=checked]:bg-slate-900 data-[state=checked]:border-slate-900"
                       />
-                      <label
-                        htmlFor="step5-confirm"
-                        className="text-sm font-medium cursor-pointer select-none text-slate-700 group-hover:text-slate-900"
-                      >
+                      <span className="text-sm font-medium select-none text-slate-700 group-hover:text-slate-900">
                         매체 상세 설정 확인 완료
-                      </label>
-                    </div>
+                      </span>
+                    </label>
                   </CardFooter>
                 </Card>
               </div>
@@ -3123,200 +3278,61 @@ function CreateIPExpansionDialog({
                 <Card className="flex-1 flex flex-col border-slate-200 shadow-sm bg-slate-50/50">
                   <ScrollArea className="flex-1">
                     <div className="p-8 space-y-8">
-                      {/* 1. Visual Preview Section */}
+                      {/* 1. Project Title & Overview */}
                       <section className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
                         <h3 className="font-bold text-lg flex items-center gap-2 mb-6 text-slate-800">
                           <FileText className="w-5 h-5 text-indigo-500" />
-                          IP 확장 제안서 표지 및 개요
+                          프로젝트 제안서 생성 개요
                         </h3>
-                        <div className="flex flex-col md:flex-row gap-8 items-center">
-                          {/* Visual Placeholder */}
-                          <div className="w-full md:w-1/3 aspect-[3/4] rounded-xl overflow-hidden relative shadow-lg group">
-                            <div
-                              className={cn(
-                                'absolute inset-0 bg-gradient-to-br',
-                                selectedFormat === 'webtoon'
-                                  ? 'from-green-100 to-emerald-50'
-                                  : selectedFormat === 'drama'
-                                    ? 'from-purple-100 to-indigo-50'
-                                    : selectedFormat === 'movie'
-                                      ? 'from-red-100 to-orange-50'
-                                      : 'from-slate-100 to-gray-50',
-                              )}
+                        <div className="space-y-6">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-bold text-slate-500">
+                              프로젝트 제목
+                              <span className="text-red-500 ml-1">*</span>
+                            </Label>
+                            <Input
+                              value={projectTitle}
+                              onChange={(e) => setProjectTitle(e.target.value)}
+                              placeholder={`${selectedWork?.title || '작품'} ${
+                                formats.find((f) => f.id === selectedFormat)
+                                  ?.title || '확장'
+                              } 프로젝트`}
+                              className="font-bold text-lg h-12 bg-white border-slate-300 focus-visible:ring-indigo-500"
                             />
-
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                              <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 text-slate-700">
-                                {formats.find((f) => f.id === selectedFormat)
-                                  ?.icon ? (
-                                  React.createElement(
-                                    formats.find(
-                                      (f) => f.id === selectedFormat,
-                                    )!.icon,
-                                    { className: 'w-8 h-8' },
-                                  )
-                                ) : (
-                                  <ImageIcon className="w-8 h-8" />
-                                )}
-                              </div>
-                              <h4 className="font-bold text-slate-900 text-lg mb-1">
-                                {formats.find((f) => f.id === selectedFormat)
-                                  ?.title || '확장 포맷'}
-                              </h4>
-                              <p className="text-xs text-slate-500">
-                                {mediaDetails.style
-                                  ? `${
-                                      mediaDetails.style === 'realistic'
-                                        ? '실사체'
-                                        : mediaDetails.style === 'casual'
-                                          ? '캐주얼/SD'
-                                          : mediaDetails.style ===
-                                              'martial_arts'
-                                            ? '무협/극화체'
-                                            : mediaDetails.style === 'us_comics'
-                                              ? '미국 코믹스'
-                                              : mediaDetails.style
-                                    } 스타일`
-                                  : '스타일 미정'}
-                              </p>
-                            </div>
-
-                            {/* Overlay Badge */}
-                            <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-                              <Badge className="bg-black/80 hover:bg-black/90 text-white border-0 backdrop-blur-sm">
-                                Proposal Generation Ready
-                              </Badge>
-                            </div>
                           </div>
 
-                          {/* Info */}
-                          <div className="flex-1 space-y-6 w-full">
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <Label className="text-sm font-bold text-slate-500">
-                                  프로젝트 제목
-                                  <span className="text-red-500 ml-1">*</span>
-                                </Label>
-                                <Input
-                                  value={projectTitle}
-                                  onChange={(e) =>
-                                    setProjectTitle(e.target.value)
-                                  }
-                                  placeholder={`${selectedWork?.title || '작품'} ${
-                                    formats.find((f) => f.id === selectedFormat)
-                                      ?.title || '확장'
-                                  } 프로젝트`}
-                                  className="font-bold text-lg h-12 bg-white border-slate-300 focus-visible:ring-indigo-500"
-                                />
-                              </div>
-                              <p className="text-slate-600 leading-relaxed">
-                                선택하신{' '}
-                                <span className="font-semibold text-slate-900">
-                                  {selectedLorebooks.length}개의 설정집
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            {[
+                              {
+                                label: '예상 분량',
+                                value: '약 15~20페이지',
+                              },
+                              {
+                                label: '포함 이미지',
+                                value: '없음 (텍스트 중심)',
+                              },
+                              {
+                                label: '소요 시간',
+                                value: '약 10분 내외',
+                              },
+                              {
+                                label: '소모 크레딧',
+                                value: '50 Credits',
+                              },
+                            ].map((item, i) => (
+                              <div
+                                key={i}
+                                className="bg-slate-50 rounded-lg p-3 border border-slate-100"
+                              >
+                                <span className="text-xs text-slate-500 font-medium block mb-1">
+                                  {item.label}
                                 </span>
-                                을 기반으로,
-                                <span className="font-semibold text-slate-900">
-                                  {' '}
-                                  {genreStrategy === 'original'
-                                    ? '원작의 감성을 유지하며'
-                                    : '새로운 장르로 변주하여'}
+                                <span className="text-sm font-bold text-slate-700">
+                                  {item.value}
                                 </span>
-                                <span className="font-semibold text-slate-900">
-                                  {' '}
-                                  {business.targetAge.join(', ') || '전연령'}
-                                </span>{' '}
-                                타겟의
-                                <span className="font-semibold text-slate-900">
-                                  {' '}
-                                  {
-                                    formats.find((f) => f.id === selectedFormat)
-                                      ?.title
-                                  }
-                                </span>{' '}
-                                기획안을 생성합니다.
-                              </p>
-
-                              <div className="pt-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setShowReferenceModal(true)}
-                                  className="gap-2 text-slate-600"
-                                >
-                                  <List className="w-4 h-4" /> 설정 요약
-                                  전체보기
-                                </Button>
                               </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                              {[
-                                {
-                                  label: '예상 분량',
-                                  value: '약 15~20페이지',
-                                },
-                                {
-                                  label: '포함 이미지',
-                                  value: '컨셉 아트 5종 이상',
-                                },
-                                {
-                                  label: '소요 시간',
-                                  value: '약 10분 내외',
-                                },
-                                {
-                                  label: '소모 크레딧',
-                                  value: '50 Credits',
-                                },
-                              ].map((item, i) => (
-                                <div
-                                  key={i}
-                                  className="bg-slate-50 rounded-lg p-3 flex justify-between items-center border border-slate-100"
-                                >
-                                  <span className="text-xs text-slate-500 font-medium">
-                                    {item.label}
-                                  </span>
-                                  <span className="text-sm font-bold text-slate-700">
-                                    {item.value}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                            ))}
                           </div>
-                        </div>
-                      </section>
-
-                      {/* 1.5 Content Strategy Preview */}
-                      <section>
-                        <h3 className="font-bold text-lg flex items-center gap-2 mb-4 px-1 text-slate-800">
-                          <FileText className="w-5 h-5 text-slate-500" />
-                          제안서 핵심 구성 요소 (Content Strategy)
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {Object.entries(
-                            getContentStrategy(selectedFormat),
-                          ).map(([key, strategy]: [string, any]) => (
-                            <Card
-                              key={key}
-                              className="border-slate-200 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all"
-                            >
-                              <CardContent className="p-5 flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                                  <strategy.icon className="w-5 h-5" />
-                                </div>
-                                <div>
-                                  <h4 className="font-bold text-slate-800 text-sm mb-1">
-                                    {strategy.title}
-                                  </h4>
-                                  <p className="text-xs text-slate-500 mb-2 leading-relaxed">
-                                    {strategy.desc}
-                                  </p>
-                                  <div className="bg-slate-50 px-2 py-1.5 rounded text-[11px] font-medium text-slate-600 border border-slate-100 inline-block">
-                                    💡 {strategy.sub}
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
                         </div>
                       </section>
 
@@ -3324,12 +3340,19 @@ function CreateIPExpansionDialog({
                       <section>
                         <h3 className="font-bold text-lg flex items-center gap-2 mb-4 px-1 text-slate-800">
                           <Settings className="w-5 h-5 text-slate-500" />
-                          설정 요약 (Configuration Summary)
+                          입력 설정 요약
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {[
                             {
-                              label: '장르 전략',
+                              label: '참조 데이터',
+                              value: `${selectedLorebooks.length}개의 설정집`,
+                              icon: BookOpen,
+                              color: 'text-indigo-600',
+                              bg: 'bg-indigo-50',
+                            },
+                            {
+                              label: '장르 설정',
                               value:
                                 genreStrategy === 'original'
                                   ? '원작 장르 유지 (Original)'
@@ -3390,8 +3413,18 @@ function CreateIPExpansionDialog({
                           ].map((item, i) => (
                             <div
                               key={i}
-                              className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-start gap-3"
+                              className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm flex items-start gap-3 relative group"
                             >
+                              {item.label === '참조 데이터' && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute top-2 right-2 h-6 w-6 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => setShowReferenceModal(true)}
+                                >
+                                  <Maximize2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
                               <div
                                 className={cn(
                                   'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
@@ -3472,106 +3505,7 @@ function CreateIPExpansionDialog({
                           </details>
                         </div>
                       </section>
-                      <section>
-                        <h3 className="font-bold text-lg flex items-center gap-2 mb-4 px-1 text-slate-800">
-                          <Settings2 className="w-5 h-5 text-slate-500" />
-                          설정 요약
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {[
-                            {
-                              label: '참조 데이터',
-                              value: `${selectedLorebooks.length}개의 설정집`,
-                              sub: selectedLorebooks
-                                .map((l) => l.keyword)
-                                .join(', '),
-                              icon: BookOpen,
-                              action: (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 text-xs px-2 ml-auto"
-                                  onClick={() => setShowReferenceModal(true)}
-                                >
-                                  상세보기
-                                </Button>
-                              ),
-                            },
-                            {
-                              label: '확장 전략',
-                              value:
-                                genreStrategy === 'original'
-                                  ? '원작 장르 유지'
-                                  : `장르 변주 (${targetGenre})`,
-                              sub:
-                                universeSetting === 'shared'
-                                  ? '공유 세계관'
-                                  : '평행 세계',
-                              icon: Wand2,
-                            },
-                            {
-                              label: '타겟/예산',
-                              value: `${business.targetAge.join(', ') || '전연령'} / ${business.targetGender === 'male' ? '남성' : business.targetGender === 'female' ? '여성' : '전체'}`,
-                              sub: `예산 규모: ${business.budgetRange === 'low' ? '저예산' : business.budgetRange === 'high' ? '블록버스터' : '중형 예산'}`,
-                              icon: Target,
-                            },
-                            {
-                              label: '매체 설정',
-                              value: mediaDetails.style
-                                ? `${mediaDetails.style} 스타일`
-                                : '스타일 미정',
-                              sub:
-                                mediaDetails.seasonType === 'movie'
-                                  ? '단편 영화'
-                                  : mediaDetails.seasonType === 'series'
-                                    ? '시리즈물'
-                                    : '형식 미정',
-                              icon: Film,
-                            },
-                            {
-                              label: '톤앤매너',
-                              value: business.toneManner || 'AI 추천',
-                              sub: '전반적인 분위기',
-                              icon: Palette,
-                            },
-                            {
-                              label: '추가 요청',
-                              value: mediaPrompt
-                                ? '사용자 지정 프롬프트 포함'
-                                : '없음',
-                              sub: mediaPrompt
-                                ? mediaPrompt.length > 20
-                                  ? mediaPrompt.substring(0, 20) + '...'
-                                  : mediaPrompt
-                                : '-',
-                              icon: MessageSquare,
-                            },
-                          ].map((item: any, i) => (
-                            <div
-                              key={i}
-                              className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 shrink-0">
-                                <item.icon className="w-4 h-4" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between">
-                                  <div className="text-xs font-bold text-slate-400 mb-0.5">
-                                    {item.label}
-                                  </div>
-                                  {item.action}
-                                </div>
-                                <div className="font-bold text-slate-800 text-sm truncate">
-                                  {item.value}
-                                </div>
-                                <div className="text-xs text-slate-500 truncate mt-0.5">
-                                  {item.sub}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
+                      {/* Duplicate Configuration Summary Removed */}
                     </div>
                   </ScrollArea>
 
@@ -3649,41 +3583,97 @@ function CreateIPExpansionDialog({
         <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>참조 설정집 상세</DialogTitle>
+            <Tabs
+              value={referenceModalTab}
+              onValueChange={setReferenceModalTab}
+              className="mt-4"
+            >
+              <TabsList className="grid grid-cols-7 w-full">
+                {[
+                  { id: 'all', label: '전체' },
+                  { id: 'characters', label: '인물' },
+                  { id: 'places', label: '장소' },
+                  { id: 'items', label: '물건' },
+                  { id: 'groups', label: '단체' },
+                  { id: 'worldviews', label: '세계' },
+                  { id: 'plots', label: '사건' },
+                ].map((tab) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className="text-xs px-1"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           </DialogHeader>
-          <ScrollArea className="flex-1 pr-4 overflow-y-auto">
+          <ScrollArea className="flex-1 pr-4 overflow-y-auto mt-4">
             <div className="space-y-4">
-              {selectedLorebooks.map((lorebook, i) => (
-                <div
-                  key={i}
-                  className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="font-bold text-lg text-slate-800">
-                      {lorebook.keyword}
+              {selectedLorebooks
+                .filter(
+                  (lb) =>
+                    referenceModalTab === 'all' ||
+                    lb.category ===
+                      {
+                        characters: '인물',
+                        places: '장소',
+                        items: '물건',
+                        groups: '단체',
+                        worldviews: '세계관',
+                        plots: '사건',
+                      }[referenceModalTab],
+                )
+                .map((lorebook, i) => (
+                  <div
+                    key={i}
+                    className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="font-bold text-lg text-slate-800">
+                        {lorebook.keyword}
+                      </div>
+                      <Badge variant="secondary">{lorebook.category}</Badge>
                     </div>
-                    <Badge variant="secondary">{lorebook.category}</Badge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm text-slate-600 mb-3">
-                    <div>
-                      <span className="font-semibold text-slate-500">
-                        작가:
-                      </span>{' '}
-                      {lorebook.authorName}
+                    <div className="grid grid-cols-2 gap-2 text-sm text-slate-600 mb-3">
+                      <div>
+                        <span className="font-semibold text-slate-500">
+                          작가:
+                        </span>{' '}
+                        {lorebook.authorName}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-slate-500">
+                          작품:
+                        </span>{' '}
+                        {lorebook.workTitle}
+                      </div>
                     </div>
-                    <div>
-                      <span className="font-semibold text-slate-500">
-                        작품:
-                      </span>{' '}
-                      {lorebook.workTitle}
+                    <div className="bg-slate-50 p-3 rounded text-sm text-slate-700 whitespace-pre-wrap">
+                      {typeof lorebook.setting === 'string'
+                        ? lorebook.setting
+                        : JSON.stringify(lorebook.setting, null, 2)}
                     </div>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded text-sm text-slate-700 whitespace-pre-wrap">
-                    {typeof lorebook.setting === 'string'
-                      ? lorebook.setting
-                      : JSON.stringify(lorebook.setting, null, 2)}
-                  </div>
+                ))}
+              {selectedLorebooks.filter(
+                (lb) =>
+                  referenceModalTab === 'all' ||
+                  lb.category ===
+                    {
+                      characters: '인물',
+                      places: '장소',
+                      items: '물건',
+                      groups: '단체',
+                      worldviews: '세계관',
+                      plots: '사건',
+                    }[referenceModalTab],
+              ).length === 0 && (
+                <div className="text-center text-slate-500 py-10">
+                  해당 카테고리의 참조 설정집이 없습니다.
                 </div>
-              ))}
+              )}
             </div>
           </ScrollArea>
           <DialogFooter>
