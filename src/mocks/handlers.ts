@@ -146,26 +146,58 @@ let MOCK_WORKS = generateList(5, (i) => ({
   statusDescription: '상태 설명',
 }));
 
+// Map<WorkId, Lorebook[]>
+const MOCK_LOREBOOKS = new Map<number, any[]>();
+
 // Map<WorkId, Manuscript[]>
 const MOCK_MANUSCRIPTS = new Map<number, any[]>();
 
-// Initialize manuscripts for existing works (except NEW ones)
+// Initialize lorebooks for existing works
 MOCK_WORKS.forEach((work) => {
-  if (work.status !== 'NEW') {
-    MOCK_MANUSCRIPTS.set(
-      work.id,
-      generateList(3, (i) => ({
-        id: i,
-        workId: work.id,
-        episode: i + 1,
-        subtitle: `제 ${i + 1}화 - 내용`,
-        createdAt: new Date().toISOString(),
-        txt: `내용입니다...`,
-      })),
-    );
-  } else {
-    MOCK_MANUSCRIPTS.set(work.id, []);
-  }
+  const lorebooks = [
+    {
+      id: 1,
+      workId: work.id,
+      name: '주인공',
+      category: 'characters',
+      description: '메인 주인공입니다.',
+      age: '20세',
+      gender: '남성',
+      occupation: '학생',
+      appearance: '검은 머리, 평범한 인상',
+      personality: '내향적이지만 정의로움',
+      role: '주인공',
+      ability: '회귀',
+      image: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      workId: work.id,
+      name: '서울',
+      category: 'places',
+      description: '배경이 되는 도시',
+      location: '대한민국',
+      atmosphere: '현대적, 삭막함',
+      function: '주요 활동 무대',
+      image: null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    },
+  ];
+  MOCK_LOREBOOKS.set(work.id, lorebooks);
+
+  MOCK_MANUSCRIPTS.set(
+    work.id,
+    generateList(3, (i) => ({
+      id: i,
+      workId: work.id,
+      episode: i,
+      subtitle: `Subtitle ${i}`,
+      txt: `Manuscript text ${i}`,
+    })),
+  );
 });
 
 // ----------------------------------------------------------------------
@@ -531,24 +563,10 @@ export const handlers = [
     `${BACKEND_URL}/api/v1/author/:userId/:title/lorebook`,
     ({ request }) => {
       const url = new URL(request.url);
-      const workId = url.searchParams.get('workId');
-      return HttpResponse.json(
-        generateList(20, (i) => ({
-          id: i,
-          workId: Number(workId),
-          name: `설정 ${i}`,
-          category: getRandomItem([
-            'characters',
-            'places',
-            'items',
-            'groups',
-            'worldviews',
-            'plots',
-          ]),
-          description: '설정 설명...',
-          image: null,
-        })),
-      );
+      const workId = Number(url.searchParams.get('workId'));
+      const lorebooks = MOCK_LOREBOOKS.get(workId) || [];
+
+      return HttpResponse.json(lorebooks);
     },
   ),
 
@@ -557,28 +575,90 @@ export const handlers = [
     ({ params, request }) => {
       const category = params.category as string;
       const url = new URL(request.url);
-      const workId = url.searchParams.get('workId');
-      
-      // Map Korean category names to English if needed, or use as is
-      // The user provided example uses Korean '인물'
-      return HttpResponse.json(
-        generateList(5, (i) => ({
-          id: i,
-          workId: Number(workId),
-          name: `${category} 설정 ${i}`,
-          category: category,
-          description: `${category}에 대한 상세 설정입니다.`,
-          image: null,
-        })),
-      );
+      const workId = Number(url.searchParams.get('workId'));
+
+      const lorebooks = MOCK_LOREBOOKS.get(workId) || [];
+      const filtered = lorebooks.filter((l) => l.category === category);
+
+      return HttpResponse.json(filtered);
+    },
+  ),
+
+  http.post(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/lorebook`,
+    async ({ request }) => {
+      const body = (await request.json()) as any;
+      const workId = Number(body.workId); // Assuming workId is passed in body or inferred
+
+      // In a real app, workId might come from the URL or body.
+      // The current frontend implementation seems to rely on the URL param context
+      // but let's assume we can get the workId.
+      // For mock purposes, if workId is missing in body, we might need to extract from URL if possible,
+      // or default to a known ID. But let's check if the frontend sends it.
+      // If not, we'll try to find it from the MOCK_LOREBOOKS keys or default to 0.
+
+      const targetWorkId = body.workId ? Number(body.workId) : 0;
+      const currentLorebooks = MOCK_LOREBOOKS.get(targetWorkId) || [];
+
+      const newId = Math.max(...currentLorebooks.map((l) => l.id), 0) + 1;
+      const newLorebook = {
+        id: newId,
+        workId: targetWorkId,
+        ...body,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      currentLorebooks.push(newLorebook);
+      MOCK_LOREBOOKS.set(targetWorkId, currentLorebooks);
+
+      return HttpResponse.json(newLorebook);
+    },
+  ),
+
+  http.put(
+    `${BACKEND_URL}/api/v1/author/:userId/:title/lorebook/:id`,
+    async ({ params, request }) => {
+      const id = Number(params.id);
+      const body = (await request.json()) as any;
+      const workId = Number(body.workId); // Ensure frontend sends workId
+
+      const currentLorebooks = MOCK_LOREBOOKS.get(workId) || [];
+      const index = currentLorebooks.findIndex((l) => l.id === id);
+
+      if (index !== -1) {
+        currentLorebooks[index] = {
+          ...currentLorebooks[index],
+          ...body,
+          updatedAt: new Date().toISOString(),
+        };
+        MOCK_LOREBOOKS.set(workId, currentLorebooks);
+        return HttpResponse.json(currentLorebooks[index]);
+      }
+
+      return new HttpResponse(null, { status: 404 });
     },
   ),
 
   http.delete(
     `${BACKEND_URL}/api/v1/author/:userId/:title/lorebook/:category/:id`,
-    async () => {
+    async ({ params, request }) => {
+      // Need workId to find the list
+      // The URL pattern implies userId and title, but getting workId might require query param or lookup
+      // For simplicity, we'll search all lists
+      const id = Number(params.id);
+
+      for (const [wId, books] of MOCK_LOREBOOKS.entries()) {
+        const index = books.findIndex((b) => b.id === id);
+        if (index !== -1) {
+          books.splice(index, 1);
+          MOCK_LOREBOOKS.set(wId, books);
+          return HttpResponse.json({ success: true });
+        }
+      }
+
       await new Promise((resolve) => setTimeout(resolve, 500));
-      return HttpResponse.json({ success: true });
+      return HttpResponse.json({ success: true }); // Fallback success
     },
   ),
 
@@ -596,11 +676,11 @@ export const handlers = [
 
   http.post(
     `${BACKEND_URL}/api/v1/ai/author/:userId/:title/lorebook/conflict_solve`,
-    async () => {
+    async ({ request }) => {
+      const body = await request.json();
+      console.log('Conflict Solve Request:', body);
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      return HttpResponse.json({
-        solution: '충돌 해결 방안...',
-      });
+      return HttpResponse.text('충돌 해결 및 저장 완료');
     },
   ),
 
@@ -691,9 +771,14 @@ export const handlers = [
     },
   ),
 
-  http.get(`${BACKEND_URL}/api/v1/manager/ip-expansion/proposals`, () =>
-    HttpResponse.json(
-      generateList(14, (i) => {
+  http.get(
+    `${BACKEND_URL}/api/v1/manager/ip-expansion/proposals`,
+    ({ request }) => {
+      const url = new URL(request.url);
+      const page = Number(url.searchParams.get('page') || '0');
+      const size = Number(url.searchParams.get('size') || '10');
+
+      const allData = generateList(34, (i) => {
         const id = i;
         const authorIndex = id % NAMES.length;
         const workIndex = id % TITLES.length;
@@ -727,7 +812,7 @@ export const handlers = [
             'PROPOSED',
           ]),
           statusDescription: '검토 중입니다.',
-          createdAt: new Date().toISOString(),
+          createdAt: new Date(Date.now() - i * 86400000).toISOString(),
           authorId: authorIndex,
           authorName: NAMES[authorIndex],
           workId: workIndex,
@@ -775,8 +860,33 @@ export const handlers = [
             },
           ],
         };
-      }),
-    ),
+      });
+
+      const totalElements = allData.length;
+      const totalPages = Math.ceil(totalElements / size);
+      const content = allData.slice(page * size, (page + 1) * size);
+
+      return HttpResponse.json({
+        content,
+        pageable: {
+          pageNumber: page,
+          pageSize: size,
+          sort: { empty: false, sorted: true, unsorted: false },
+          offset: page * size,
+          paged: true,
+          unpaged: false,
+        },
+        totalPages,
+        totalElements,
+        last: page === totalPages - 1,
+        size,
+        number: page,
+        sort: { empty: false, sorted: true, unsorted: false },
+        numberOfElements: content.length,
+        first: page === 0,
+        empty: content.length === 0,
+      });
+    },
   ),
 
   http.get(`${BACKEND_URL}/api/v1/manager/iptrend/list`, ({ request }) => {
