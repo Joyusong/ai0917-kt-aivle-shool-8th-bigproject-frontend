@@ -103,6 +103,27 @@ import {
 } from 'lucide-react';
 import { DiffView } from './DiffView';
 
+const normalizeAnalysisData = (data: PublishAnalysisResponseDto): any => {
+  const normalize = (section: any) => {
+    if (Array.isArray(section)) return section;
+    if (!section || typeof section !== 'object') return [];
+    return Object.entries(section).flatMap(([category, items]) => {
+      if (!Array.isArray(items)) return [];
+      return items.map((item: any) => ({
+        ...item,
+        category: category,
+      }));
+    });
+  };
+
+  return {
+    충돌: normalize(data['충돌']),
+    '설정 결합': normalize(data['설정 결합']),
+    '신규 업로드': normalize(data['신규 업로드']),
+    기존설정: normalize(data['기존설정']),
+  };
+};
+
 interface AuthorWorksProps {
   integrationId: string;
 }
@@ -406,13 +427,16 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       if (!selectedWorkId) return;
       const work = works?.find((w) => w.id === selectedWorkId);
       if (!work) return;
-      return authorService.analyzeManuscript(integrationId, work.title, {
-        check: selectedKeywords as any,
-      });
+      return authorService.analyzeManuscript(
+        integrationId,
+        work.title,
+        work.id,
+        selectedKeywords as any,
+      );
     },
     onSuccess: (data) => {
       if (data) {
-        setSettingBookDiff(data);
+        setSettingBookDiff(normalizeAnalysisData(data));
         setIsKeywordSelectionOpen(false);
         setIsFinalReviewOpen(true);
 
@@ -905,14 +929,14 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
     const status = processingStatus[selectedManuscript.id];
 
     if (status === 'ANALYZING') {
-      toast.info('설정집 분석이 진행 중입니다. 잠시만 기다려주세요.');
+      toast.info('AI 서버 준비 중입니다. 서버 가동 후 분석을 시작할게요.');
       return;
     }
 
     if (status === 'REVIEW_READY') {
       const result = analysisResults[selectedManuscript.id];
       if (result) {
-        setSettingBookDiff(result);
+        setSettingBookDiff(normalizeAnalysisData(result));
         setIsFinalReviewOpen(true);
         setIsFinalReviewConfirmed(false);
       } else {
@@ -940,7 +964,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
     if (status === 'REVIEW_READY') {
       const result = analysisResults[manuscript.id];
       if (result) {
-        setSettingBookDiff(result);
+        setSettingBookDiff(normalizeAnalysisData(result));
         setIsFinalReviewOpen(true);
         return;
       }
@@ -993,7 +1017,14 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
 
     setIsKeywordSelectionOpen(false);
     toast.info(
-      '설정집 변경사항을 분석 중입니다... (시간이 소요될 수 있습니다)',
+      <div className="flex flex-col gap-1">
+        <span className="font-bold">설정집 분석 시작</span>
+        <span className="text-xs">
+          AI가 선택된 키워드를 기반으로 상세 설정을 분석하고 있습니다.
+          (예상 소요시간: 30초)
+        </span>
+      </div>,
+      { duration: 4000 }
     );
     analysisMutation.mutate();
   };
@@ -1040,7 +1071,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       // and calling authorService.saveLorebookManual or similar for each.
       // For now, we simulate success to allow the flow to complete.
 
-      const newItems = settingBookDiff['신규 업로드'] || [];
+      const newItems = (settingBookDiff['신규 업로드'] as any[]) || [];
       for (const item of newItems) {
         try {
           const req: LorebookSaveRequestDto = {
@@ -1619,9 +1650,9 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
             <div className="flex-1 overflow-y-auto bg-muted/5 p-6">
               {['충돌', '설정 결합', '신규 업로드'].map((tabKey) => {
                 const items =
-                  settingBookDiff?.[
+                  (settingBookDiff?.[
                     tabKey as keyof PublishAnalysisResponseDto
-                  ] || [];
+                  ] as any[]) || [];
                 const hasItems = items.length > 0;
 
                 return (
@@ -1928,7 +1959,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
           </Tabs>
 
           <DialogFooter className="flex-col sm:flex-col gap-4 border-t pt-4 px-6 pb-6 bg-background z-10">
-            {(settingBookDiff?.['충돌']?.filter(
+            {((settingBookDiff?.['충돌'] as any[])?.filter(
               (c: any) => !resolvedConflicts.has(c.id),
             ).length || 0) > 0 ? (
               // Conflict State
