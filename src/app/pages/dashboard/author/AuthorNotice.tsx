@@ -157,14 +157,21 @@ export function AuthorNotice({ integrationId }: AuthorNoticeProps) {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-sm text-muted-foreground mx-2">
-              {page + 1} / {totalPages || 1}
-            </span>
+            {Array.from({ length: totalPages || 1 }, (_, i) => (
+              <Button
+                key={i}
+                variant={page === i ? 'default' : 'ghost'}
+                className={`h-8 w-8 p-0 ${page === i ? 'bg-blue-600 text-white' : 'text-slate-600'}`}
+                onClick={() => setPage(i)}
+              >
+                {i + 1}
+              </Button>
+            ))}
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              disabled={page >= totalPages - 1}
+              disabled={page >= (totalPages || 1) - 1}
               onClick={() => setPage(page + 1)}
             >
               <ChevronRight className="w-4 h-4" />

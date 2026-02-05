@@ -410,15 +410,28 @@ export const handlers = [
       monthlyIncome: 3500000,
     }),
   ),
-  http.get(`${BACKEND_URL}/api/v1/author/dashboard/notice`, () =>
-    HttpResponse.json(
-      generateList(5, (i) => ({
-        id: i,
-        title: `[공지] 작가님들을 위한 ${i}월 가이드`,
-        createdAt: '2026-02-01',
-      })),
-    ),
-  ),
+  http.get(`${BACKEND_URL}/api/v1/author/dashboard/notice`, ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get('page') || 0);
+    const size = Number(url.searchParams.get('size') || 10);
+    const content = generateList(size, (i) => {
+      const id = page * size + i + 1;
+      return {
+        id,
+        title: `[공지] 작가님들을 위한 ${id}월 가이드`,
+        content: '작가 분들을 위한 운영 가이드와 시스템 업데이트 안내입니다.',
+        writer: '관리자',
+        originalFilename: i % 3 === 0 ? `author_notice_${id}.pdf` : null,
+        createdAt: new Date(Date.now() - id * 86400000).toISOString(),
+      };
+    });
+    return HttpResponse.json({
+      content,
+      totalElements: 50,
+      totalPages: 5,
+      number: page,
+    });
+  }),
 
   // 4.1 Dashboard
   http.get(`${BACKEND_URL}/api/v1/manager/dashboard/summary`, () =>
@@ -1224,27 +1237,6 @@ export const handlers = [
   // ======================================================================
 
   // 5.0 Manager & Invite Code
-  http.get(`${BACKEND_URL}/api/v1/author/manager`, () => {
-    // Mock: 50% chance of being matched
-    // You can toggle this logic or inspect localStorage to simulate states
-    const isMatched = Math.random() > 0.5;
-
-    if (isMatched) {
-      return HttpResponse.json({
-        ok: true,
-        managerIntegrationId: 'admin',
-        managerName: '김운영',
-        managerSiteEmail: 'manager@test.com',
-      });
-    } else {
-      return HttpResponse.json({
-        ok: false,
-        managerIntegrationId: null,
-        managerName: null,
-        managerSiteEmail: null,
-      });
-    }
-  }),
 
   http.post(`${BACKEND_URL}/api/v1/author/manager/code`, () => {
     // Return 6-digit code as Map<String, Object>
@@ -1622,16 +1614,6 @@ export const handlers = [
   }),
 
   // 5.7 Get My Manager
-  http.get(`${BACKEND_URL}/api/v1/author/manager`, () => {
-    // Mock: Return a matched manager for testing "Hide Button" logic
-    // Change ok to false to test "Show Button"
-    return HttpResponse.json({
-      ok: true,
-      managerIntegrationId: 'MGR-001',
-      managerName: '김매니저',
-      managerSiteEmail: 'manager@example.com',
-    });
-  }),
 
   // ======================================================================
   // 6. Author Manuscript & Lorebook API (New Specs)
@@ -1902,12 +1884,29 @@ export const handlers = [
 
   // 5.6 Author Manager
   http.get(`${BACKEND_URL}/api/v1/author/manager`, () => {
+    const linked = localStorage.getItem('msw-author-linked');
+    const isLinked = linked !== 'false';
+    if (!isLinked) {
+      return HttpResponse.json({
+        managerId: null,
+        managerName: null,
+        managerEmail: null,
+        managerIntegrationId: null,
+        linkedAt: null,
+        isOnline: false,
+      });
+    }
     return HttpResponse.json({
       managerId: 'manager_123',
       managerName: '김운영',
       managerEmail: 'manager_kim@ip-ergo-sum.com',
       managerIntegrationId: 'mg_int_12345',
-      linkedAt: '2025-01-15T09:00:00',
+      linkedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+      isOnline: Math.random() > 0.5,
     });
+  }),
+  http.delete(`${BACKEND_URL}/api/v1/author/manager`, () => {
+    localStorage.setItem('msw-author-linked', 'false');
+    return HttpResponse.json({ success: true });
   }),
 ];

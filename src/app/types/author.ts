@@ -146,6 +146,7 @@ export interface AuthorManagerResponseDto {
   managerEmail: string;
   managerIntegrationId: string;
   linkedAt: string;
+  isOnline?: boolean;
 }
 
 export interface ManuscriptDto {

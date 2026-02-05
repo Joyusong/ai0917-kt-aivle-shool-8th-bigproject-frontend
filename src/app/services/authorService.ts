@@ -329,6 +329,11 @@ export const authorService = {
     );
     return response.data;
   },
+  // Unlink from Manager
+  unlinkManager: async () => {
+    const response = await apiClient.delete('/api/v1/author/manager');
+    return response.data;
+  },
 
   // My Page
   getMyPage: async () => {
