@@ -331,10 +331,13 @@ function WorkItem({
                       </span>
                       {manuscript.subtitle || '무제'}
                     </span>
+                    {manuscript.readOnly && (
+                      <Lock className="w-3 h-3 ml-2 text-muted-foreground shrink-0" />
+                    )}
                   </div>
                 );
 
-                if (manuscript.is_read_only) {
+                if (manuscript.readOnly) {
                   return <div key={manuscript.id}>{ManuscriptContent}</div>;
                 }
 

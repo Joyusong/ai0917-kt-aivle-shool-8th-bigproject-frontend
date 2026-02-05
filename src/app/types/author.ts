@@ -156,7 +156,7 @@ export interface ManuscriptDto {
   episode: number;
   subtitle: string;
   txt?: string;
-  is_read_only?: boolean;
+  readOnly?: boolean;
 }
 
 export interface ManuscriptDetailDto extends ManuscriptDto {

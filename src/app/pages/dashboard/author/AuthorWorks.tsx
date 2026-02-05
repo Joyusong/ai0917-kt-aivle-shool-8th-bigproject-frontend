@@ -102,11 +102,79 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
+import { DynamicSettingEditor } from '../../../components/dashboard/author/DynamicSettingEditor';
+import { GlobalLoadingOverlay } from './GlobalLoadingOverlay';
 import { DiffView } from './DiffView';
 import { SettingViewer } from './SettingViewer';
 
 const normalizeAnalysisData = (data: PublishAnalysisResponseDto): any => {
+  const inferCategory = (content: any): string => {
+    if (!content || typeof content !== 'object') return '기타';
+    const keys = Object.keys(content);
+    if (
+      keys.includes('직업/신분') ||
+      keys.includes('성격') ||
+      keys.includes('인물관계')
+    )
+      return '인물';
+    if (
+      keys.includes('위치') ||
+      keys.includes('분위기') ||
+      keys.includes('지형')
+    )
+      return '장소';
+    if (keys.includes('종류') || keys.includes('용도') || keys.includes('등급'))
+      return '물건';
+    if (keys.includes('일시') || keys.includes('주체') || keys.includes('원인'))
+      return '사건';
+    if (keys.includes('규모') || keys.includes('목적') || keys.includes('상징'))
+      return '단체';
+    return '기타';
+  };
+
   const normalize = (section: any) => {
+    // Handle array of arrays (tuple structure: [id, contentMap, episodes])
+    if (
+      Array.isArray(section) &&
+      section.length > 0 &&
+      Array.isArray(section[0])
+    ) {
+      return section.map((item: any) => {
+        if (Array.isArray(item) && item.length >= 2) {
+          const id = item[0];
+          const contentMap = item[1];
+          const episodes = item[2];
+
+          const entries = Object.entries(contentMap || {});
+          if (entries.length > 0) {
+            const [name, content] = entries[0];
+            const category = inferCategory(content);
+
+            // Check for explicit conflict structure if present in content
+            const original = (content as any)?.original || null;
+            const newContent = (content as any)?.new || content;
+            const reason =
+              (content as any)?.reason || '설정 충돌이 감지되었습니다.';
+
+            return {
+              id,
+              name,
+              category,
+              description:
+                typeof newContent === 'string'
+                  ? newContent
+                  : JSON.stringify(newContent, null, 2),
+              original: original,
+              new: newContent,
+              reason: reason,
+              episodes,
+            };
+          }
+        }
+        return item;
+      });
+    }
+
     if (Array.isArray(section)) return section;
     if (!section || typeof section !== 'object') return [];
     return Object.entries(section).flatMap(([category, items]) => {
@@ -1322,7 +1390,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
 
               <div className="flex items-center gap-2">
                 {/* Save & Publish Buttons */}
-                {selectedManuscript && (
+                {selectedManuscript && !selectedManuscript.readOnly && (
                   <>
                     <Button
                       size="sm"
@@ -1383,8 +1451,11 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                   <Textarea
                     value={editorContent}
                     onChange={handleEditorChange}
+                    readOnly={selectedManuscript?.readOnly}
                     className={cn(
                       'w-full h-full resize-none border-none focus-visible:ring-0 p-8 text-lg leading-relaxed font-serif overflow-y-auto',
+                      selectedManuscript?.readOnly &&
+                        'bg-gray-50 text-gray-500 cursor-not-allowed',
                     )}
                     placeholder="여기에 내용을 작성하세요..."
                   />
@@ -1529,23 +1600,8 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       >
         <DialogContent className="sm:max-w-5xl max-h-[85vh] flex flex-col">
           {analysisMutation.isPending ? (
-            <div className="flex flex-col items-center justify-center h-[60vh] gap-8">
-              <div className="relative flex items-center justify-center">
-                <div className="absolute w-24 h-24 rounded-full border-4 border-primary/20 animate-[spin_3s_linear_infinite]"></div>
-                <div className="absolute w-24 h-24 rounded-full border-4 border-t-primary animate-spin"></div>
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-              </div>
-              <div className="text-center space-y-3">
-                <h3 className="text-2xl font-bold tracking-tight">
-                  AI가 설정집을 분석하고 있습니다
-                </h3>
-                <p className="text-muted-foreground text-lg">
-                  선택하신 키워드를 바탕으로 인물, 세계관, 사건 등을 심층 분석
-                  중입니다.
-                  <br />
-                  잠시만 기다려주세요. (약 10~20초 소요)
-                </p>
-              </div>
+            <div className="h-[60vh] relative">
+              <GlobalLoadingOverlay isVisible={true} />
             </div>
           ) : (
             <>
@@ -2081,20 +2137,20 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                                 </div>
 
                                 {isEditing ? (
-                                  <div className="space-y-4">
-                                    <Label>Description</Label>
-                                    <Textarea
-                                      value={currentContent.description}
-                                      onChange={(e) =>
+                                  <div className="bg-muted/30 p-4 rounded-lg border border-muted/50">
+                                    <DynamicSettingEditor
+                                      data={currentContent.description}
+                                      category={item.category}
+                                      onChange={(newData) =>
                                         setEditingContent((prev) => ({
                                           ...prev,
                                           [item.id]: {
                                             ...currentContent,
-                                            description: e.target.value,
+                                            description:
+                                              JSON.stringify(newData),
                                           },
                                         }))
                                       }
-                                      className="min-h-[150px] font-mono text-sm"
                                     />
                                   </div>
                                 ) : (
@@ -2154,19 +2210,23 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
             ) : (
               // Non-Conflict State (All resolved or none existed)
               <div className="flex flex-col gap-4 w-full">
-                {((settingBookDiff?.['충돌'] as any[])?.length || 0) > 0 && (
-                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700 flex items-start gap-2">
-                    <div className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5">
-                      TIP
+                {/* Only show success message if there were conflicts initially */}
+                {((settingBookDiff?.['충돌'] as any[])?.length || 0) > 0 &&
+                  ((settingBookDiff?.['충돌'] as any[])?.filter(
+                    (c: any) => !resolvedConflicts.has(c.id),
+                  ).length || 0) === 0 && (
+                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700 flex items-start gap-2">
+                      <div className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5">
+                        TIP
+                      </div>
+                      <p>
+                        모든 충돌이 해결되었습니다.
+                        <span className="font-bold mx-1">설정 결합</span> 및
+                        <span className="font-bold mx-1">신규 업로드</span>
+                        내용을 최종 확인해 주세요.
+                      </p>
                     </div>
-                    <p>
-                      모든 충돌이 해결되었습니다.
-                      <span className="font-bold mx-1">설정 결합</span> 및
-                      <span className="font-bold mx-1">신규 업로드</span>
-                      내용을 최종 확인해 주세요.
-                    </p>
-                  </div>
-                )}
+                  )}
                 <div className="flex items-center justify-between w-full mt-2">
                   <div className="flex items-center gap-2">
                     <Checkbox

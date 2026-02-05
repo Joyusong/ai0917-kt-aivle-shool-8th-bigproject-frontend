@@ -99,7 +99,7 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
                     summary?.ongoingCount || 0
                   )}
                 </div>
-                <div className="text-sm text-muted-foreground">전체 작품</div>
+                <div className="text-sm text-muted-foreground">연재 작품</div>
               </div>
             </div>
           </CardContent>
