@@ -329,7 +329,7 @@ export const authorService = {
     );
     return response.data;
   },
-  // Unlink from Manager
+  // Unlink from Manager 연결 끊기
   unlinkManager: async () => {
     const response = await apiClient.delete('/api/v1/author/manager');
     return response.data;
