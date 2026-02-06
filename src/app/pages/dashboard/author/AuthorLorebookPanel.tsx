@@ -354,17 +354,26 @@ export function AuthorLorebookPanel({
   const exportMutation = useMutation({
     mutationFn: async () => {
       // Fetch all lorebooks using wildcard '*' to ensure full export
-      const response = await authorService.getLorebooksByCategory(
+      const response = await authorService.getLorebooks(
         userId,
         work!.title,
-        '*',
         workId,
       );
-      const items = Array.isArray(response)
-        ? response
-        : (response as any)?.data && Array.isArray((response as any).data)
-          ? (response as any).data
-          : [];
+
+      let items: any[] = [];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (
+        (response as any)?.content &&
+        Array.isArray((response as any).content)
+      ) {
+        items = (response as any).content;
+      } else if (
+        (response as any)?.data &&
+        Array.isArray((response as any).data)
+      ) {
+        items = (response as any).data;
+      }
 
       if (items.length === 0) {
         throw new Error('NO_DATA');
@@ -425,69 +434,74 @@ export function AuthorLorebookPanel({
           md += `### ${item.keyword || '제목 없음'}\n`;
           if (item.subtitle) md += `**부제**: ${item.subtitle}\n\n`;
 
-          // Add description/summary first
-          const desc =
-            settings.description ||
-            settings.summary ||
-            settings.설명 ||
-            settings.상세설명;
-          if (desc) md += `> ${desc}\n\n`;
+          if (typeof settings === 'string') {
+            md += `> ${settings}\n\n`;
+          } else {
+            // Add description/summary first
+            const desc =
+              settings.description ||
+              settings.summary ||
+              settings.설명 ||
+              settings.상세설명;
+            if (desc) md += `> ${desc}\n\n`;
 
-          // Add other fields
-          Object.entries(settings).forEach(([key, value]) => {
-            if (
-              [
-                'description',
-                'summary',
-                '설명',
-                '상세설명',
-                'name',
-                'title',
-                'keyword',
-              ].includes(key)
-            )
-              return;
+            // Add other fields
+            Object.entries(settings).forEach(([key, value]) => {
+              if (
+                [
+                  'description',
+                  'summary',
+                  '설명',
+                  '상세설명',
+                  'name',
+                  'title',
+                  'keyword',
+                ].includes(key)
+              )
+                return;
 
-            md += `- **${key}**: `;
+              md += `- **${key}**: `;
 
-            if (Array.isArray(value)) {
-              if (value.length === 0) {
-                md += '(없음)\n';
-              } else if (typeof value[0] !== 'object') {
-                md += `${value.join(', ')}\n`;
-              } else {
+              if (Array.isArray(value)) {
+                if (value.length === 0) {
+                  md += '(없음)\n';
+                } else if (typeof value[0] !== 'object') {
+                  md += `${value.join(', ')}\n`;
+                } else {
+                  md += '\n';
+                  value.forEach((subItem: any) => {
+                    // Special handling for relationships (인물관계)
+                    if (key === '인물관계' || key === 'relationships') {
+                      const relation = subItem.관계 || subItem.relation || '';
+                      const target =
+                        subItem.대상이름 || subItem.targetName || '';
+                      const detail =
+                        subItem.상세내용 || subItem.description || '';
+                      md += `  - **${target}**`;
+                      if (relation) md += ` (${relation})`;
+                      if (detail) md += `: ${detail}`;
+                      md += '\n';
+                    } else {
+                      // Generic object array
+                      md += `  - `;
+                      const parts: string[] = [];
+                      Object.entries(subItem).forEach(([k, v]) => {
+                        if (v) parts.push(`${k}: ${v}`);
+                      });
+                      md += parts.join(', ') + '\n';
+                    }
+                  });
+                }
+              } else if (typeof value === 'object' && value !== null) {
                 md += '\n';
-                value.forEach((subItem: any) => {
-                  // Special handling for relationships (인물관계)
-                  if (key === '인물관계' || key === 'relationships') {
-                    const relation = subItem.관계 || subItem.relation || '';
-                    const target = subItem.대상이름 || subItem.targetName || '';
-                    const detail =
-                      subItem.상세내용 || subItem.description || '';
-                    md += `  - **${target}**`;
-                    if (relation) md += ` (${relation})`;
-                    if (detail) md += `: ${detail}`;
-                    md += '\n';
-                  } else {
-                    // Generic object array
-                    md += `  - `;
-                    const parts: string[] = [];
-                    Object.entries(subItem).forEach(([k, v]) => {
-                      if (v) parts.push(`${k}: ${v}`);
-                    });
-                    md += parts.join(', ') + '\n';
-                  }
+                Object.entries(value).forEach(([subKey, subValue]) => {
+                  md += `  - **${subKey}**: ${subValue}\n`;
                 });
+              } else {
+                md += `${value}\n`;
               }
-            } else if (typeof value === 'object' && value !== null) {
-              md += '\n';
-              Object.entries(value).forEach(([subKey, subValue]) => {
-                md += `  - **${subKey}**: ${subValue}\n`;
-              });
-            } else {
-              md += `${value}\n`;
-            }
-          });
+            });
+          }
 
           md += `\n---\n\n`;
         });
@@ -1333,28 +1347,24 @@ export function AuthorLorebookPanel({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4">
-            {/* Search Controls */}
-            <div className="flex items-center gap-2">
-              <Select
-                value={searchCategory}
-                onValueChange={(val) => setSearchCategory(val as Category)}
-              >
-                <SelectTrigger className="w-[110px] h-9 text-xs">
-                  <SelectValue placeholder="카테고리" />
-                </SelectTrigger>
-                <SelectContent>
-                  {searchCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id} className="text-xs">
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex items-center gap-2">
+            <Select
+              value={searchCategory}
+              onValueChange={(val) => setSearchCategory(val as Category)}
+            >
+              <SelectTrigger className="w-[120px] h-10 text-xs shrink-0">
+                <SelectValue placeholder="카테고리" />
+              </SelectTrigger>
+              <SelectContent>
+                {searchCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id} className="text-xs">
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {/* Input & Button */}
-            <div className="relative flex items-center gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="찾고 싶은 내용을 문장으로 설명해주세요..."
@@ -1363,15 +1373,16 @@ export function AuthorLorebookPanel({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSearch(e);
                 }}
-                className="pl-9 h-10 text-sm"
+                className="pl-9 h-10 text-sm w-full"
               />
-              <Button onClick={handleSearch} className="h-10 px-4 shrink-0">
-                {searchMutation.isPending && (
-                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                )}
-                검색
-              </Button>
             </div>
+
+            <Button onClick={handleSearch} className="h-10 px-4 shrink-0">
+              {searchMutation.isPending && (
+                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              )}
+              검색
+            </Button>
           </div>
 
           <ScrollArea className="flex-1 h-[400px] -mx-2 px-2">
