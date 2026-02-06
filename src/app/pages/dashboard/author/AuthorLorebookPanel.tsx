@@ -128,6 +128,30 @@ export function AuthorLorebookPanel({
     enabled: !!work?.title && !!userId,
   });
 
+  // Fetch ALL Data for Counts
+  const { data: allLorebooksData } = useQuery({
+    queryKey: ['author', 'lorebook', userId, work?.title, 'all'],
+    queryFn: () => authorService.getLorebooks(userId, work!.title, workId),
+    enabled: !!work?.title && !!userId,
+  });
+
+  const allLorebooks = Array.isArray(allLorebooksData)
+    ? allLorebooksData
+    : (allLorebooksData as any)?.data &&
+        Array.isArray((allLorebooksData as any).data)
+      ? (allLorebooksData as any).data
+      : [];
+
+  const categoryCounts = allLorebooks.reduce(
+    (acc: any, item: any) => {
+      const cat = item.category || '미분류';
+      acc[cat] = (acc[cat] || 0) + 1;
+      acc['all'] = (acc['all'] || 0) + 1;
+      return acc;
+    },
+    { all: 0 },
+  );
+
   const lorebooks = Array.isArray(lorebooksData)
     ? lorebooksData
     : (lorebooksData as any)?.data && Array.isArray((lorebooksData as any).data)
@@ -191,22 +215,26 @@ export function AuthorLorebookPanel({
     mutationFn: (data: any) => {
       const { name, title, description, subtitle, ...rest } = data;
       const lorebookTitle = name || title;
-      const settingsObj = { description, ...rest };
-      const settings = JSON.stringify(settingsObj);
 
-      return authorService.saveLorebookManual(userId, work!.title, workId, {
+      const payload = {
         keyword: lorebookTitle,
         subtitle: subtitle || '',
-        settings,
-        category: toBackendCategory(activeCategory) as any,
-        episode: [],
-      });
+        category: toBackendCategory(activeCategory),
+        description: description,
+        ...rest,
+      };
+
+      return authorService.createLorebookSpecific(userId, work!.title, payload);
     },
     onSuccess: () => {
-      toast.success('생성되었습니다.');
+      toast.success('설정집이 생성되었습니다.');
       setIsEditOpen(false);
       queryClient.invalidateQueries({
         queryKey: ['author', 'lorebook', userId, work?.title, activeCategory],
+      });
+      // Also invalidate 'all' for counts
+      queryClient.invalidateQueries({
+        queryKey: ['author', 'lorebook', userId, work?.title, 'all'],
       });
     },
     onError: () => toast.error('생성에 실패했습니다.'),
@@ -216,26 +244,31 @@ export function AuthorLorebookPanel({
     mutationFn: ({ id, data }: { id: number; data: any }) => {
       const { name, title, description, subtitle, ...rest } = data;
       const lorebookTitle = name || title;
-      const settingsObj = { description, ...rest };
-      const settings = JSON.stringify(settingsObj);
 
-      return authorService.updateLorebook(
+      const payload = {
+        keyword: lorebookTitle,
+        subtitle: subtitle || '',
+        description: description,
+        ...rest,
+      };
+
+      return authorService.updateLorebookSpecific(
         userId,
         work!.title,
-        activeCategory,
-        id,
-        {
-          keyword: lorebookTitle,
-          subtitle: subtitle || '',
-          settings,
-        },
+        toBackendCategory(activeCategory),
+        id.toString(),
+        payload,
       );
     },
     onSuccess: () => {
-      toast.success('수정되었습니다.');
+      toast.success('설정집이 수정되었습니다.');
       setIsEditOpen(false);
       queryClient.invalidateQueries({
         queryKey: ['author', 'lorebook', userId, work?.title, activeCategory],
+      });
+      // Also invalidate 'all' for counts
+      queryClient.invalidateQueries({
+        queryKey: ['author', 'lorebook', userId, work?.title, 'all'],
       });
     },
     onError: () => toast.error('수정에 실패했습니다.'),
@@ -266,6 +299,10 @@ export function AuthorLorebookPanel({
       toast.success('삭제되었습니다.');
       queryClient.invalidateQueries({
         queryKey: ['author', 'lorebook', userId, work?.title, activeCategory],
+      });
+      // Also invalidate 'all' for counts
+      queryClient.invalidateQueries({
+        queryKey: ['author', 'lorebook', userId, work?.title, 'all'],
       });
     },
     onError: () => toast.error('삭제에 실패했습니다.'),
@@ -580,8 +617,15 @@ export function AuthorLorebookPanel({
 
     // Perform Similarity Check단체 before saving
     // Use name or title or description as query
-    const query = data.name || data.title || data.description || '';
-    checkSimilarityMutation.mutate({ category: 'all', query });
+    // const query = data.name || data.title || data.description || '';
+    // checkSimilarityMutation.mutate({ category: 'all', query });
+
+    // Bypass Similarity Check as per user request
+    if (editingItem?.id) {
+      updateMutation.mutate({ id: editingItem.id, data: data });
+    } else {
+      createMutation.mutate(data);
+    }
   };
 
   const handleConfirmSave = () => {
@@ -1140,6 +1184,9 @@ export function AuthorLorebookPanel({
                 onClick={() => setActiveCategory(cat.id)}
               >
                 <span className="text-xs font-medium">{cat.label}</span>
+                <span className="text-[10px] ml-1 opacity-70">
+                  ({categoryCounts[cat.id] || 0})
+                </span>
               </Button>
             ))}
           </div>
@@ -1172,7 +1219,7 @@ export function AuthorLorebookPanel({
               설정 검색
             </DialogTitle>
             <DialogDescription className="text-sm">
-              작품 내 모든 설정을 검색합니다.
+              작품 내 설정을 유사도 기반으로 검색합니다.
             </DialogDescription>
           </DialogHeader>
 
@@ -1214,7 +1261,7 @@ export function AuthorLorebookPanel({
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 h-[400px] -mx-2 px-2">
+          <ScrollArea className="flex-1 h-[50vh] -mx-2 px-2 overflow-y-auto">
             {searchResults.length > 0 ? (
               <div className="space-y-3">
                 {searchResults.map((item) => (
@@ -1323,7 +1370,7 @@ export function AuthorLorebookPanel({
         <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingItem?.id ? '설정 수정' : '새 설정 추가'}
+              {editingItem?.id ? '설정집 수정' : '설정집 생성'}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave}>
