@@ -82,65 +82,59 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto font-sans">
-      {/* 1. 상단 통계 카드 (기존 유지) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-border">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+    <div className="space-y-6 max-w-7xl mx-auto font-sans p-1">
+      {/* 1. 상단 통계 카드 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">연재 작품</p>
+              <div className="text-2xl font-bold text-foreground">
+                {isSummaryLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  summary?.ongoingCount || 0
+                )}
               </div>
-              <div>
-                <div className="text-2xl text-foreground font-bold">
-                  {isSummaryLoading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    summary?.ongoingCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">연재 작품</div>
-              </div>
+            </div>
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                <Database className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">전체 설정집</p>
+              <div className="text-2xl font-bold text-foreground">
+                {isSummaryLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  summary?.settingBookCount || 0
+                )}
               </div>
-              <div>
-                <div className="text-2xl text-foreground font-bold">
-                  {isSummaryLoading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    summary?.settingBookCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">전체 설정집</div>
-              </div>
+            </div>
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+              <Database className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-border">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+        <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">완결 작품</p>
+              <div className="text-2xl font-bold text-foreground">
+                {isSummaryLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  summary?.completedCount || 0
+                )}
               </div>
-              <div>
-                <div className="text-2xl text-foreground font-bold">
-                  {isSummaryLoading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    summary?.completedCount || 0
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground">완결 작품</div>
-              </div>
+            </div>
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
             </div>
           </CardContent>
         </Card>
@@ -149,41 +143,43 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
       {/* 2. 배너 위젯 섹션 (공지사항) */}
       <div className="grid grid-cols-1 gap-6">
         {/* 공지사항 위젯 */}
-        <Card className="border-border relative overflow-hidden group">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Megaphone className="w-5 h-5 text-primary" />
+        <Card className="border-border relative overflow-hidden group shadow-sm">
+          <CardHeader className="pb-2 p-4">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Megaphone className="w-4 h-4 text-primary" />
               주요 공지사항
             </CardTitle>
           </CardHeader>
-          <CardContent className="h-[140px] flex flex-col justify-center relative">
+          <CardContent className="h-[120px] flex flex-col justify-center relative p-4 pt-0">
             {currentNotice ? (
               <div
-                className="space-y-2 px-8 transition-all duration-300 hover:opacity-80 cursor-pointer"
+                className="space-y-1.5 px-8 transition-all duration-300 hover:opacity-80 cursor-pointer"
                 onClick={() => handleNoticeClick(currentNotice)}
               >
-                <Badge
-                  variant={
-                    currentNotice.category === 'URGENT'
-                      ? 'destructive'
-                      : 'default'
-                  }
-                  className="mb-1"
-                >
-                  {currentNotice.category === 'URGENT' ? '긴급' : '공지'}
-                </Badge>
-                <h3 className="text-lg font-bold line-clamp-1">
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant={
+                      currentNotice.category === 'URGENT'
+                        ? 'destructive'
+                        : 'default'
+                    }
+                    className="text-[10px] h-5 px-1.5"
+                  >
+                    {currentNotice.category === 'URGENT' ? '긴급' : '공지'}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(currentNotice.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <h3 className="text-base font-bold line-clamp-1">
                   {currentNotice.title}
                 </h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">
+                <p className="text-xs text-muted-foreground line-clamp-2">
                   {currentNotice.content || '공지사항 내용을 확인하세요.'}
                 </p>
-                <span className="text-xs text-muted-foreground block mt-2">
-                  {new Date(currentNotice.createdAt).toLocaleDateString()}
-                </span>
               </div>
             ) : (
-              <div className="text-center text-muted-foreground">
+              <div className="text-center text-xs text-muted-foreground">
                 등록된 공지사항이 없습니다.
               </div>
             )}
@@ -194,7 +190,7 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/50 hover:bg-background shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-background/50 hover:bg-background shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={handlePrevNotice}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -202,7 +198,7 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/50 hover:bg-background shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-background/50 hover:bg-background shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={handleNextNotice}
                 >
                   <ChevronRight className="w-4 h-4" />
