@@ -133,7 +133,50 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-              제5조 (책임의 제한)
+              제5조 (지식재산권 및 데이터 활용)
+            </h2>
+            <ul className="list-disc pl-6 space-y-1 text-slate-600 dark:text-slate-400">
+              <li>
+                회원이 서비스에 업로드한 콘텐츠(작품 원문 등)의 저작권은 회원
+                본인에게 있습니다.
+              </li>
+              <li>
+                회원은 회사가 서비스를 운영하고 개선하기 위해, 그리고{' '}
+                <strong>AI 모델을 학습시키고 고도화하기 위한 목적</strong>으로
+                회원이 업로드한 콘텐츠를 수집, 저장, 복제, 가공할 수 있는
+                권한(비독점적, 전 세계적, 무상 라이선스)을 부여합니다.
+              </li>
+              <li>
+                회사는 회원의 동의 없이 해당 데이터를 제3자에게 판매하거나 서비스
+                운영/개선 외의 목적으로 유출하지 않습니다.
+              </li>
+            </ul>
+          </section>
+
+          {/* 제6조 */}
+          <section className="space-y-3">
+            <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+              제6조 (계약 해지 및 데이터 보관)
+            </h2>
+            <ul className="list-disc pl-6 space-y-1">
+              <li>
+                회원은 언제든지 서비스 내 설정 메뉴를 통해 이용 계약 해지(회원
+                탈퇴)를 신청할 수 있습니다.
+              </li>
+              <li>
+                회사는 회원의 실수로 인한 탈퇴 피해를 방지하기 위해,{' '}
+                <strong>탈퇴 요청일로부터 7일간 회원의 데이터를 보관</strong>하며,
+                7일이 경과하면 모든 데이터를 영구 삭제합니다.
+              </li>
+            </ul>
+          </section>
+
+          {/* 제7조 */}
+          <section className="space-y-3">
+            <h2 className="text-base md:text-lg font-bold flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
+              제7조 (책임의 제한)
             </h2>
             <p>
               회사는 천재지변, 서버 점검, 통신 장애 등 불가항력적인 사유로
