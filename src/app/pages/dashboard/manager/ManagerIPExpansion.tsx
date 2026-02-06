@@ -1438,7 +1438,7 @@ function CreateIPExpansionDialog({
   const [showCreateConfirm, setShowCreateConfirm] = useState(false);
   const [showReferenceModal, setShowReferenceModal] = useState(false);
   const [referenceModalTab, setReferenceModalTab] = useState('all');
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [showPdfFullScreen, setShowPdfFullScreen] = useState(false);
 
   // New Modals for Step 6
   const [showPlanningDirectionModal, setShowPlanningDirectionModal] =
@@ -4059,15 +4059,10 @@ function CreateIPExpansionDialog({
                           <Monitor className="w-4 h-4 text-slate-500" />
                           기획안 미리보기
                         </h3>
-                        <VisualPreview
-                          project={{
-                            title: projectTitle || '제목 미정',
-                            format: selectedFormat,
-                            mediaDetails: mediaDetails,
-                          }}
+                        <PdfPreview
                           isFullScreen={false}
-                          className="w-full h-[240px] object-contain bg-slate-50"
-                          onFullScreen={() => setShowPreviewModal(true)}
+                          className="w-full h-[240px]"
+                          onFullScreen={() => setShowPdfFullScreen(true)}
                         />
                       </section>
 
@@ -4746,24 +4741,19 @@ function CreateIPExpansionDialog({
       </Dialog>
 
       {/* Full Screen Preview Modal */}
-      <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
-        <DialogContent className="!w-screen !h-screen !max-w-none rounded-none border-0 p-0 overflow-hidden bg-black/95 [&>button:last-child]:hidden">
+      <Dialog open={showPdfFullScreen} onOpenChange={setShowPdfFullScreen}>
+        <DialogContent className="!w-screen !h-screen !max-w-none rounded-none border-0 p-0 overflow-hidden bg-slate-50 [&>button:last-child]:hidden">
           <div className="relative w-full h-full flex items-center justify-center p-8">
             <Button
               variant="ghost"
-              className="absolute top-4 right-4 text-white hover:bg-white/20 z-50 rounded-full w-10 h-10 p-0"
-              onClick={() => setShowPreviewModal(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:bg-slate-200 z-50 rounded-full w-10 h-10 p-0"
+              onClick={() => setShowPdfFullScreen(false)}
             >
               <X className="w-6 h-6" />
             </Button>
-            <VisualPreview
-              className="w-full h-full object-contain"
+            <PdfPreview
+              className="w-full h-full shadow-none border-0"
               isFullScreen={true}
-              project={{
-                title: projectTitle || '제목 미정',
-                format: selectedFormat,
-                mediaDetails: mediaDetails,
-              }}
             />
           </div>
         </DialogContent>

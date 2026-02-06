@@ -14,6 +14,7 @@ import {
   Trash2,
   Loader2,
 } from 'lucide-react';
+import { DynamicSettingEditor } from '../../../components/dashboard/author/DynamicSettingEditor';
 import { Button } from '../../../components/ui/button';
 import {
   Card,
@@ -83,6 +84,7 @@ export function AuthorLorebookPanel({
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null); // If null, it's create mode
+  const [editorData, setEditorData] = useState<any>({});
 
   // Similarity Check States
   const [isSimilarityCheckOpen, setIsSimilarityCheckOpen] = useState(false);
@@ -158,16 +160,19 @@ export function AuthorLorebookPanel({
       if (typeof content === 'string') {
         description = content;
       } else {
-        description =
+        const descField =
           content.description ||
           content.배경 ||
           content.summary ||
           content.상세설명 ||
           content.설명 || // Added for Item type
-          (Array.isArray(content.작중묘사)
-            ? content.작중묘사.join(' ')
-            : content.작중묘사) || // Added for Place type
-          '';
+          content.작중묘사; // Added for Place type
+
+        if (Array.isArray(descField)) {
+          description = descField.join(' ');
+        } else if (typeof descField === 'string') {
+          description = descField;
+        }
       }
 
       return {
@@ -238,11 +243,13 @@ export function AuthorLorebookPanel({
 
   const handleCreateClick = () => {
     setEditingItem({});
+    setEditorData({});
     setIsEditOpen(true);
   };
 
   const handleEditClick = (item: any) => {
     setEditingItem({ ...item });
+    setEditorData({ ...item });
     setIsEditOpen(true);
   };
 
@@ -548,27 +555,25 @@ export function AuthorLorebookPanel({
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const data = Object.fromEntries(formData as any);
+    let data: any = {};
 
-    // Process tags/arrays
-    if (activeCategory === '인물' && data.traits) {
-      data.traits = (data.traits as string)
-        .split(',')
-        .map((s) => s.trim()) as any;
-    }
-    if (activeCategory === '세계' && data.tags) {
-      data.tags = (data.tags as string).split(',').map((s) => s.trim()) as any;
-    }
-    if (activeCategory === '단체' && data.members) {
-      data.members = (data.members as string)
-        .split(',')
-        .map((s) => s.trim()) as any;
-    }
-    if (activeCategory === '사건' && data.participants) {
-      data.participants = (data.participants as string)
-        .split(',')
-        .map((s) => s.trim()) as any;
+    if (activeCategory === '인물' || activeCategory === '세계') {
+      data = editorData;
+    } else {
+      const formData = new FormData(e.target as HTMLFormElement);
+      data = Object.fromEntries(formData as any);
+
+      // Process tags/arrays (Legacy support for other categories)
+      if (activeCategory === '단체' && data.members) {
+        data.members = (data.members as string)
+          .split(',')
+          .map((s) => s.trim()) as any;
+      }
+      if (activeCategory === '사건' && data.participants) {
+        data.participants = (data.participants as string)
+          .split(',')
+          .map((s) => s.trim()) as any;
+      }
     }
 
     setPendingSaveData(data);
@@ -606,54 +611,6 @@ export function AuthorLorebookPanel({
     ...categories,
   ];
 
-  const getTagsForItem = (item: any) => {
-    const category = item.category || activeCategory;
-    switch (category) {
-      case '인물':
-        return [
-          item.role,
-          item['직업/신분'],
-          item.age,
-          item['연령'],
-          ...(item.traits || item['성격'] || []),
-        ].filter(Boolean) as string[];
-      case '장소':
-        return [
-          item.location,
-          item['위치'],
-          item.scale,
-          item['규모'],
-          item['분위기'],
-          ...(item['집단'] || []),
-        ].filter(Boolean) as string[];
-      case '물건':
-        return [
-          item.type,
-          item['종류'],
-          item.grade,
-          item['등급'],
-          ...(item['관련인물'] || []),
-        ].filter(Boolean) as string[];
-      case '단체':
-        return [item.leader, item['수장'], item.scale, item['규모']].filter(
-          Boolean,
-        ) as string[];
-      case '세계':
-        return [item.category].filter(Boolean) as string[];
-      case '사건':
-        return [
-          item.importance,
-          item['중요도'],
-          item.date,
-          item['발생 시점'],
-        ].filter(Boolean) as string[];
-      default:
-        return [item.role, item.type, item.category].filter(
-          Boolean,
-        ) as string[];
-    }
-  };
-
   const renderContent = () => {
     const commonProps = {
       onEdit: handleEditClick,
@@ -672,115 +629,41 @@ export function AuthorLorebookPanel({
       );
     }
 
-    return items.map((item) => (
-      <LorebookCard
-        key={item.id}
-        item={item}
-        title={item.name}
-        description={item.description}
-        category={item.category}
-        tags={getTagsForItem(item)}
-        {...commonProps}
-      />
-    ));
+    return items.map((item) => {
+      const getDescription = () => {
+        if (Array.isArray(item['배경'])) return item['배경'].join(' ');
+        if (Array.isArray(item['설명'])) return item['설명'].join(' ');
+        if (Array.isArray(item['작중묘사'])) return item['작중묘사'].join(' ');
+        if (Array.isArray(item.description)) return item.description.join(' ');
+        return item.description || '';
+      };
+
+      return (
+        <LorebookCard
+          key={item.id}
+          item={item}
+          title={item.name}
+          description={getDescription()}
+          category={item.category}
+          tags={getTagsForItem(item, activeCategory)}
+          {...commonProps}
+        />
+      );
+    });
   };
 
   const renderFormFields = () => {
+    if (activeCategory === '인물' || activeCategory === '세계') {
+      return (
+        <DynamicSettingEditor
+          data={editorData}
+          category={activeCategory}
+          onChange={setEditorData}
+        />
+      );
+    }
+
     switch (activeCategory) {
-      case '인물':
-        return (
-          <>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">이름</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={editingItem?.name}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">부제/별칭</Label>
-                <Input
-                  id="subtitle"
-                  name="subtitle"
-                  defaultValue={editingItem?.subtitle}
-                  placeholder="별명이나 이명 등"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="age">나이</Label>
-                <Input id="age" name="age" defaultValue={editingItem?.age} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="gender">성별</Label>
-                <Input
-                  id="gender"
-                  name="gender"
-                  defaultValue={editingItem?.gender}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="occupation">직업</Label>
-                <Input
-                  id="occupation"
-                  name="occupation"
-                  defaultValue={editingItem?.occupation}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">역할</Label>
-              <Input
-                id="role"
-                name="role"
-                defaultValue={editingItem?.role}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="appearance">외모 묘사</Label>
-              <Textarea
-                id="appearance"
-                name="appearance"
-                defaultValue={editingItem?.appearance}
-                className="min-h-[60px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="personality">성격</Label>
-              <Textarea
-                id="personality"
-                name="personality"
-                defaultValue={editingItem?.personality}
-                className="min-h-[60px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">상세 설명</Label>
-              <Textarea
-                id="description"
-                name="description"
-                defaultValue={editingItem?.description}
-                required
-                className="min-h-[100px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="traits">특징 (쉼표로 구분)</Label>
-              <Input
-                id="traits"
-                name="traits"
-                defaultValue={editingItem?.traits?.join(', ')}
-              />
-            </div>
-          </>
-        );
       case '장소':
         return (
           <>
@@ -791,6 +674,7 @@ export function AuthorLorebookPanel({
                   id="name"
                   name="name"
                   defaultValue={editingItem?.name}
+                  placeholder="예: 마법사의 탑"
                   required
                 />
               </div>
@@ -800,6 +684,7 @@ export function AuthorLorebookPanel({
                   id="subtitle"
                   name="subtitle"
                   defaultValue={editingItem?.subtitle}
+                  placeholder="예: 고대 마법의 중심지"
                 />
               </div>
             </div>
@@ -810,6 +695,7 @@ export function AuthorLorebookPanel({
                   id="location"
                   name="location"
                   defaultValue={editingItem?.location}
+                  placeholder="예: 왕국 북부 숲 속"
                 />
               </div>
               <div className="space-y-2">
@@ -818,6 +704,7 @@ export function AuthorLorebookPanel({
                   id="scale"
                   name="scale"
                   defaultValue={editingItem?.scale}
+                  placeholder="예: 높이 100m, 5층 건물"
                 />
               </div>
             </div>
@@ -827,6 +714,7 @@ export function AuthorLorebookPanel({
                 id="atmosphere"
                 name="atmosphere"
                 defaultValue={editingItem?.atmosphere}
+                placeholder="예: 신비롭고 조용함"
               />
             </div>
             <div className="space-y-2">
@@ -835,6 +723,7 @@ export function AuthorLorebookPanel({
                 id="function"
                 name="function"
                 defaultValue={editingItem?.function}
+                placeholder="예: 마법 연구 및 교육"
               />
             </div>
             <div className="space-y-2">
@@ -843,6 +732,7 @@ export function AuthorLorebookPanel({
                 id="owner"
                 name="owner"
                 defaultValue={editingItem?.owner}
+                placeholder="예: 대마법사 엘리온"
               />
             </div>
             <div className="space-y-2">
@@ -852,6 +742,7 @@ export function AuthorLorebookPanel({
                 name="history"
                 defaultValue={editingItem?.history}
                 className="min-h-[60px]"
+                placeholder="예: 300년 전 건설되어..."
               />
             </div>
             <div className="space-y-2">
@@ -862,6 +753,7 @@ export function AuthorLorebookPanel({
                 defaultValue={editingItem?.description}
                 required
                 className="min-h-[100px]"
+                placeholder="상세한 묘사를 입력하세요."
               />
             </div>
           </>
@@ -876,6 +768,7 @@ export function AuthorLorebookPanel({
                   id="name"
                   name="name"
                   defaultValue={editingItem?.name}
+                  placeholder="예: 엑스칼리버"
                   required
                 />
               </div>
@@ -885,17 +778,28 @@ export function AuthorLorebookPanel({
                   id="subtitle"
                   name="subtitle"
                   defaultValue={editingItem?.subtitle}
+                  placeholder="예: 약속된 승리의 검"
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">종류</Label>
-                <Input id="type" name="type" defaultValue={editingItem?.type} />
+                <Input
+                  id="type"
+                  name="type"
+                  defaultValue={editingItem?.type}
+                  placeholder="예: 장검, 아티팩트"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="rank">등급/가치</Label>
-                <Input id="rank" name="rank" defaultValue={editingItem?.rank} />
+                <Input
+                  id="rank"
+                  name="rank"
+                  defaultValue={editingItem?.rank}
+                  placeholder="예: S급, 전설 등급"
+                />
               </div>
             </div>
             <div className="space-y-2">
@@ -904,6 +808,7 @@ export function AuthorLorebookPanel({
                 id="effect"
                 name="effect"
                 defaultValue={editingItem?.effect}
+                placeholder="예: 모든 상처 치유, 빛의 일격"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -913,6 +818,7 @@ export function AuthorLorebookPanel({
                   id="origin"
                   name="origin"
                   defaultValue={editingItem?.origin}
+                  placeholder="예: 호수의 여인"
                 />
               </div>
               <div className="space-y-2">
@@ -921,6 +827,7 @@ export function AuthorLorebookPanel({
                   id="material"
                   name="material"
                   defaultValue={editingItem?.material}
+                  placeholder="예: 정령석, 미스릴"
                 />
               </div>
             </div>
@@ -930,6 +837,7 @@ export function AuthorLorebookPanel({
                 id="owner"
                 name="owner"
                 defaultValue={editingItem?.owner}
+                placeholder="예: 아서 왕"
               />
             </div>
             <div className="space-y-2">
@@ -939,6 +847,7 @@ export function AuthorLorebookPanel({
                 name="history"
                 defaultValue={editingItem?.history}
                 className="min-h-[60px]"
+                placeholder="예: 바위에 꽂혀 있던 검..."
               />
             </div>
             <div className="space-y-2">
@@ -949,6 +858,7 @@ export function AuthorLorebookPanel({
                 defaultValue={editingItem?.description}
                 required
                 className="min-h-[100px]"
+                placeholder="상세한 묘사를 입력하세요."
               />
             </div>
           </>
@@ -963,6 +873,7 @@ export function AuthorLorebookPanel({
                 name="name"
                 defaultValue={editingItem?.name}
                 required
+                placeholder="예: 그림자 길드"
               />
             </div>
             <div className="space-y-2">
@@ -971,12 +882,18 @@ export function AuthorLorebookPanel({
                 id="subtitle"
                 name="subtitle"
                 defaultValue={editingItem?.subtitle}
+                placeholder="예: 어둠 속의 수호자들"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="type">유형</Label>
-                <Input id="type" name="type" defaultValue={editingItem?.type} />
+                <Input
+                  id="type"
+                  name="type"
+                  defaultValue={editingItem?.type}
+                  placeholder="예: 비밀결사, 상인 조합"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="scale">규모</Label>
@@ -984,6 +901,7 @@ export function AuthorLorebookPanel({
                   id="scale"
                   name="scale"
                   defaultValue={editingItem?.scale}
+                  placeholder="예: 500명 규모, 3개 대륙 활동"
                 />
               </div>
             </div>
@@ -993,6 +911,7 @@ export function AuthorLorebookPanel({
                 id="symbol"
                 name="symbol"
                 defaultValue={editingItem?.symbol}
+                placeholder="예: 검은 독수리 문장"
               />
             </div>
             <div className="space-y-2">
@@ -1001,6 +920,7 @@ export function AuthorLorebookPanel({
                 id="purpose"
                 name="purpose"
                 defaultValue={editingItem?.purpose}
+                placeholder="예: 왕권 수호 및 정보 수집"
               />
             </div>
             <div className="space-y-2">
@@ -1010,6 +930,7 @@ export function AuthorLorebookPanel({
                 name="activity"
                 defaultValue={editingItem?.activity}
                 className="min-h-[60px]"
+                placeholder="예: 암살, 첩보, 밀무역"
               />
             </div>
             <div className="space-y-2">
@@ -1019,6 +940,7 @@ export function AuthorLorebookPanel({
                 name="history"
                 defaultValue={editingItem?.history}
                 className="min-h-[60px]"
+                placeholder="예: 1차 대전쟁 직후 설립..."
               />
             </div>
             <div className="space-y-2">
@@ -1029,6 +951,7 @@ export function AuthorLorebookPanel({
                 defaultValue={editingItem?.description}
                 required
                 className="min-h-[100px]"
+                placeholder="상세한 묘사를 입력하세요."
               />
             </div>
             <div className="space-y-2">
@@ -1037,110 +960,7 @@ export function AuthorLorebookPanel({
                 id="members"
                 name="members"
                 defaultValue={editingItem?.members?.join(', ')}
-              />
-            </div>
-          </>
-        );
-      case '세계':
-        return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="title">세계관 명칭</Label>
-              <Input
-                id="title"
-                name="title"
-                defaultValue={editingItem?.title}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="subtitle">부제/별칭</Label>
-              <Input
-                id="subtitle"
-                name="subtitle"
-                defaultValue={editingItem?.subtitle}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">카테고리</Label>
-              <Input
-                id="category"
-                name="category"
-                defaultValue={editingItem?.category}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="geography">지리/환경</Label>
-              <Textarea
-                id="geography"
-                name="geography"
-                defaultValue={editingItem?.geography}
-                className="min-h-[60px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="culture">문화/사회</Label>
-              <Textarea
-                id="culture"
-                name="culture"
-                defaultValue={editingItem?.culture}
-                className="min-h-[60px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="history">역사</Label>
-              <Textarea
-                id="history"
-                name="history"
-                defaultValue={editingItem?.history}
-                className="min-h-[60px]"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="law">법률/규칙</Label>
-                <Input id="law" name="law" defaultValue={editingItem?.law} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="magic">마법/기술</Label>
-                <Input
-                  id="magic"
-                  name="magic"
-                  defaultValue={editingItem?.magic}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="technology">기술 수준</Label>
-                <Input
-                  id="technology"
-                  name="technology"
-                  defaultValue={editingItem?.technology}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="race">종족 구성</Label>
-                <Input id="race" name="race" defaultValue={editingItem?.race} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">상세 설명</Label>
-              <Textarea
-                id="description"
-                name="description"
-                defaultValue={editingItem?.description}
-                required
-                className="min-h-[100px]"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tags">태그 (쉼표로 구분)</Label>
-              <Input
-                id="tags"
-                name="tags"
-                defaultValue={editingItem?.tags?.join(', ')}
+                placeholder="예: 길드장, 부길드장, 행동대장"
               />
             </div>
           </>
@@ -1155,6 +975,7 @@ export function AuthorLorebookPanel({
                 name="title"
                 defaultValue={editingItem?.title}
                 required
+                placeholder="예: 대화재 사건"
               />
             </div>
             <div className="space-y-2">
@@ -1163,6 +984,7 @@ export function AuthorLorebookPanel({
                 id="subtitle"
                 name="subtitle"
                 defaultValue={editingItem?.subtitle}
+                placeholder="예: 왕궁을 뒤흔든 밤"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -1172,7 +994,7 @@ export function AuthorLorebookPanel({
                   id="date"
                   name="date"
                   defaultValue={editingItem?.date}
-                  placeholder="예: 2025년 1월 1일, 제1장 3화 등"
+                  placeholder="예: 제국력 520년 3월 15일"
                 />
               </div>
               <div className="space-y-2">
@@ -1181,6 +1003,7 @@ export function AuthorLorebookPanel({
                   id="location"
                   name="location"
                   defaultValue={editingItem?.location}
+                  placeholder="예: 수도 중앙 광장"
                 />
               </div>
             </div>
@@ -1191,6 +1014,7 @@ export function AuthorLorebookPanel({
                 name="cause"
                 defaultValue={editingItem?.cause}
                 className="min-h-[60px]"
+                placeholder="예: 마법 실험 실패"
               />
             </div>
             <div className="space-y-2">
@@ -1200,6 +1024,7 @@ export function AuthorLorebookPanel({
                 name="flow"
                 defaultValue={editingItem?.flow}
                 className="min-h-[60px]"
+                placeholder="예: 폭발 후 화재 확산, 진압 시도"
               />
             </div>
             <div className="space-y-2">
@@ -1209,6 +1034,7 @@ export function AuthorLorebookPanel({
                 name="result"
                 defaultValue={editingItem?.result}
                 className="min-h-[60px]"
+                placeholder="예: 왕궁 별관 소실"
               />
             </div>
             <div className="space-y-2">
@@ -1218,6 +1044,7 @@ export function AuthorLorebookPanel({
                 name="influence"
                 defaultValue={editingItem?.influence}
                 className="min-h-[60px]"
+                placeholder="예: 마법 금지법 제정"
               />
             </div>
             <div className="space-y-2">
@@ -1226,6 +1053,7 @@ export function AuthorLorebookPanel({
                 id="participants"
                 name="participants"
                 defaultValue={editingItem?.participants?.join(', ')}
+                placeholder="예: 마법사 길드, 왕실 근위대"
               />
             </div>
             <div className="space-y-2">
@@ -1236,6 +1064,7 @@ export function AuthorLorebookPanel({
                 defaultValue={editingItem?.description}
                 required
                 className="min-h-[100px]"
+                placeholder="상세한 묘사를 입력하세요."
               />
             </div>
           </>
@@ -1518,7 +1347,7 @@ export function AuthorLorebookPanel({
   );
 }
 
-function LorebookCard({
+export function LorebookCard({
   item,
   title,
   description,
@@ -1535,19 +1364,42 @@ function LorebookCard({
   onEdit: (item: any) => void;
   onDelete: (id: number) => void;
 }) {
+  const isCharacter = category === '인물';
+  const isWorld = category === '세계';
+
   return (
-    <Card className="relative group">
+    <Card className="relative group hover:border-primary/50 transition-colors">
       <CardContent className="p-3 space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <h5 className="font-semibold text-sm line-clamp-1">{title}</h5>
-            {category && (
-              <Badge variant="outline" className="text-[10px] px-1 h-5">
-                {category}
-              </Badge>
-            )}
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h5 className="font-semibold text-sm line-clamp-1">{title}</h5>
+              {category && (
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-1 h-5 shrink-0"
+                >
+                  {category}
+                </Badge>
+              )}
+            </div>
+            {isCharacter &&
+              item['별명'] &&
+              Array.isArray(item['별명']) &&
+              item['별명'].length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {item['별명'].map((alias: string, i: number) => (
+                    <span
+                      key={i}
+                      className="text-[10px] text-muted-foreground bg-muted px-1 rounded"
+                    >
+                      {alias}
+                    </span>
+                  ))}
+                </div>
+              )}
           </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -1566,19 +1418,110 @@ function LorebookCard({
             </Button>
           </div>
         </div>
+
         <p className="text-xs text-muted-foreground line-clamp-2">
           {description}
         </p>
+
+        {isCharacter && (
+          <div className="flex gap-2 text-[10px] text-muted-foreground">
+            {item['기술/능력'] &&
+              Array.isArray(item['기술/능력']) &&
+              item['기술/능력'].length > 0 && (
+                <span>기술 {item['기술/능력'].length}개</span>
+              )}
+            {item['인물관계'] &&
+              Array.isArray(item['인물관계']) &&
+              item['인물관계'].length > 0 && (
+                <span>관계 {item['인물관계'].length}명</span>
+              )}
+          </div>
+        )}
+
+        {isWorld && (
+          <div className="flex gap-2 text-[10px] text-muted-foreground">
+            {item['규칙'] &&
+              Array.isArray(item['규칙']) &&
+              item['규칙'].length > 0 && (
+                <span>규칙 {item['규칙'].length}개</span>
+              )}
+            {item['금기'] &&
+              Array.isArray(item['금기']) &&
+              item['금기'].length > 0 && (
+                <span>금기 {item['금기'].length}개</span>
+              )}
+            {item['필수 제약'] &&
+              Array.isArray(item['필수 제약']) &&
+              item['필수 제약'].length > 0 && (
+                <span>제약 {item['필수 제약'].length}개</span>
+              )}
+          </div>
+        )}
+
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1">
-            {tags.map((tag, i) => (
+            {tags.slice(0, 5).map((tag, i) => (
               <Badge key={i} variant="secondary" className="text-[10px] px-1">
                 {tag}
               </Badge>
             ))}
+            {tags.length > 5 && (
+              <span className="text-[10px] text-muted-foreground">
+                +{tags.length - 5}
+              </span>
+            )}
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
+export const getTagsForItem = (item: any, defaultCategory = '인물') => {
+  const category = item.category || defaultCategory;
+  const flatten = (val: any) => (Array.isArray(val) ? val : [val]);
+
+  switch (category) {
+    case '인물':
+      return [
+        ...flatten(item.species || item['종족']),
+        ...flatten(item.role || item['직업/신분']),
+        ...flatten(item.age || item['연령']),
+        ...flatten(item.traits || item['성격']),
+      ].filter(Boolean) as string[];
+    case '장소':
+      return [
+        item.location,
+        item['위치'],
+        item.scale,
+        item['규모'],
+        item['분위기'],
+        ...(item['집단'] || []),
+      ].filter(Boolean) as string[];
+    case '물건':
+      return [
+        item.type,
+        item['종류'],
+        item.grade,
+        item['등급'],
+        ...(item['관련인물'] || []),
+      ].filter(Boolean) as string[];
+    case '단체':
+      return [item.leader, item['수장'], item.scale, item['규모']].filter(
+        Boolean,
+      ) as string[];
+    case '세계':
+      return [...flatten(item['종류']), ...flatten(item['분위기'])].filter(
+        Boolean,
+      ) as string[];
+    case '사건':
+      return [
+        item.importance,
+        item['중요도'],
+        item.date,
+        item['발생 시점'],
+      ].filter(Boolean) as string[];
+    default:
+      return [item.role, item.type, item.category].filter(Boolean) as string[];
+  }
+};
