@@ -151,104 +151,200 @@ const normalizeAnalysisData = (data: PublishAnalysisResponseDto): any => {
     return val;
   };
 
+  const unwrapItem = (item: any, maxDepth = 5) => {
+    let current = item;
+    for (let i = 0; i < maxDepth; i++) {
+      // Handle standard array wrapping [item]
+      if (Array.isArray(current) && current.length === 1) {
+        current = current[0];
+      }
+      // Handle 3-level tuple wrapping [[id, map, eps]] -> [id, map, eps]
+      else if (
+        Array.isArray(current) &&
+        current.length === 1 &&
+        Array.isArray(current[0])
+      ) {
+        current = current[0];
+      } else {
+        break;
+      }
+    }
+    return current;
+  };
+
+  const unwrapList = (item: any, maxDepth = 5) => {
+    let current = item;
+    for (let i = 0; i < maxDepth; i++) {
+      if (Array.isArray(current) && current.length === 1) {
+        const inner = current[0];
+        // If inner is array:
+        if (Array.isArray(inner)) {
+          // If inner is empty [], it's an empty list. Unwrap to it.
+          if (inner.length === 0) {
+            current = inner;
+            continue;
+          }
+          // Check first element of inner to guess if inner is a List or a Tuple.
+          const first = inner[0];
+
+          // If first is Array (Tuple) or Object (Item), then inner is a List of Items.
+          // So current is [List]. We MUST unwrap.
+          if (
+            Array.isArray(first) ||
+            (typeof first === 'object' && first !== null)
+          ) {
+            current = inner;
+            continue;
+          }
+
+          // If first is primitive (id), then inner is likely a Tuple Item.
+          // So current is [Tuple]. We must NOT unwrap.
+          return current;
+        }
+
+        // If inner is Object (Item), then current is [Item]. We must NOT unwrap.
+        if (typeof inner === 'object' && inner !== null) {
+          return current;
+        }
+
+        // If inner is primitive, continue unwrapping
+        current = inner;
+      } else {
+        break;
+      }
+    }
+    return current;
+  };
+
+  const processItem = (
+    rawItem: any,
+    defaultCategory: string,
+    existingSettingsMap?: Record<string, any>,
+  ) => {
+    const item = unwrapItem(rawItem);
+
+    // Case 1: Tuple [id, contentMap, episodes]
+    if (Array.isArray(item) && item.length >= 2) {
+      const id = item[0];
+      const contentMap = item[1];
+      const episodes = item[2];
+
+      if (contentMap && typeof contentMap === 'object') {
+        const entries = Object.entries(contentMap);
+        if (entries.length > 0) {
+          const [name, content] = entries[0];
+          const category =
+            defaultCategory !== '기타'
+              ? defaultCategory
+              : inferCategory(content);
+
+          let original = (content as any)?.original || null;
+          const newContent = (content as any)?.new || content;
+          const reason =
+            (content as any)?.reason || '설정 충돌이 감지되었습니다.';
+
+          if (!original && existingSettingsMap && name) {
+            const existing = existingSettingsMap[name];
+            if (existing) {
+              // If existing is an object with description, use it, otherwise use existing itself
+              original = existing.description || existing;
+              // If original is still an object with 'setting', use that
+              if (
+                original &&
+                typeof original === 'object' &&
+                original.setting
+              ) {
+                original = original.setting;
+              }
+            }
+          }
+
+          return {
+            id,
+            name,
+            category,
+            description:
+              typeof newContent === 'string'
+                ? newContent
+                : JSON.stringify(cleanValue(newContent), null, 2),
+            original: cleanValue(original),
+            new: cleanValue(newContent),
+            reason,
+            episodes,
+          };
+        }
+      }
+    }
+
+    // Case 2: Standard Object
+    let name = item.name;
+    let description = item.description || item.setting;
+    const category = item.category || defaultCategory;
+
+    if (!name) {
+      const reservedKeys = ['ep_num', 'category', 'id', 'original', 'new'];
+      const contentEntry = Object.entries(item).find(
+        ([key]) => !reservedKeys.includes(key),
+      );
+
+      if (contentEntry) {
+        name = contentEntry[0];
+        const content = contentEntry[1];
+        description =
+          typeof content === 'string'
+            ? content
+            : JSON.stringify(cleanValue(content), null, 2);
+      }
+    }
+
+    let original = item.original;
+    if (!original && existingSettingsMap && name) {
+      const existing = existingSettingsMap[name];
+      if (existing) {
+        original = existing.description || existing;
+        if (original && typeof original === 'object' && original.setting) {
+          original = original.setting;
+        }
+      }
+    }
+
+    return {
+      ...cleanValue(item),
+      category: category,
+      name: name || 'Unknown',
+      description: description || '',
+      id: item.id || `${category}-${name}`,
+      original: original || null,
+    };
+  };
+
   const normalize = (
     section: any,
     existingSettingsMap?: Record<string, any>,
   ) => {
-    // Handle array of arrays (tuple structure: [id, contentMap, episodes])
-    if (
-      Array.isArray(section) &&
-      section.length > 0 &&
-      Array.isArray(section[0])
-    ) {
-      return section.map((item: any) => {
-        if (Array.isArray(item) && item.length >= 2) {
-          const id = item[0];
-          const contentMap = item[1];
-          const episodes = item[2];
+    if (!section) return [];
 
-          const entries = Object.entries(contentMap || {});
-          if (entries.length > 0) {
-            const [name, content] = entries[0];
-            const category = inferCategory(content);
+    // 1. Handle if section is an array (e.g. "기존설정" list or "충돌" list)
+    // Use unwrapList to preserve the list structure (don't unwrap [Tuple] to Tuple)
+    let targetList = unwrapList(section);
 
-            // Check for explicit conflict structure if present in content
-            const original = (content as any)?.original || null;
-            const newContent = (content as any)?.new || content;
-            const reason =
-              (content as any)?.reason || '설정 충돌이 감지되었습니다.';
-
-            return {
-              id,
-              name,
-              category,
-              description:
-                typeof newContent === 'string'
-                  ? newContent
-                  : JSON.stringify(cleanValue(newContent), null, 2),
-              original: cleanValue(original),
-              new: cleanValue(newContent),
-              reason: reason,
-              episodes,
-            };
-          }
-        }
-        return item;
-      });
+    if (!Array.isArray(targetList)) {
+      // If it's an object (keyed by category), flatten it
+      if (targetList && typeof targetList === 'object') {
+        return Object.entries(targetList).flatMap(([category, items]) => {
+          if (!Array.isArray(items)) return [];
+          return items.map((item) =>
+            processItem(item, category, existingSettingsMap),
+          );
+        });
+      }
+      return [];
     }
 
-    if (Array.isArray(section)) return section;
-    if (!section || typeof section !== 'object') return [];
-    return Object.entries(section).flatMap(([category, items]) => {
-      if (!Array.isArray(items)) return [];
-      return items.map((item: any) => {
-        let name = item.name;
-        let description = item.description || item.setting;
-
-        // Handle dynamic key structure (e.g., { "이준": "content...", "ep_num": [] })
-        if (!name) {
-          const reservedKeys = ['ep_num', 'category', 'id', 'original', 'new'];
-          const contentEntry = Object.entries(item).find(
-            ([key]) => !reservedKeys.includes(key),
-          );
-
-          if (contentEntry) {
-            name = contentEntry[0];
-            const content = contentEntry[1];
-            description =
-              typeof content === 'string'
-                ? content
-                : JSON.stringify(cleanValue(content), null, 2);
-          }
-        }
-
-        // Try to find original setting from existing map if not present
-        let original = item.original;
-        if (!original && existingSettingsMap && name) {
-          const existing = existingSettingsMap[name];
-          if (existing) {
-            // existing might be the full object, we want the content
-            // usually existing structure matches the normalized structure?
-            // We need to be careful. The existingSettingsMap is derived from '기존설정' which is normalized below.
-            // But '기존설정' normalization happens after this call if we do it sequentially.
-            // So we should normalize '기존설정' first or pass raw data.
-            // Actually, '기존설정' is also passed to normalize.
-            // Let's pass the raw '기존설정' map to this function?
-            // Or better: Normalize '기존설정' first, then pass it to '설정 결합' normalization.
-            original = existing.description || existing;
-          }
-        }
-
-        return {
-          ...cleanValue(item),
-          category: category,
-          name: name || 'Unknown',
-          description: description || '',
-          id: item.id || `${category}-${name}`,
-          original: original || null,
-        };
-      });
-    });
+    // It is an array. Map each item.
+    return targetList.map((item: any) =>
+      processItem(item, '기타', existingSettingsMap),
+    );
   };
 
   // 1. Normalize '기존설정' first to create a lookup map
@@ -427,6 +523,15 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
     let content;
     if (item.new !== undefined) {
       content = typeof item.new === 'string' ? item.new : { ...item.new };
+      // Inject name if missing in content but present in item (Pre-fill)
+      if (
+        typeof content === 'object' &&
+        !content.name &&
+        !content.keyword &&
+        item.name
+      ) {
+        content.name = item.name;
+      }
     } else {
       content = { ...item };
     }
@@ -456,10 +561,22 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       const items = [...prev[tabKey]];
       const idx = items.findIndex((i: any) => i.id === id);
       if (idx !== -1) {
+        // Helper to update name/title if present in content
+        const updateName = (target: any, source: any) => {
+          const newName = source.name || source.keyword || source.title;
+          if (newName) {
+            target.name = newName;
+            if (target.keyword) target.keyword = newName;
+          }
+          return target;
+        };
+
         if (tabKey === '설정 결합') {
           items[idx] = { ...items[idx], new: content };
+          updateName(items[idx], content);
         } else {
           items[idx] = { ...items[idx], ...content };
+          updateName(items[idx], content);
         }
       }
       return { ...prev, [tabKey]: items };
@@ -1346,6 +1463,19 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
           return next;
         });
       }
+
+      // Invalidate queries to refresh UI
+      if (selectedWorkId) {
+        const work = works?.find((w) => w.id === selectedWorkId);
+        if (work) {
+          queryClient.invalidateQueries({
+            queryKey: ['author', 'manuscript', integrationId, work.title],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['author', 'lorebook', integrationId, work.title],
+          });
+        }
+      }
     },
     onError: () => {
       toast.error('설정집 업데이트에 실패했습니다.');
@@ -1910,7 +2040,35 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       </Dialog>
 
       {/* Final Review Modal */}
-      <Dialog open={isFinalReviewOpen} onOpenChange={setIsFinalReviewOpen}>
+      <Dialog
+        open={isFinalReviewOpen}
+        onOpenChange={(open) => {
+          setIsFinalReviewOpen(open);
+          if (!open) {
+            // Reset workflow to initial state (Keyword Selection)
+            setExtractedKeywords(null);
+            setSelectedKeywords({});
+            setIsKeywordSelectionConfirmed(false);
+            setSettingBookDiff(null);
+            setResolvedConflicts(new Set());
+            setEditingItems(new Set());
+            setEditingContent({});
+
+            if (selectedManuscript) {
+              setProcessingStatus((prev) => {
+                const next = { ...prev };
+                delete next[selectedManuscript.id];
+                return next;
+              });
+              setAnalysisResults((prev) => {
+                const next = { ...prev };
+                delete next[selectedManuscript.id];
+                return next;
+              });
+            }
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-5xl max-h-[85vh] flex flex-col p-0 gap-0 rounded-xl border shadow-2xl overflow-hidden">
           <DialogHeader className="p-6 pb-4 shrink-0 border-b bg-background z-10">
             <DialogTitle>설정집 변경 사항 확인 (최종 검수)</DialogTitle>
