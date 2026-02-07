@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Users,
   Globe,
@@ -56,7 +56,7 @@ interface AuthorLorebookPanelProps {
   className?: string;
 }
 
-type Category = 'all' | '인물' | '장소' | '물건' | '단체' | '세계' | '사건';
+type Category = 'all' | '인물' | '장소' | '물건' | '집단' | '세계' | '사건';
 
 const toBackendCategory = (cat: string): string => {
   const map: Record<string, string> = {
@@ -64,7 +64,7 @@ const toBackendCategory = (cat: string): string => {
     인물: '인물',
     장소: '장소',
     물건: '물건',
-    단체: '단체',
+    집단: '집단',
     세계: '세계',
     사건: '사건',
     전체: '*',
@@ -93,6 +93,7 @@ export function AuthorLorebookPanel({
     [],
   );
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [searchTimer, setSearchTimer] = useState(0);
 
   const queryClient = useQueryClient();
 
@@ -144,7 +145,17 @@ export function AuthorLorebookPanel({
 
   const categoryCounts = allLorebooks.reduce(
     (acc: any, item: any) => {
-      const cat = item.category || '미분류';
+      let cat = item.category || '미분류';
+      // Normalize category names if backend returns English or different variations
+      if (cat === 'Place' || cat === 'place') cat = '장소';
+      else if (cat === 'Person' || cat === 'person' || cat === 'Character')
+        cat = '인물';
+      else if (cat === 'Item' || cat === 'item' || cat === 'Object')
+        cat = '물건';
+      else if (cat === 'Organization' || cat === 'Group') cat = '집단';
+      else if (cat === 'World' || cat === 'Setting') cat = '세계';
+      else if (cat === 'Event' || cat === 'Incident') cat = '사건';
+
       acc[cat] = (acc[cat] || 0) + 1;
       acc['all'] = (acc['all'] || 0) + 1;
       return acc;
@@ -216,15 +227,27 @@ export function AuthorLorebookPanel({
       const { name, title, description, subtitle, ...rest } = data;
       const lorebookTitle = name || title;
 
+      // Wrap dynamic fields into a 'settings' JSON string as expected by Backend DTO
+      const settingObj = {
+        [lorebookTitle]: {
+          description: description,
+          ...rest,
+        },
+      };
+
       const payload = {
         keyword: lorebookTitle,
         subtitle: subtitle || '',
         category: toBackendCategory(activeCategory),
-        description: description,
-        ...rest,
+        settings: JSON.stringify(settingObj),
       };
 
-      return authorService.createLorebookSpecific(userId, work!.title, payload);
+      return authorService.createLorebookSpecific(
+        userId,
+        work!.title,
+        workId,
+        payload,
+      );
     },
     onSuccess: () => {
       toast.success('설정집이 생성되었습니다.');
@@ -237,7 +260,11 @@ export function AuthorLorebookPanel({
         queryKey: ['author', 'lorebook', userId, work?.title, 'all'],
       });
     },
-    onError: () => toast.error('생성에 실패했습니다.'),
+    onError: (error: any) => {
+      console.error(error);
+      const msg = error?.response?.data?.message || '생성에 실패했습니다.';
+      toast.error(msg);
+    },
   });
 
   const updateMutation = useMutation({
@@ -245,17 +272,30 @@ export function AuthorLorebookPanel({
       const { name, title, description, subtitle, ...rest } = data;
       const lorebookTitle = name || title;
 
+      // Wrap dynamic fields into a 'settings' JSON string as expected by Backend DTO
+      const settingObj = {
+        [lorebookTitle]: {
+          description: description,
+          ...rest,
+        },
+      };
+
       const payload = {
         keyword: lorebookTitle,
         subtitle: subtitle || '',
-        description: description,
-        ...rest,
+        settings: JSON.stringify(settingObj),
       };
+
+      // Use item's category if activeCategory is 'all', otherwise use activeCategory
+      const categoryToUse =
+        activeCategory === 'all' && editingItem?.category
+          ? editingItem.category
+          : activeCategory;
 
       return authorService.updateLorebookSpecific(
         userId,
         work!.title,
-        toBackendCategory(activeCategory),
+        toBackendCategory(categoryToUse),
         id.toString(),
         payload,
       );
@@ -377,6 +417,19 @@ export function AuthorLorebookPanel({
     onError: () => toast.error('검색에 실패했습니다.'),
   });
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (searchMutation.isPending) {
+      setSearchTimer(0);
+      interval = setInterval(() => {
+        setSearchTimer((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setSearchTimer(0);
+    }
+    return () => clearInterval(interval);
+  }, [searchMutation.isPending]);
+
   const checkSimilarityMutation = useMutation({
     mutationFn: ({ category, query }: { category: string; query: string }) =>
       authorService.searchLorebookSimilarity(userId, work!.title, {
@@ -432,7 +485,7 @@ export function AuthorLorebookPanel({
         '인물',
         '장소',
         '물건',
-        '단체',
+        '집단',
         '세계',
         '사건',
         '미분류',
@@ -590,32 +643,34 @@ export function AuthorLorebookPanel({
     searchMutation.mutate({ category: searchCategory, query: searchQuery });
   };
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setEditorData((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    let data: any = {};
+    // Always use editorData as it is now updated in real-time for all categories
+    let data = { ...editorData };
 
-    if (activeCategory === '인물' || activeCategory === '세계') {
-      data = editorData;
-    } else {
-      const formData = new FormData(e.target as HTMLFormElement);
-      data = Object.fromEntries(formData as any);
-
-      // Process tags/arrays (Legacy support for other categories)
-      if (activeCategory === '단체' && data.members) {
-        data.members = (data.members as string)
-          .split(',')
-          .map((s) => s.trim()) as any;
-      }
-      if (activeCategory === '사건' && data.participants) {
-        data.participants = (data.participants as string)
-          .split(',')
-          .map((s) => s.trim()) as any;
-      }
+    // Process tags/arrays (Legacy support for other categories)
+    if (activeCategory === '집단' && typeof data.members === 'string') {
+      data.members = data.members.split(',').map((s: string) => s.trim());
+    }
+    if (activeCategory === '사건' && typeof data.participants === 'string') {
+      data.participants = data.participants
+        .split(',')
+        .map((s: string) => s.trim());
     }
 
     setPendingSaveData(data);
 
-    // Perform Similarity Check단체 before saving
+    // Perform Similarity Check집단 before saving
     // Use name or title or description as query
     // const query = data.name || data.title || data.description || '';
     // checkSimilarityMutation.mutate({ category: 'all', query });
@@ -645,7 +700,7 @@ export function AuthorLorebookPanel({
     { id: '인물', label: '인물' },
     { id: '장소', label: '장소' },
     { id: '물건', label: '물건' },
-    { id: '단체', label: '단체' },
+    { id: '집단', label: '집단' },
     { id: '세계', label: '세계' },
     { id: '사건', label: '사건' },
   ];
@@ -717,7 +772,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="name"
                   name="name"
-                  defaultValue={editingItem?.name}
+                  value={editorData.name || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 마법사의 탑"
                   required
                 />
@@ -727,7 +783,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="subtitle"
                   name="subtitle"
-                  defaultValue={editingItem?.subtitle}
+                  value={editorData.subtitle || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 고대 마법의 중심지"
                 />
               </div>
@@ -738,7 +795,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="location"
                   name="location"
-                  defaultValue={editingItem?.location}
+                  value={editorData.location || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 왕국 북부 숲 속"
                 />
               </div>
@@ -747,7 +805,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="scale"
                   name="scale"
-                  defaultValue={editingItem?.scale}
+                  value={editorData.scale || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 높이 100m, 5층 건물"
                 />
               </div>
@@ -757,7 +816,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="atmosphere"
                 name="atmosphere"
-                defaultValue={editingItem?.atmosphere}
+                value={editorData.atmosphere || ''}
+                onChange={handleInputChange}
                 placeholder="예: 신비롭고 조용함"
               />
             </div>
@@ -766,7 +826,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="function"
                 name="function"
-                defaultValue={editingItem?.function}
+                value={editorData.function || ''}
+                onChange={handleInputChange}
                 placeholder="예: 마법 연구 및 교육"
               />
             </div>
@@ -775,7 +836,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="owner"
                 name="owner"
-                defaultValue={editingItem?.owner}
+                value={editorData.owner || ''}
+                onChange={handleInputChange}
                 placeholder="예: 대마법사 엘리온"
               />
             </div>
@@ -784,7 +846,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="history"
                 name="history"
-                defaultValue={editingItem?.history}
+                value={editorData.history || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 300년 전 건설되어..."
               />
@@ -794,7 +857,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="description"
                 name="description"
-                defaultValue={editingItem?.description}
+                value={editorData.description || ''}
+                onChange={handleInputChange}
                 required
                 className="min-h-[100px]"
                 placeholder="상세한 묘사를 입력하세요."
@@ -811,7 +875,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="name"
                   name="name"
-                  defaultValue={editingItem?.name}
+                  value={editorData.name || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 엑스칼리버"
                   required
                 />
@@ -821,7 +886,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="subtitle"
                   name="subtitle"
-                  defaultValue={editingItem?.subtitle}
+                  value={editorData.subtitle || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 약속된 승리의 검"
                 />
               </div>
@@ -832,7 +898,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="type"
                   name="type"
-                  defaultValue={editingItem?.type}
+                  value={editorData.type || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 장검, 아티팩트"
                 />
               </div>
@@ -841,7 +908,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="rank"
                   name="rank"
-                  defaultValue={editingItem?.rank}
+                  value={editorData.rank || ''}
+                  onChange={handleInputChange}
                   placeholder="예: S급, 전설 등급"
                 />
               </div>
@@ -851,7 +919,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="effect"
                 name="effect"
-                defaultValue={editingItem?.effect}
+                value={editorData.effect || ''}
+                onChange={handleInputChange}
                 placeholder="예: 모든 상처 치유, 빛의 일격"
               />
             </div>
@@ -861,7 +930,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="origin"
                   name="origin"
-                  defaultValue={editingItem?.origin}
+                  value={editorData.origin || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 호수의 여인"
                 />
               </div>
@@ -870,7 +940,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="material"
                   name="material"
-                  defaultValue={editingItem?.material}
+                  value={editorData.material || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 정령석, 미스릴"
                 />
               </div>
@@ -880,7 +951,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="owner"
                 name="owner"
-                defaultValue={editingItem?.owner}
+                value={editorData.owner || ''}
+                onChange={handleInputChange}
                 placeholder="예: 아서 왕"
               />
             </div>
@@ -889,7 +961,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="history"
                 name="history"
-                defaultValue={editingItem?.history}
+                value={editorData.history || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 바위에 꽂혀 있던 검..."
               />
@@ -899,7 +972,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="description"
                 name="description"
-                defaultValue={editingItem?.description}
+                value={editorData.description || ''}
+                onChange={handleInputChange}
                 required
                 className="min-h-[100px]"
                 placeholder="상세한 묘사를 입력하세요."
@@ -907,7 +981,7 @@ export function AuthorLorebookPanel({
             </div>
           </>
         );
-      case '단체':
+      case '집단':
         return (
           <>
             <div className="space-y-2">
@@ -915,7 +989,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="name"
                 name="name"
-                defaultValue={editingItem?.name}
+                value={editorData.name || ''}
+                onChange={handleInputChange}
                 required
                 placeholder="예: 그림자 길드"
               />
@@ -925,7 +1000,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="subtitle"
                 name="subtitle"
-                defaultValue={editingItem?.subtitle}
+                value={editorData.subtitle || ''}
+                onChange={handleInputChange}
                 placeholder="예: 어둠 속의 수호자들"
               />
             </div>
@@ -935,7 +1011,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="type"
                   name="type"
-                  defaultValue={editingItem?.type}
+                  value={editorData.type || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 비밀결사, 상인 조합"
                 />
               </div>
@@ -944,7 +1021,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="scale"
                   name="scale"
-                  defaultValue={editingItem?.scale}
+                  value={editorData.scale || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 500명 규모, 3개 대륙 활동"
                 />
               </div>
@@ -954,7 +1032,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="symbol"
                 name="symbol"
-                defaultValue={editingItem?.symbol}
+                value={editorData.symbol || ''}
+                onChange={handleInputChange}
                 placeholder="예: 검은 독수리 문장"
               />
             </div>
@@ -963,7 +1042,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="purpose"
                 name="purpose"
-                defaultValue={editingItem?.purpose}
+                value={editorData.purpose || ''}
+                onChange={handleInputChange}
                 placeholder="예: 왕권 수호 및 정보 수집"
               />
             </div>
@@ -972,7 +1052,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="activity"
                 name="activity"
-                defaultValue={editingItem?.activity}
+                value={editorData.activity || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 암살, 첩보, 밀무역"
               />
@@ -982,7 +1063,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="history"
                 name="history"
-                defaultValue={editingItem?.history}
+                value={editorData.history || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 1차 대전쟁 직후 설립..."
               />
@@ -992,7 +1074,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="description"
                 name="description"
-                defaultValue={editingItem?.description}
+                value={editorData.description || ''}
+                onChange={handleInputChange}
                 required
                 className="min-h-[100px]"
                 placeholder="상세한 묘사를 입력하세요."
@@ -1003,7 +1086,12 @@ export function AuthorLorebookPanel({
               <Input
                 id="members"
                 name="members"
-                defaultValue={editingItem?.members?.join(', ')}
+                value={
+                  Array.isArray(editorData.members)
+                    ? editorData.members.join(', ')
+                    : editorData.members || ''
+                }
+                onChange={handleInputChange}
                 placeholder="예: 길드장, 부길드장, 행동대장"
               />
             </div>
@@ -1017,7 +1105,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="title"
                 name="title"
-                defaultValue={editingItem?.title}
+                value={editorData.title || ''}
+                onChange={handleInputChange}
                 required
                 placeholder="예: 대화재 사건"
               />
@@ -1027,7 +1116,8 @@ export function AuthorLorebookPanel({
               <Input
                 id="subtitle"
                 name="subtitle"
-                defaultValue={editingItem?.subtitle}
+                value={editorData.subtitle || ''}
+                onChange={handleInputChange}
                 placeholder="예: 왕궁을 뒤흔든 밤"
               />
             </div>
@@ -1037,7 +1127,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="date"
                   name="date"
-                  defaultValue={editingItem?.date}
+                  value={editorData.date || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 제국력 520년 3월 15일"
                 />
               </div>
@@ -1046,7 +1137,8 @@ export function AuthorLorebookPanel({
                 <Input
                   id="location"
                   name="location"
-                  defaultValue={editingItem?.location}
+                  value={editorData.location || ''}
+                  onChange={handleInputChange}
                   placeholder="예: 수도 중앙 광장"
                 />
               </div>
@@ -1056,7 +1148,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="cause"
                 name="cause"
-                defaultValue={editingItem?.cause}
+                value={editorData.cause || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 마법 실험 실패"
               />
@@ -1066,7 +1159,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="flow"
                 name="flow"
-                defaultValue={editingItem?.flow}
+                value={editorData.flow || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 폭발 후 화재 확산, 진압 시도"
               />
@@ -1076,7 +1170,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="result"
                 name="result"
-                defaultValue={editingItem?.result}
+                value={editorData.result || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 왕궁 별관 소실"
               />
@@ -1086,7 +1181,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="influence"
                 name="influence"
-                defaultValue={editingItem?.influence}
+                value={editorData.influence || ''}
+                onChange={handleInputChange}
                 className="min-h-[60px]"
                 placeholder="예: 마법 금지법 제정"
               />
@@ -1096,7 +1192,12 @@ export function AuthorLorebookPanel({
               <Input
                 id="participants"
                 name="participants"
-                defaultValue={editingItem?.participants?.join(', ')}
+                value={
+                  Array.isArray(editorData.participants)
+                    ? editorData.participants.join(', ')
+                    : editorData.participants || ''
+                }
+                onChange={handleInputChange}
                 placeholder="예: 마법사 길드, 왕실 근위대"
               />
             </div>
@@ -1105,7 +1206,8 @@ export function AuthorLorebookPanel({
               <Textarea
                 id="description"
                 name="description"
-                defaultValue={editingItem?.description}
+                value={editorData.description || ''}
+                onChange={handleInputChange}
                 required
                 className="min-h-[100px]"
                 placeholder="상세한 묘사를 입력하세요."
@@ -1135,7 +1237,7 @@ export function AuthorLorebookPanel({
             variant="ghost"
             size="icon"
             className="h-6 w-6 mr-1"
-            title="설정 검색"
+            title="설정집 검색"
             onClick={() => setIsSearchOpen(true)}
           >
             <Search className="w-4 h-4" />
@@ -1216,7 +1318,7 @@ export function AuthorLorebookPanel({
         <DialogContent className="max-w-xl max-h-[80vh] flex flex-col p-6 gap-6">
           <DialogHeader className="px-0 pt-0 pb-2 border-b">
             <DialogTitle className="text-lg font-semibold">
-              설정 검색
+              설정집 검색
             </DialogTitle>
             <DialogDescription className="text-sm">
               작품 내 설정을 유사도 기반으로 검색합니다.
@@ -1253,11 +1355,19 @@ export function AuthorLorebookPanel({
               />
             </div>
 
-            <Button onClick={handleSearch} className="h-10 px-4 shrink-0">
-              {searchMutation.isPending && (
-                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+            <Button
+              onClick={handleSearch}
+              className="h-10 px-4 shrink-0"
+              disabled={searchMutation.isPending}
+            >
+              {searchMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  검색 중... {searchTimer}s
+                </>
+              ) : (
+                '검색'
               )}
-              검색
             </Button>
           </div>
 
@@ -1385,7 +1495,7 @@ export function AuthorLorebookPanel({
               >
                 취소
               </Button>
-              <Button type="submit">저장</Button>
+              <Button type="submit">{editingItem?.id ? '수정' : '생성'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -1553,7 +1663,7 @@ export const getTagsForItem = (item: any, defaultCategory = '인물') => {
         item['등급'],
         ...(item['관련인물'] || []),
       ].filter(Boolean) as string[];
-    case '단체':
+    case '집단':
       return [item.leader, item['수장'], item.scale, item['규모']].filter(
         Boolean,
       ) as string[];
