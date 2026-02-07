@@ -6,86 +6,84 @@ import {
   List,
   FileText,
   X,
-} from "lucide-react";
-import { Button } from "../../../components/ui/button";
+} from 'lucide-react';
+import { Button } from '../../../components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "../../../components/ui/dialog";
+} from '../../../components/ui/dialog';
 import {
   Select,
   SelectTrigger,
   SelectValue,
   SelectContent,
   SelectItem,
-} from "../../../components/ui/select";
+} from '../../../components/ui/select';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card";
-import { Input } from "../../../components/ui/input";
-import { Badge } from "../../../components/ui/badge";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import apiClient from "../../../api/axios";
-import { toast } from "sonner";
+} from '../../../components/ui/card';
+import { Input } from '../../../components/ui/input';
+import { Badge } from '../../../components/ui/badge';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../../../api/axios';
+import { toast } from 'sonner';
 
 export function ManagerWorkAnalysis() {
-  const [viewMode, setViewMode] = useState<"grid" | "list">(
-    "grid",
-  );
-  const [filterBy, setFilterBy] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [filterBy, setFilterBy] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedWork, setSelectedWork] = useState<any>(null);
   const [showAnalysisModal, setShowAnalysisModal] = useState(false);
-  const [selectedAuthorId, setSelectedAuthorId] = useState<string>("");
-  const [selectedAuthorWorkId, setSelectedAuthorWorkId] = useState<string>("");
+  const [selectedAuthorId, setSelectedAuthorId] = useState<string>('');
+  const [selectedAuthorWorkId, setSelectedAuthorWorkId] = useState<string>('');
 
   const works = [
     {
       id: 1,
-      title: "암흑의 영역 연대기",
-      author: "김민지",
-      category: "인물",
-      genre: "판타지",
-      gradient: "from-slate-700 to-slate-900",
+      title: '암흑의 영역 연대기',
+      author: '김민지',
+      category: '인물',
+      genre: '판타지',
+      gradient: 'from-slate-700 to-slate-900',
     },
     {
       id: 2,
-      title: "운명의 검",
-      author: "이재원",
-      category: "서사",
-      genre: "무협",
-      gradient: "from-purple-700 to-purple-900",
+      title: '운명의 검',
+      author: '이재원',
+      category: '서사',
+      genre: '무협',
+      gradient: 'from-purple-700 to-purple-900',
     },
     {
       id: 3,
-      title: "별빛 아카데미",
-      author: "박수진",
-      category: "세계관",
-      genre: "학원",
-      gradient: "from-blue-700 to-blue-900",
+      title: '별빛 아카데미',
+      author: '박수진',
+      category: '세계관',
+      genre: '학원',
+      gradient: 'from-blue-700 to-blue-900',
     },
     {
       id: 4,
-      title: "시간의 문",
-      author: "최현우",
-      category: "서사",
-      genre: "SF",
-      gradient: "from-green-700 to-green-900",
+      title: '시간의 문',
+      author: '최현우',
+      category: '서사',
+      genre: 'SF',
+      gradient: 'from-green-700 to-green-900',
     },
     {
       id: 5,
-      title: "마법 학원",
-      author: "정서연",
-      category: "인물",
-      genre: "판타지",
-      gradient: "from-orange-700 to-orange-900",
+      title: '마법 학원',
+      author: '정서연',
+      category: '인물',
+      genre: '판타지',
+      gradient: 'from-orange-700 to-orange-900',
     },
   ];
 
@@ -102,29 +100,31 @@ export function ManagerWorkAnalysis() {
             />
           </div>
 
-          <select
-            value={filterBy}
-            onChange={(e) => setFilterBy(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white flex-1 sm:flex-initial"
-          >
-            <option value="all">전체 보기</option>
-            <option value="author">작가별</option>
-            <option value="genre">장르별</option>
-          </select>
+          <Select value={filterBy} onValueChange={setFilterBy}>
+            <SelectTrigger className="w-full sm:w-[130px] flex-1 sm:flex-initial">
+              <SelectValue placeholder="필터" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 보기</SelectItem>
+              <SelectItem value="author">작가별</SelectItem>
+              <SelectItem value="genre">장르별</SelectItem>
+            </SelectContent>
+          </Select>
 
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-4 py-2 border border-slate-200 rounded-lg text-sm text-slate-700 bg-white flex-1 sm:flex-initial"
-          >
-            <option value="all">전체 카테고리</option>
-            <option value="characters">인물</option>
-            <option value="world">세계관</option>
-            <option value="narrative">서사</option>
-            <option value="place">장소</option>
-            <option value="item">물건</option>
-            <option value="group">집단</option>
-          </select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full sm:w-[160px] flex-1 sm:flex-initial">
+              <SelectValue placeholder="카테고리" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 카테고리</SelectItem>
+              <SelectItem value="characters">인물</SelectItem>
+              <SelectItem value="world">세계관</SelectItem>
+              <SelectItem value="narrative">서사</SelectItem>
+              <SelectItem value="place">장소</SelectItem>
+              <SelectItem value="item">물건</SelectItem>
+              <SelectItem value="group">집단</SelectItem>
+            </SelectContent>
+          </Select>
 
           <Button
             variant="outline"
@@ -147,16 +147,16 @@ export function ManagerWorkAnalysis() {
           </Button>
           <div className="flex items-center gap-2">
             <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setViewMode("grid")}
+              onClick={() => setViewMode('grid')}
             >
               <Grid3x3 className="w-4 h-4" />
             </Button>
             <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setViewMode("list")}
+              onClick={() => setViewMode('list')}
             >
               <List className="w-4 h-4" />
             </Button>
@@ -165,8 +165,8 @@ export function ManagerWorkAnalysis() {
       </div>
 
       {/* Grid View */}
-      {viewMode === "grid" && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {works.map((work) => (
             <Card
               key={work.id}
@@ -182,17 +182,15 @@ export function ManagerWorkAnalysis() {
                 <div className="text-sm text-slate-900 mb-1 truncate">
                   {work.title}
                 </div>
-                <div className="text-xs text-slate-500 mb-2">
-                  {work.author}
-                </div>
+                <div className="text-xs text-slate-500 mb-2">{work.author}</div>
                 <div className="flex gap-1">
                   <Badge
                     className={`${
-                      work.category === "인물"
-                        ? "bg-blue-500"
-                        : work.category === "세계관"
-                          ? "bg-green-500"
-                          : "bg-purple-500"
+                      work.category === '인물'
+                        ? 'bg-blue-500'
+                        : work.category === '세계관'
+                          ? 'bg-green-500'
+                          : 'bg-purple-500'
                     } text-white text-xs`}
                   >
                     {work.category}
@@ -218,7 +216,7 @@ export function ManagerWorkAnalysis() {
                 value={selectedAuthorId}
                 onChange={(v) => {
                   setSelectedAuthorId(v);
-                  setSelectedAuthorWorkId("");
+                  setSelectedAuthorWorkId('');
                 }}
               />
             </div>
@@ -232,13 +230,18 @@ export function ManagerWorkAnalysis() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAnalysisModal(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowAnalysisModal(false)}
+            >
               취소
             </Button>
             <Button
               disabled={!selectedAuthorId || !selectedAuthorWorkId}
               onClick={() => {
-                toast.info("AI 서버 준비 중입니다. 서버 가동 후 분석을 시작할게요.");
+                toast.info(
+                  'AI 서버 준비 중입니다. 서버 가동 후 분석을 시작할게요.',
+                );
                 setShowAnalysisModal(false);
               }}
             >
@@ -277,11 +280,11 @@ export function ManagerWorkAnalysis() {
               <div>
                 <Badge
                   className={`${
-                    selectedWork.category === "인물"
-                      ? "bg-blue-500"
-                      : selectedWork.category === "세계관"
-                        ? "bg-green-500"
-                        : "bg-purple-500"
+                    selectedWork.category === '인물'
+                      ? 'bg-blue-500'
+                      : selectedWork.category === '세계관'
+                        ? 'bg-green-500'
+                        : 'bg-purple-500'
                   } text-white`}
                 >
                   {selectedWork.category}
@@ -298,9 +301,7 @@ export function ManagerWorkAnalysis() {
                 <CardContent className="p-6 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <div className="text-sm text-slate-500 mb-1">
-                        장르
-                      </div>
+                      <div className="text-sm text-slate-500 mb-1">장르</div>
                       <div className="text-sm text-slate-900">
                         {selectedWork.genre}
                       </div>
@@ -314,17 +315,11 @@ export function ManagerWorkAnalysis() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-500 mb-1">
-                        등록일
-                      </div>
-                      <div className="text-sm text-slate-900">
-                        2024.01.15
-                      </div>
+                      <div className="text-sm text-slate-500 mb-1">등록일</div>
+                      <div className="text-sm text-slate-900">2024.01.15</div>
                     </div>
                     <div>
-                      <div className="text-sm text-slate-500 mb-1">
-                        상태
-                      </div>
+                      <div className="text-sm text-slate-500 mb-1">상태</div>
                       <Badge className="bg-green-500 text-white">
                         분석 완료
                       </Badge>
@@ -347,8 +342,8 @@ export function ManagerWorkAnalysis() {
                         주요 인물
                       </div>
                       <div className="text-sm text-slate-600">
-                        엘레나, 루미나스, 다크로드 등 15명의
-                        캐릭터가 분석되었습니다.
+                        엘레나, 루미나스, 다크로드 등 15명의 캐릭터가
+                        분석되었습니다.
                       </div>
                     </div>
                     <div className="p-4 bg-slate-50 rounded-lg">
@@ -356,8 +351,8 @@ export function ManagerWorkAnalysis() {
                         세계관 설정
                       </div>
                       <div className="text-sm text-slate-600">
-                        중세 판타지 세계관, 마법 체계, 7개
-                        왕국의 정치 구조 등이 포함되어 있습니다.
+                        중세 판타지 세계관, 마법 체계, 7개 왕국의 정치 구조 등이
+                        포함되어 있습니다.
                       </div>
                     </div>
                     <div className="p-4 bg-slate-50 rounded-lg">
@@ -365,8 +360,8 @@ export function ManagerWorkAnalysis() {
                         서사 구조
                       </div>
                       <div className="text-sm text-slate-600">
-                        3막 구조, 주요 갈등 요소, 클라이맥스
-                        분석이 완료되었습니다.
+                        3막 구조, 주요 갈등 요소, 클라이맥스 분석이
+                        완료되었습니다.
                       </div>
                     </div>
                   </div>
@@ -390,7 +385,7 @@ export function ManagerWorkAnalysis() {
                       <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-blue-500 rounded-full"
-                          style={{ width: "92%" }}
+                          style={{ width: '92%' }}
                         ></div>
                       </div>
                       <span className="text-sm text-slate-900 font-semibold">
@@ -406,7 +401,7 @@ export function ManagerWorkAnalysis() {
                       <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-green-500 rounded-full"
-                          style={{ width: "88%" }}
+                          style={{ width: '88%' }}
                         ></div>
                       </div>
                       <span className="text-sm text-slate-900 font-semibold">
@@ -422,7 +417,7 @@ export function ManagerWorkAnalysis() {
                       <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-purple-500 rounded-full"
-                          style={{ width: "95%" }}
+                          style={{ width: '95%' }}
                         ></div>
                       </div>
                       <span className="text-sm text-slate-900 font-semibold">
@@ -448,10 +443,10 @@ function LinkedAuthorsSelect({
   onChange: (v: string) => void;
 }) {
   const { data } = useQuery({
-    queryKey: ["manager", "authors", "linked", "list"],
+    queryKey: ['manager', 'authors', 'linked', 'list'],
     queryFn: async () => {
-      const res = await apiClient.get("/api/v1/manager/authors", {
-        params: { size: 100, sort: "name,asc", linked: true },
+      const res = await apiClient.get('/api/v1/manager/authors', {
+        params: { size: 100, sort: 'name,asc', linked: true },
       });
       const page = res.data as any;
       const items = page?.content ?? [];
@@ -492,7 +487,7 @@ function AuthorWorksSelect({
   onChange: (v: string) => void;
 }) {
   const { data } = useQuery({
-    queryKey: ["manager", "authors", "works", authorId],
+    queryKey: ['manager', 'authors', 'works', authorId],
     queryFn: async () => {
       if (!authorId) return [];
       const res = await apiClient.get(
@@ -505,7 +500,11 @@ function AuthorWorksSelect({
   return (
     <Select value={value} onValueChange={onChange} disabled={!authorId}>
       <SelectTrigger className="w-full">
-        <SelectValue placeholder={authorId ? "작품을 선택하세요" : "작가를 먼저 선택하세요"} />
+        <SelectValue
+          placeholder={
+            authorId ? '작품을 선택하세요' : '작가를 먼저 선택하세요'
+          }
+        />
       </SelectTrigger>
       <SelectContent>
         {data?.map((w) => (

@@ -259,7 +259,7 @@ function WorkItem({
               <span className="truncate flex-1 text-left">{work.title}</span>
               <span
                 className={cn(
-                  'ml-2 text-[10px] px-1.5 py-0.5 rounded-full border shrink-0',
+                  'ml-2 text-xs px-1.5 py-0.5 rounded-full border shrink-0',
                   work.status === 'COMPLETED'
                     ? 'border-green-500 text-green-600 bg-green-50'
                     : work.status === 'NEW'
@@ -333,8 +333,9 @@ function WorkItem({
                       </span>
                       {manuscript.subtitle || '무제'}
                     </span>
+                    {/* ReadOnly Lock Icon for Manuscript Item */}
                     {manuscript.readOnly && (
-                      <Lock className="w-3 h-3 ml-2 text-muted-foreground shrink-0" />
+                      <Lock className="w-3 h-3 text-slate-400 ml-auto mr-2" />
                     )}
                   </div>
                 );

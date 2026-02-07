@@ -82,59 +82,65 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto font-sans p-1">
+    <div className="space-y-6 max-w-7xl mx-auto font-sans p-4">
       {/* 1. 상단 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">연재 작품</p>
-              <div className="text-2xl font-bold text-foreground">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center shrink-0">
+              <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="space-y-1 overflow-hidden">
+              <div className="text-2xl font-bold text-foreground truncate">
                 {isSummaryLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   summary?.ongoingCount || 0
                 )}
               </div>
-            </div>
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <p className="text-sm text-muted-foreground truncate">
+                연재 작품
+              </p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">전체 설정집</p>
-              <div className="text-2xl font-bold text-foreground">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
+              <Database className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="space-y-1 overflow-hidden">
+              <div className="text-2xl font-bold text-foreground truncate">
                 {isSummaryLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   summary?.settingBookCount || 0
                 )}
               </div>
-            </div>
-            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-              <Database className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <p className="text-sm text-muted-foreground truncate">
+                전체 설정집
+              </p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">완결 작품</p>
-              <div className="text-2xl font-bold text-foreground">
+          <CardContent className="p-6 flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center shrink-0">
+              <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="space-y-1 overflow-hidden">
+              <div className="text-2xl font-bold text-foreground truncate">
                 {isSummaryLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
                   summary?.completedCount || 0
                 )}
               </div>
-            </div>
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <p className="text-sm text-muted-foreground truncate">
+                완결 작품
+              </p>
             </div>
           </CardContent>
         </Card>
