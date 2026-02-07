@@ -626,6 +626,7 @@ export function DynamicSettingEditor({
     <div className="space-y-4 p-1">
       <div className="flex justify-end mb-2">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => setIsRawMode(!isRawMode)}
@@ -707,6 +708,7 @@ function Field({
               className="p-3 border rounded-md bg-muted/20 space-y-2 relative"
             >
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 className="absolute top-1 right-1 h-6 w-6 text-red-400 hover:text-red-500"
@@ -731,6 +733,7 @@ function Field({
             </div>
           ))}
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={onAdd}
@@ -752,6 +755,7 @@ function Field({
                   className="h-8 text-sm"
                 />
                 <Button
+                  type="button"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0 text-red-400 hover:text-red-500"
@@ -763,6 +767,7 @@ function Field({
             ),
           )}
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={onAdd}
