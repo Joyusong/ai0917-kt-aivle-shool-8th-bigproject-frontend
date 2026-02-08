@@ -140,6 +140,89 @@ const HighlightText = ({
   );
 };
 
+// Helper to parse conflict reason
+const parseConflictReason = (text: string) => {
+  if (!text) return '';
+  const match = text.match(/\[판단사유:\s*(.*?)\]/);
+  return match ? match[1] : text.replace('[결과: 충돌]', '').trim();
+};
+
+// Helper component for setting comparison
+const SettingComparison = ({
+  original,
+  updated,
+}: {
+  original: any;
+  updated: any;
+}) => {
+  if (!original && !updated) return null;
+
+  // Collect all keys from both objects
+  const allKeys = Array.from(
+    new Set([...Object.keys(original || {}), ...Object.keys(updated || {})]),
+  );
+
+  return (
+    <div className="border rounded-md overflow-hidden text-xs">
+      <div className="grid grid-cols-2 bg-slate-100 border-b font-bold text-slate-700">
+        <div className="p-2 border-r flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-slate-400" />
+          기존 설정 (Original)
+        </div>
+        <div className="p-2 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-green-500" />
+          신규 설정 (Updated)
+        </div>
+      </div>
+      {allKeys.map((key) => {
+        const origVal = original?.[key];
+        const newVal = updated?.[key];
+        const isAdded = !origVal && newVal;
+        const isDeleted = origVal && !newVal;
+        const isModified =
+          origVal &&
+          newVal &&
+          JSON.stringify(origVal) !== JSON.stringify(newVal);
+
+        let origClass = 'p-2 border-r bg-white text-slate-600';
+        let newClass = 'p-2 bg-white text-slate-600';
+
+        if (isAdded) {
+          newClass = 'p-2 bg-green-50 text-green-700 font-medium';
+        } else if (isDeleted) {
+          origClass =
+            'p-2 border-r bg-red-50 text-red-700 font-medium decoration-red-300';
+        } else if (isModified) {
+          origClass = 'p-2 border-r bg-yellow-50 text-yellow-700';
+          newClass = 'p-2 bg-yellow-50 text-yellow-700 font-medium';
+        }
+
+        const formatValue = (val: any) => {
+          if (Array.isArray(val)) return val.join(', ');
+          return String(val || '-');
+        };
+
+        return (
+          <div key={key} className="grid grid-cols-2 border-b last:border-0">
+            <div className={origClass}>
+              <span className="font-bold mr-2 text-[10px] text-slate-400 block mb-1">
+                {key}
+              </span>
+              {formatValue(origVal)}
+            </div>
+            <div className={newClass}>
+              <span className="font-bold mr-2 text-[10px] text-slate-400 block mb-1">
+                {key}
+              </span>
+              {formatValue(newVal)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 function getContentStrategy(formatId: string | null) {
   const common = {
     valueProp: {
@@ -1467,6 +1550,12 @@ function CreateIPExpansionDialog({
     number | null
   >(null);
 
+  // Conflict Check States
+  const [conflictResult, setConflictResult] = useState<any>(null);
+  const [isConflictChecking, setIsConflictChecking] = useState(false);
+  const [selectedConflict, setSelectedConflict] = useState<any>(null);
+  const [showConflictDetail, setShowConflictDetail] = useState(false);
+
   const analysisBadges = useMemo(() => {
     if (selectedLorebooks.length === 0) return [];
 
@@ -1683,9 +1772,7 @@ function CreateIPExpansionDialog({
     queryFn: async () => {
       if (!selectedAuthor?.id) return [];
       try {
-        // Fetch detailed author info which includes recentWorks
-        const detail = await managerService.getAuthorDetail(selectedAuthor.id);
-        return detail.recentWorks || [];
+        return await managerService.getAuthorWorks(selectedAuthor.id);
       } catch (error) {
         console.error('Failed to fetch author works:', error);
         return [];
@@ -1695,16 +1782,10 @@ function CreateIPExpansionDialog({
   });
 
   const { data: lorebooks } = useQuery({
-    queryKey: [
-      'manager',
-      'lorebooks',
-      selectedAuthor?.id,
-      selectedWork?.title,
-      selectedWork?.id,
-    ],
+    queryKey: ['manager', 'lorebooks', selectedAuthor?.id, selectedWork?.id],
     queryFn: () =>
       selectedWork?.id
-        ? managerService.getManagerWorkLorebooks(selectedWork.id)
+        ? managerService.getAuthorWorkLorebooks(selectedWork.id)
         : Promise.resolve([]),
     enabled: !!selectedWork?.id,
   });
@@ -1873,11 +1954,14 @@ function CreateIPExpansionDialog({
         setAuthorSearch('');
         setWorkSearch('');
         setLorebookSearch('');
+        setConflictResult(null);
+        setSelectedConflict(null);
+        setShowConflictDetail(false);
       }
     }
   }, [isOpen, initialData]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     // Step 1 Validation
     if (currentStep === 1) {
       if (!selectedAuthor) {
@@ -1896,6 +1980,23 @@ function CreateIPExpansionDialog({
         toast.error('중심이 될 핵심 설정(왕관)을 하나 지정하세요.');
         return;
       }
+
+      // Conflict Check API Call
+      setIsConflictChecking(true);
+      try {
+        const result = await managerService.checkConflicts({
+          lorebookIds: selectedLorebooks.map((l) => l.id),
+          crownId: selectedCrownSetting,
+        });
+        setConflictResult(result);
+        setCurrentStep(2);
+      } catch (error) {
+        console.error('Conflict check failed:', error);
+        toast.error('설정 충돌 검수 중 오류가 발생했습니다.');
+      } finally {
+        setIsConflictChecking(false);
+      }
+      return;
     }
 
     // Step 2 Validation
@@ -2651,58 +2752,76 @@ function CreateIPExpansionDialog({
                           variant="secondary"
                           className="ml-2 bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5"
                         >
-                          3건의 충돌 감지
+                          {Object.values(conflictResult?.충돌 || {}).reduce(
+                            (acc: number, items: any) =>
+                              acc + (Array.isArray(items) ? items.length : 0),
+                            0,
+                          )}
+                          건의 충돌 감지
                         </Badge>
                       </CardTitle>
                       <span className="text-[10px] text-slate-400">
-                        Analysis ID: #EXP-2024-001
+                        Analysis ID: #EXP-
+                        {Math.floor(Math.random() * 10000)
+                          .toString()
+                          .padStart(4, '0')}
                       </span>
                     </div>
                   </CardHeader>
-                  {/* Inner Scroll Area for Conflict Content */}
                   <ScrollArea className="flex-1 bg-white">
                     <div className="p-5 space-y-3">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="group p-4 rounded-lg border border-slate-100 bg-slate-50/30 hover:border-amber-200 hover:bg-amber-50/30 transition-all duration-300"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
-                              <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] text-slate-500 group-hover:border-amber-300 group-hover:text-amber-600 transition-colors">
-                                {i}
-                              </span>
-                              성격 특성 충돌 가능성
-                            </h4>
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] font-normal text-slate-400 border-slate-200"
-                            >
-                              개연성 지수 -15%
-                            </Badge>
-                          </div>
-                          <p className="text-slate-600 text-xs leading-relaxed pl-7">
-                            '냉철한 이성' 특성을 가진 주인공 A와 '감정적 폭발'
-                            특성을 가진 조연 B의 상호작용 시뮬레이션에서 개연성
-                            오류가 발생할 확률이 높습니다. 특정 시나리오에서 두
-                            캐릭터의 대화가 루프에 빠질 수 있습니다.
-                          </p>
-                          <div className="mt-3 pl-7 flex gap-2">
-                            <Badge
-                              variant="secondary"
-                              className="bg-white border border-slate-200 text-slate-500 text-[10px] h-5"
-                            >
-                              주인공 A
-                            </Badge>
-                            <Badge
-                              variant="secondary"
-                              className="bg-white border border-slate-200 text-slate-500 text-[10px] h-5"
-                            >
-                              조연 B
-                            </Badge>
-                          </div>
+                      {Object.entries(conflictResult?.충돌 || {}).flatMap(
+                        ([category, items]: [string, any]) =>
+                          items.flatMap((item: any, idx: number) => {
+                            const itemName = Object.keys(item).find(
+                              (k) => !['신규설정', '기존설정'].includes(k),
+                            );
+                            if (!itemName) return null;
+                            const description = item[itemName];
+                            const reason = parseConflictReason(description);
+
+                            return (
+                              <div
+                                key={`${category}-${idx}`}
+                                onClick={() => {
+                                  setSelectedConflict({
+                                    ...item,
+                                    itemName,
+                                    category,
+                                  });
+                                  setShowConflictDetail(true);
+                                }}
+                                className="group p-4 rounded-lg border border-slate-100 bg-slate-50/30 hover:border-amber-200 hover:bg-amber-50/30 transition-all duration-300 cursor-pointer"
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <h4 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+                                    <span className="w-5 h-5 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[10px] text-slate-500 group-hover:border-amber-300 group-hover:text-amber-600 transition-colors">
+                                      !
+                                    </span>
+                                    {category} - {itemName}
+                                  </h4>
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] font-normal text-slate-400 border-slate-200"
+                                  >
+                                    상세 보기 &gt;
+                                  </Badge>
+                                </div>
+                                <p className="text-slate-600 text-xs leading-relaxed pl-7 line-clamp-2">
+                                  {reason}
+                                </p>
+                              </div>
+                            );
+                          }),
+                      )}
+                      {(!conflictResult ||
+                        Object.values(conflictResult?.충돌 || {}).every(
+                          (items: any) => !items.length,
+                        )) && (
+                        <div className="text-center py-10 text-slate-500">
+                          충돌 사항이 발견되지 않았습니다.
                         </div>
-                      ))}
+                      )}
                     </div>
                   </ScrollArea>
                   <CardFooter className="bg-slate-50/80 border-t p-4 shrink-0 backdrop-blur-sm">
@@ -2723,6 +2842,56 @@ function CreateIPExpansionDialog({
                     </label>
                   </CardFooter>
                 </Card>
+
+                <Dialog
+                  open={showConflictDetail}
+                  onOpenChange={setShowConflictDetail}
+                >
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>설정 충돌 상세 분석</DialogTitle>
+                      <DialogDescription>
+                        기존 설정과 신규 설정 간의 충돌 내용을 비교하고 병합
+                        방식을 결정하세요.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4">
+                      <div className="mb-4 p-3 bg-amber-50 text-amber-800 rounded-md text-sm border border-amber-100">
+                        <span className="font-bold mr-2">[AI 판단 사유]</span>
+                        {selectedConflict &&
+                          parseConflictReason(
+                            selectedConflict[selectedConflict.itemName],
+                          )}
+                      </div>
+
+                      <Tabs defaultValue="merge" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="merge">
+                            설정 결합 (Merge)
+                          </TabsTrigger>
+                          <TabsTrigger value="raw">Raw Data</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="merge" className="mt-4">
+                          <SettingComparison
+                            original={selectedConflict?.기존설정}
+                            updated={selectedConflict?.신규설정}
+                          />
+                        </TabsContent>
+                        <TabsContent value="raw">
+                          <pre className="text-xs bg-slate-950 text-slate-50 p-4 rounded-md overflow-auto max-h-[300px]">
+                            {JSON.stringify(selectedConflict, null, 2)}
+                          </pre>
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={() => setShowConflictDetail(false)}>
+                        확인
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
             )}
 
@@ -4197,6 +4366,63 @@ function CreateIPExpansionDialog({
                               </p>
                             </div>
                           </div>
+
+                          {/* [New Card 4] Conflict Summary */}
+                          {conflictResult &&
+                            Object.keys(conflictResult.충돌 || {}).length >
+                              0 && (
+                              <div
+                                onClick={() => setCurrentStep(2)}
+                                className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group cursor-pointer hover:border-red-400 transition-colors col-span-full"
+                              >
+                                <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-red-50 text-red-600">
+                                  <AlertTriangle className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="overflow-hidden w-full">
+                                  <p className="text-[10px] font-bold text-slate-500 mb-0.5">
+                                    설정 충돌 해결
+                                  </p>
+                                  <div className="space-y-1">
+                                    {Object.entries(conflictResult?.충돌 || {})
+                                      .flatMap(
+                                        ([category, items]: [string, any]) =>
+                                          items.map(
+                                            (item: any, idx: number) => {
+                                              const itemName = Object.keys(
+                                                item,
+                                              ).find(
+                                                (k) =>
+                                                  ![
+                                                    '신규설정',
+                                                    '기존설정',
+                                                  ].includes(k),
+                                              );
+                                              if (!itemName) return null;
+                                              const reason =
+                                                parseConflictReason(
+                                                  item[itemName],
+                                                );
+                                              return (
+                                                <div
+                                                  key={`${category}-${idx}`}
+                                                  className="flex items-start gap-2 text-xs"
+                                                >
+                                                  <span className="font-bold text-slate-700 min-w-[60px]">
+                                                    {category}/{itemName}
+                                                  </span>
+                                                  <span className="text-slate-600 truncate">
+                                                    {reason}
+                                                  </span>
+                                                </div>
+                                              );
+                                            },
+                                          ),
+                                      )
+                                      .slice(0, 3)}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
 
                           {[
                             {
