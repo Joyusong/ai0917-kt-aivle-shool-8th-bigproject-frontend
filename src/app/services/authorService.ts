@@ -313,7 +313,7 @@ export const authorService = {
   ) => {
     try {
       const response = await apiClient.patch(
-        `/api/v1/author/${userId}/${title}/lorebook/${tag}/${itemId}`,
+        `/api/v1/ai/author/${userId}/${title}/lorebook/${tag}/${itemId}`,
         data,
       );
       return response.data;
