@@ -11,6 +11,10 @@ interface SelectedSettingCardProps {
     authorName: string;
     workTitle: string;
     category: string;
+    // Extra fields from setting_format.txt
+    nickname?: string;
+    background?: string;
+    species?: string;
   };
   onRemove: () => void;
   isCrown: boolean;
@@ -62,7 +66,6 @@ export function SelectedSettingCard({
       >
         <X className="w-3 h-3" />
       </Button>
-
       <div className="pt-1 pl-6 pr-8">
         {' '}
         {/* Added padding for icons */}
@@ -79,12 +82,32 @@ export function SelectedSettingCard({
               {item.authorName} / {item.workTitle}
             </span>
           </span>
-          <Badge
-            variant="secondary"
-            className="w-fit text-[10px] px-1.5 py-0 h-4 bg-slate-100 text-slate-600 border-slate-200 font-medium leading-none"
-          >
-            {item.category}
-          </Badge>
+          <div className="flex flex-wrap gap-1 mt-1">
+            <Badge
+              variant="secondary"
+              className="w-fit text-[10px] px-1.5 py-0 h-4 bg-slate-100 text-slate-600 border-slate-200 font-medium leading-none"
+            >
+              {item.category}
+            </Badge>
+            {item.species && (
+              <Badge
+                variant="outline"
+                className="w-fit text-[10px] px-1.5 py-0 h-4 text-slate-500 border-slate-200 font-normal leading-none"
+              >
+                {item.species}
+              </Badge>
+            )}
+          </div>
+          {item.nickname && (
+            <div className="text-[10px] text-slate-400 truncate mt-0.5">
+              "{item.nickname}"
+            </div>
+          )}
+          {item.background && (
+            <div className="text-[10px] text-slate-400 line-clamp-2 leading-snug mt-0.5">
+              {item.background}
+            </div>
+          )}
         </div>
       </div>
 
