@@ -17,6 +17,7 @@ import TermsPage from './pages/legal/TermsPage';
 import { authService } from './services/authService';
 import AILabPage from './pages/lab/AILabPage';
 import { Toaster } from './components/ui/sonner';
+import { toast } from 'sonner';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ensureCsrfToken } from './utils/csrf';
 
@@ -70,6 +71,8 @@ export default function App() {
   };
 
   const handleLogout = async () => {
+    // Clear all toasts immediately
+    toast.dismiss();
     setIsLoggingOut(true);
     try {
       await authService.logout();

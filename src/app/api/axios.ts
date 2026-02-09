@@ -89,7 +89,14 @@ apiClient.interceptors.response.use(
         // Refresh마저 실패하면(로그인 만료) 강제 로그아웃
         isRefreshing = false;
         localStorage.removeItem('accessToken');
-        window.location.href = '/login'; // 혹은 리덕스/recoil 로그아웃 액션 실행
+        // Landing Page('/')나 Login Page('/login')가 아닐 경우에만 리다이렉트
+        if (
+          window.location.pathname !== '/login' &&
+          window.location.pathname !== '/' &&
+          window.location.pathname !== '/signup'
+        ) {
+          window.location.href = '/login'; // 혹은 리덕스/recoil 로그아웃 액션 실행
+        }
         return Promise.reject(refreshError);
       }
     }
