@@ -51,6 +51,7 @@ import {
   User,
   Crown,
   HelpCircle,
+  Layout,
   Info,
 } from 'lucide-react';
 import { PdfPreview, VisualPreview } from '../../../components/ProjectPreviews';
@@ -402,21 +403,38 @@ export function ManagerIPExpansion() {
   const PAGE_SIZE = 8;
   const queryClient = useQueryClient();
 
+  const { data: me } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: authService.me,
+  });
+
   const { data: proposalsData, isLoading } = useQuery({
-    queryKey: ['manager', 'ip-expansion', 'proposals', page],
-    queryFn: () => managerService.getIPProposals('me', page, PAGE_SIZE),
+    queryKey: ['manager', 'ip-expansion', 'proposals', page, me?.integrationId],
+    queryFn: () =>
+      managerService.getIPProposals(me?.integrationId || 'me', page, PAGE_SIZE),
+    enabled: !!me?.integrationId,
   });
 
   const proposals = proposalsData?.content || [];
 
   const createMutation = useMutation({
     mutationFn: managerService.createIPExpansionProject,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: ['manager', 'ip-expansion', 'proposals'],
       });
-      setIsCreateDialogOpen(false);
-      toast.success('새로운 IP 확장 프로젝트가 생성되었습니다.');
+      // System Notification Simulation
+      toast.success('IP 확장 프로젝트 생성이 완료되었습니다!', {
+        duration: 5000,
+        icon: '✅',
+        style: {
+          background: '#f0fdf4',
+          color: '#15803d',
+          border: '1px solid #bbf7d0',
+          padding: '16px',
+          fontWeight: 'bold',
+        },
+      });
     },
   });
 
@@ -458,6 +476,9 @@ export function ManagerIPExpansion() {
   });
 
   const handleCreateProject = (project: any) => {
+    // Immediate feedback and close dialog for long-running process
+    setIsCreateDialogOpen(false);
+
     if (editingProject) {
       updateMutation.mutate({ id: editingProject.id, data: project });
     } else {
@@ -465,10 +486,40 @@ export function ManagerIPExpansion() {
     }
   };
 
-  const handleEditProject = (project: any) => {
-    setEditingProject(project);
+  const handleEditProject = async (project: any) => {
+    if (me?.integrationId) {
+      try {
+        const detail = await managerService.getIPProposalDetail(
+          project.id,
+          me.integrationId,
+        );
+        setEditingProject(detail);
+      } catch (error) {
+        console.error('Failed to fetch detail for edit', error);
+        setEditingProject(project);
+      }
+    } else {
+      setEditingProject(project);
+    }
     setSelectedProject(null);
     setIsCreateDialogOpen(true);
+  };
+
+  const handleOpenDetail = async (proposal: any) => {
+    if (me?.integrationId) {
+      try {
+        const detail = await managerService.getIPProposalDetail(
+          proposal.id,
+          me.integrationId,
+        );
+        setSelectedProject(detail);
+      } catch (error) {
+        console.error('Failed to fetch detail', error);
+        setSelectedProject(proposal);
+      }
+    } else {
+      setSelectedProject(proposal);
+    }
   };
 
   const handlePropose = (id: number) => {
@@ -515,13 +566,14 @@ export function ManagerIPExpansion() {
               <Card
                 key={proposal.id}
                 className="cursor-pointer hover:shadow-md transition-all group"
-                onClick={() => setSelectedProject(proposal)}
+                onClick={() => handleOpenDetail(proposal)}
               >
                 <CardHeader>
                   <div className="flex justify-between items-start mb-2">
                     <Badge
                       variant={
-                        proposal.status === 'APPROVED'
+                        proposal.status === 'APPROVED' ||
+                        proposal.status === 'COMPLETED'
                           ? 'default'
                           : proposal.status === 'REVIEWING'
                             ? 'secondary'
@@ -534,6 +586,8 @@ export function ManagerIPExpansion() {
                       className={cn(
                         proposal.status === 'APPROVED' &&
                           'bg-green-600 hover:bg-green-700',
+                        proposal.status === 'COMPLETED' &&
+                          'bg-blue-600 hover:bg-blue-700',
                         proposal.status === 'REVIEWING' &&
                           'bg-blue-100 text-blue-700 hover:bg-blue-200',
                         proposal.status === 'PENDING' &&
@@ -542,13 +596,15 @@ export function ManagerIPExpansion() {
                     >
                       {proposal.status === 'APPROVED'
                         ? '승인'
-                        : proposal.status === 'REVIEWING'
-                          ? '검토'
-                          : proposal.status === 'PENDING'
-                            ? '승인 대기'
-                            : proposal.status === 'REJECTED'
-                              ? '반려'
-                              : proposal.statusDescription || proposal.status}
+                        : proposal.status === 'COMPLETED'
+                          ? '완료'
+                          : proposal.status === 'REVIEWING'
+                            ? '검토'
+                            : proposal.status === 'PENDING'
+                              ? '승인 대기'
+                              : proposal.status === 'REJECTED'
+                                ? '반려'
+                                : proposal.statusDescription || proposal.status}
                     </Badge>
                     <span className="text-xs text-slate-400">
                       {new Date(
@@ -1135,6 +1191,13 @@ function ProjectDetailModal({
                             color: 'text-rose-600',
                             bg: 'bg-rose-50',
                           },
+                          {
+                            label: '채색 톤',
+                            value: project.mediaDetails?.colorTone || '미지정',
+                            icon: Palette,
+                            color: 'text-purple-600',
+                            bg: 'bg-purple-50',
+                          },
                         ]
                       : []),
                     ...(project.format === 'drama'
@@ -1158,6 +1221,38 @@ function ProjectDetailModal({
                             icon: Clock,
                             color: 'text-indigo-600',
                             bg: 'bg-indigo-50',
+                          },
+                          {
+                            label: '서브 요소',
+                            value: project.mediaDetails?.subFocus || '미지정',
+                            icon: Zap,
+                            color: 'text-yellow-600',
+                            bg: 'bg-yellow-50',
+                          },
+                        ]
+                      : []),
+                    ...(project.format === 'movie'
+                      ? [
+                          {
+                            label: '러닝타임',
+                            value: `${project.mediaDetails?.runningTime || 120}분`,
+                            icon: Clock,
+                            color: 'text-indigo-600',
+                            bg: 'bg-indigo-50',
+                          },
+                          {
+                            label: '컬러 테마',
+                            value: project.mediaDetails?.colorTheme || '미지정',
+                            icon: Palette,
+                            color: 'text-purple-600',
+                            bg: 'bg-purple-50',
+                          },
+                          {
+                            label: '3막 구조',
+                            value: project.mediaDetails?.focusAct || '미지정',
+                            icon: Layout,
+                            color: 'text-emerald-600',
+                            bg: 'bg-emerald-50',
                           },
                         ]
                       : []),
@@ -1214,6 +1309,13 @@ function ProjectDetailModal({
                             color: 'text-indigo-600',
                             bg: 'bg-indigo-50',
                           },
+                          {
+                            label: '핵심 재미요소',
+                            value: project.mediaDetails?.coreLoop || '미지정',
+                            icon: Zap,
+                            color: 'text-yellow-600',
+                            bg: 'bg-yellow-50',
+                          },
                         ]
                       : []),
                     ...(project.format === 'spinoff'
@@ -1242,6 +1344,14 @@ function ProjectDetailModal({
                             color: 'text-indigo-600',
                             bg: 'bg-indigo-50',
                           },
+                          {
+                            label: '연재 호흡',
+                            value:
+                              project.mediaDetails?.publishPace || '미지정',
+                            icon: Clock,
+                            color: 'text-emerald-600',
+                            bg: 'bg-emerald-50',
+                          },
                         ]
                       : []),
                     ...(project.format === 'commercial'
@@ -1265,57 +1375,44 @@ function ProjectDetailModal({
                             color: 'text-pink-600',
                             bg: 'bg-pink-50',
                           },
+                          {
+                            label: '활용 목적',
+                            value:
+                              project.mediaDetails?.usagePurpose || '미지정',
+                            icon: Target,
+                            color: 'text-indigo-600',
+                            bg: 'bg-indigo-50',
+                          },
+                          {
+                            label: '타겟 상품군',
+                            value:
+                              project.mediaDetails?.targetProduct || '미지정',
+                            icon: Package,
+                            color: 'text-emerald-600',
+                            bg: 'bg-emerald-50',
+                          },
                         ]
                       : []),
                     {
                       label: '제작 톤앤매너',
-                      value: project.mediaDetails?.tone || '미지정',
+                      value:
+                        project.business?.toneManner ||
+                        project.toneAndManner ||
+                        project.mediaDetails?.tone ||
+                        '미지정',
                       icon: Palette,
                       color: 'text-purple-600',
                       bg: 'bg-purple-50',
                     },
                     {
-                      label: '핵심 재미요소',
-                      value: project.mediaDetails?.coreLoop || '미지정',
-                      icon: Zap,
-                      color: 'text-yellow-600',
-                      bg: 'bg-yellow-50',
-                    },
-                    {
-                      label: '비즈니스 모델',
-                      value: project.mediaDetails?.bmStrategy || '미지정',
-                      icon: BarChart,
-                      color: 'text-cyan-600',
-                      bg: 'bg-cyan-50',
-                    },
-                    {
                       label: '세계관 설정',
-                      value: project.mediaDetails?.worldSetting || '미지정',
+                      value:
+                        project.strategy?.universe === 'parallel'
+                          ? '평행 세계관'
+                          : '공유 세계관',
                       icon: Globe,
                       color: 'text-emerald-600',
                       bg: 'bg-emerald-50',
-                    },
-                    {
-                      label: '캐릭터 각색',
-                      value:
-                        project.mediaDetails?.characterAdaptation || '미지정',
-                      icon: Users,
-                      color: 'text-pink-600',
-                      bg: 'bg-pink-50',
-                    },
-                    {
-                      label: '플랫폼 전략',
-                      value: project.mediaDetails?.platformStrategy || '미지정',
-                      icon: Smartphone,
-                      color: 'text-blue-600',
-                      bg: 'bg-blue-50',
-                    },
-                    {
-                      label: '마케팅 포인트',
-                      value: project.mediaDetails?.marketingPoint || '미지정',
-                      icon: Megaphone,
-                      color: 'text-orange-600',
-                      bg: 'bg-orange-50',
                     },
                     {
                       label: '추가 프롬프트',
@@ -1609,7 +1706,7 @@ function CreateIPExpansionDialog({
       if (l.category === '인물') counts.characters++;
       else if (l.category === '장소') counts.places++;
       else if (l.category === '물건') counts.items++;
-      else if (l.category === '단체') counts.groups++;
+      else if (l.category === '집단') counts.groups++;
       else if (l.category === '사건') counts.plots++;
       else if (l.category === '세계' || l.category === '세계관')
         counts.worldviews++;
@@ -1740,9 +1837,9 @@ function CreateIPExpansionDialog({
         label: '물건 미포함',
         text: '개연성을 완성할 필수 소품과 도구들을 시스템이 제안합니다.',
       });
-    if (!categoriesPresent.has('단체'))
+    if (!categoriesPresent.has('집단'))
       tips.push({
-        label: '단체 미포함',
+        label: '집단 미포함',
         text: '대립하거나 협력할 관계 기반의 가상 세력을 추가합니다.',
       });
     if (!categoriesPresent.has('사건'))
@@ -1777,6 +1874,8 @@ function CreateIPExpansionDialog({
     targetGender: 'all',
     budgetRange: 'medium', // low, medium, high, very_high
     toneManner: '',
+    osmuStrategy: [] as string[],
+    marketingPoints: [] as string[],
   });
 
   // Media Specific Details State
@@ -1794,6 +1893,21 @@ function CreateIPExpansionDialog({
   const [showCoreSettingDetail, setShowCoreSettingDetail] = useState(false);
 
   // Fetch Current User (Manager)
+  const [managerId, setManagerId] = useState<string>('');
+
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const me = await authService.me();
+        if (me.integrationId) {
+          setManagerId(me.integrationId);
+        }
+      } catch (e) {
+        console.error('Failed to fetch manager info', e);
+      }
+    };
+    fetchMe();
+  }, []);
   const { data: userData } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authService.me,
@@ -1892,7 +2006,7 @@ function CreateIPExpansionDialog({
         characters: ['인물'],
         places: ['장소'],
         items: ['물건'],
-        groups: ['단체', '집단'],
+        groups: ['집단', '집단'],
         worldviews: ['세계', '세계관'],
         plots: ['사건'],
       };
@@ -2019,6 +2133,8 @@ function CreateIPExpansionDialog({
           targetGender: 'all',
           budgetRange: 'medium',
           toneManner: '',
+          osmuStrategy: [],
+          marketingPoints: [],
         });
         setMediaDetails({});
         setMediaPrompt('');
@@ -2212,6 +2328,13 @@ function CreateIPExpansionDialog({
   };
 
   const handleCreate = async () => {
+    if (!projectTitle.trim()) {
+      toast.error('프로젝트 명을 입력해주세요.');
+      // Scroll to top or focus title input if possible
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (!step6Confirmed) {
       toast.error('프로젝트 생성을 위해 내용 확인 및 동의가 필요합니다.');
       if (confirmCheckboxRef.current) {
@@ -2227,24 +2350,77 @@ function CreateIPExpansionDialog({
     setShowCreateConfirm(true);
   };
 
-  const confirmCreate = () => {
+  const confirmCreate = async () => {
+    let currentManagerId = managerId;
+    if (!currentManagerId) {
+      try {
+        const me = await authService.me();
+        if (me.integrationId) {
+          currentManagerId = me.integrationId;
+          setManagerId(me.integrationId);
+        }
+      } catch (e) {
+        console.error('Failed to fetch manager info', e);
+      }
+    }
+
+    if (!currentManagerId) {
+      toast.error('Manager ID를 찾을 수 없습니다. 다시 로그인해주세요.');
+      return;
+    }
+
+    // Map budget range to API enum
+    const mapBudgetScale = (range: string) => {
+      switch (range) {
+        case 'low':
+          return 'SMALL';
+        case 'medium':
+          return 'MEDIUM';
+        case 'high':
+          return 'LARGE';
+        case 'very_high':
+          return 'BLOCKBUSTER';
+        default:
+          return 'MEDIUM';
+      }
+    };
+
+    // Map platform to platformBM
+    const mapPlatformBM = (platform: string) => {
+      if (platform === 'mobile') return 'MOBILE_F2P';
+      if (platform === 'pc_console') return 'PC_PACKAGE';
+      return platform ? platform.toUpperCase() : undefined;
+    };
+
+    // Add work info to processed_lorebooks
+    const processedLorebooksWithWorkInfo = (
+      conflictResult?.processed_lorebooks || []
+    ).map((lb: any) => ({
+      ...lb,
+      workId: selectedWork?.workId || selectedWork?.id,
+      workTitle: selectedWork?.title,
+    }));
+
     onCreated({
-      authorId: selectedAuthor?.id,
-      workId: selectedWork?.workId,
+      managerId: currentManagerId,
       title: projectTitle,
-      lorebookIds: selectedLorebooks.map((l: any) => l.id),
-      crownLorebookId: selectedCrownSetting,
-      format: selectedFormat,
-      strategy: {
-        genres: selectedGenres,
-        targetGenre,
-        universe: universeSetting,
+      lorebookIds: selectedLorebooks.map((l: any) => l.lorebookId || l.id),
+      targetFormat: selectedFormat?.toUpperCase(),
+      targetGenre: targetGenre || selectedGenres[0] || 'FANTASY',
+      worldSetting: universeSetting.toUpperCase(),
+      targetAges: business.targetAge,
+      targetGender: business.targetGender.toUpperCase(),
+      budgetScale: mapBudgetScale(business.budgetRange),
+      toneAndManner: business.toneManner,
+      addPrompt: mediaPrompt,
+      mediaDetail: {
+        ...mediaDetails,
+        gameGenre: mediaDetails.gameGenre,
+        coreFun: mediaDetails.coreLoop?.toUpperCase(),
+        platformBM: mapPlatformBM(mediaDetails.platform),
       },
-      business,
-      mediaDetails,
-      mediaPrompt,
+      processed_lorebooks: processedLorebooksWithWorkInfo,
     });
-    // Just mock notification
     toast.success(
       '제안서 생성 요청이 완료되었습니다. (예상 소요시간: 15~20분)',
     );
@@ -2607,7 +2783,7 @@ function CreateIPExpansionDialog({
                                 { id: 'characters', label: '인물' },
                                 { id: 'places', label: '장소' },
                                 { id: 'items', label: '물건' },
-                                { id: 'groups', label: '단체' },
+                                { id: 'groups', label: '집단' },
                                 { id: 'worldviews', label: '세계' },
                                 { id: 'plots', label: '사건' },
                               ].map((tab) => (
@@ -2651,30 +2827,92 @@ function CreateIPExpansionDialog({
                                 // Parse setting for display
                                 let settingContent = lorebook.setting;
                                 try {
-                                  if (
-                                    typeof settingContent === 'string' &&
-                                    (settingContent.startsWith('{') ||
-                                      settingContent.startsWith('['))
-                                  ) {
+                                  if (typeof settingContent === 'string') {
                                     settingContent = JSON.parse(settingContent);
                                   }
                                 } catch (e) {}
 
-                                const summary =
-                                  lorebook.description ||
-                                  (typeof settingContent === 'object'
-                                    ? settingContent.description ||
+                                let summary = lorebook.description;
+                                try {
+                                  if (
+                                    typeof summary === 'string' &&
+                                    summary.trim().startsWith('{')
+                                  ) {
+                                    const parsed = JSON.parse(summary);
+                                    if (
+                                      typeof parsed === 'object' &&
+                                      parsed !== null
+                                    ) {
+                                      const values = Object.values(parsed);
+                                      if (values.length > 0) {
+                                        // Use the first value as the description
+                                        const firstValue = values[0];
+                                        if (typeof firstValue === 'string') {
+                                          summary = firstValue;
+                                        } else if (
+                                          typeof firstValue === 'object' &&
+                                          firstValue !== null
+                                        ) {
+                                          summary = Object.values(firstValue)
+                                            .filter(
+                                              (v) =>
+                                                typeof v === 'string' ||
+                                                typeof v === 'number',
+                                            )
+                                            .join(' ');
+                                        }
+                                      }
+                                    }
+                                  }
+                                } catch (e) {}
+
+                                // Truncate and clean summary
+                                if (summary) {
+                                  // Remove keyword if it starts with it (case insensitive)
+                                  const keyword = lorebook.keyword || '';
+                                  if (
+                                    keyword &&
+                                    summary
+                                      .toLowerCase()
+                                      .startsWith(keyword.toLowerCase())
+                                  ) {
+                                    summary = summary
+                                      .substring(keyword.length)
+                                      .trim();
+                                    // Remove leading colon or hyphen if present
+                                    summary = summary.replace(/^[:\-\s]+/, '');
+                                  }
+
+                                  // Truncate to ~50 chars with ...
+                                  if (summary.length > 50) {
+                                    summary = summary.substring(0, 50) + '...';
+                                  }
+                                }
+
+                                if (!summary) {
+                                  if (
+                                    typeof settingContent === 'object' &&
+                                    settingContent !== null
+                                  ) {
+                                    summary =
+                                      settingContent.description ||
                                       settingContent.summary ||
                                       Object.entries(settingContent)
                                         .filter(
-                                          ([_, v]) =>
-                                            typeof v === 'string' ||
-                                            typeof v === 'number',
+                                          ([k, v]) =>
+                                            !['id', 'image'].includes(k) &&
+                                            (typeof v === 'string' ||
+                                              typeof v === 'number'),
                                         )
                                         .slice(0, 3)
                                         .map(([k, v]) => `${k}: ${v}`)
-                                        .join(' / ')
-                                    : settingContent);
+                                        .join(' / ');
+                                  } else if (
+                                    typeof settingContent === 'string'
+                                  ) {
+                                    summary = settingContent;
+                                  }
+                                }
 
                                 return (
                                   <div
@@ -2713,17 +2951,7 @@ function CreateIPExpansionDialog({
                                         {summary}
                                       </p>
                                     </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2 bg-white/80 hover:bg-slate-100"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setViewingLorebook(lorebook);
-                                      }}
-                                    >
-                                      <Maximize2 className="w-3.5 h-3.5 text-slate-500" />
-                                    </Button>
+                                    {/* Maximize icon removed as per request */}
                                   </div>
                                 );
                               },
@@ -4387,55 +4615,7 @@ function CreateIPExpansionDialog({
                               className="font-bold text-base h-10 bg-white border-slate-300 focus-visible:ring-indigo-500"
                             />
                           </div>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            {[
-                              {
-                                label: '예상 분량',
-                                value: '약 15~20페이지',
-                              },
-                              {
-                                label: '포함 이미지',
-                                value: '없음 (텍스트 중심)',
-                              },
-                              {
-                                label: '소요 시간',
-                                value: '약 10분 내외',
-                              },
-                              {
-                                label: '소모 크레딧',
-                                value: '50 Credits',
-                              },
-                            ]
-                              .filter((item) => item.value !== '미지정')
-                              .map((item, i) => (
-                                <div
-                                  key={i}
-                                  className="bg-slate-50 rounded-lg p-2.5 border border-slate-100"
-                                >
-                                  <span className="text-[10px] text-slate-500 font-medium block mb-0.5">
-                                    {item.label}
-                                  </span>
-                                  <span className="text-xs font-bold text-slate-700">
-                                    {item.value}
-                                  </span>
-                                </div>
-                              ))}
-                          </div>
                         </div>
-                      </section>
-
-                      {/* Visual Preview */}
-                      <section className="mb-6">
-                        <h3 className="font-bold text-sm flex items-center gap-2 mb-3 px-1 text-slate-800">
-                          <Monitor className="w-4 h-4 text-slate-500" />
-                          기획안 미리보기
-                        </h3>
-                        <PdfPreview
-                          isFullScreen={false}
-                          className="w-full h-[240px]"
-                          onFullScreen={() => setShowPdfFullScreen(true)}
-                        />
                       </section>
 
                       {/* 2. Configuration Summary Grid */}
@@ -4445,81 +4625,53 @@ function CreateIPExpansionDialog({
                           입력 설정 요약
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {/* [New Card 0] Source Setting (Reference Data) */}
+                          {/* [Card 1] Source Setting (Priority) */}
                           <div
                             onClick={() => setShowReferenceModal(true)}
-                            className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group hover:border-blue-400 transition-colors cursor-pointer"
+                            className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group hover:border-indigo-400 transition-colors cursor-pointer order-first"
                           >
-                            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-blue-50 text-blue-600">
+                            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-slate-50 text-slate-600">
                               <BookOpen className="w-3.5 h-3.5" />
                             </div>
-                            <div className="overflow-hidden">
-                              <p className="text-[10px] font-bold text-slate-500 mb-0.5">
-                                원천 설정집
-                              </p>
+                            <div className="overflow-hidden flex-1">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <p className="text-[10px] font-bold text-slate-500">
+                                  원천 설정집
+                                </p>
+                              </div>
                               <p className="text-xs font-bold text-slate-800 truncate">
-                                {selectedLorebooks.length}개의 설정집 참조
+                                {selectedLorebooks.find(
+                                  (l) => l.lorebookId === selectedCrownSetting,
+                                )?.keyword ||
+                                  selectedLorebooks[0]?.keyword ||
+                                  '선택된 설정집 없음'}
+                                {selectedLorebooks.length > 1 &&
+                                  ` 외 ${selectedLorebooks.length - 1}건`}
                               </p>
                             </div>
                           </div>
 
-                          {/* [New Card 1] Core Setting */}
-                          <div
-                            onClick={() => setShowCoreSettingDetail(true)}
-                            className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group hover:border-yellow-400 transition-colors cursor-pointer"
-                          >
-                            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-yellow-50 text-yellow-600">
-                              <Crown className="w-3.5 h-3.5" />
-                            </div>
-                            <div className="overflow-hidden">
-                              <p className="text-[10px] font-bold text-slate-500 mb-0.5">
-                                핵심 설정
-                              </p>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <p className="text-xs font-bold text-slate-800 truncate">
-                                      {selectedLorebooks.find(
-                                        (l) => l.id === selectedCrownSetting,
-                                      )?.keyword || '미지정'}
-                                    </p>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="z-[1000] bg-slate-900 text-white border-0 shadow-xl">
-                                    <p>
-                                      카테고리:{' '}
-                                      {selectedLorebooks.find(
-                                        (l) => l.id === selectedCrownSetting,
-                                      )?.category || '-'}
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          </div>
-
-                          {/* [New Card 2] Planning Direction */}
+                          {/* [Card 2] Planning Direction (New) */}
                           <div
                             onClick={() => setShowPlanningDirectionModal(true)}
-                            className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group cursor-pointer hover:border-indigo-400 transition-colors"
+                            className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group hover:border-indigo-400 transition-colors cursor-pointer"
                           >
                             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-indigo-50 text-indigo-600">
                               <Zap className="w-3.5 h-3.5" />
                             </div>
                             <div className="overflow-hidden">
                               <p className="text-[10px] font-bold text-slate-500 mb-0.5">
-                                기획 방향성
+                                기획 방향
                               </p>
                               <p className="text-xs font-bold text-slate-800 truncate">
                                 {analysisBadges.length > 0
-                                  ? analysisBadges
-                                      .map((b) => b.label)
-                                      .join(', ')
-                                  : '분석 중...'}
+                                  ? `${analysisBadges[0].label} 등 ${analysisBadges.length}개 전략`
+                                  : 'AI 분석 완료'}
                               </p>
                             </div>
                           </div>
 
-                          {/* [New Card 3] Auto-Generation Rules */}
+                          {/* [Card 3] Auto-Generation Rules */}
                           <div
                             onClick={() => setShowAutoGenerationModal(true)}
                             className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group cursor-pointer hover:border-amber-400 transition-colors"
@@ -4529,21 +4681,17 @@ function CreateIPExpansionDialog({
                             </div>
                             <div className="overflow-hidden">
                               <p className="text-[10px] font-bold text-slate-500 mb-0.5">
-                                자동 생성 지침
+                                AI 생성 규칙
                               </p>
                               <p className="text-xs font-bold text-slate-800 truncate">
                                 {unselectedCategoryTips.length > 0
-                                  ? unselectedCategoryTips
-                                      .map((t) =>
-                                        t.label.replace(' 미포함', ''),
-                                      )
-                                      .join(', ')
-                                  : '모든 요소 포함됨'}
+                                  ? `${unselectedCategoryTips.length}개 요소 제외됨`
+                                  : '모든 설정 요소 포함'}
                               </p>
                             </div>
                           </div>
 
-                          {/* [New Card 4] Conflict Summary */}
+                          {/* [Card 4] Conflict Summary */}
                           {conflictResult &&
                             Object.keys(conflictResult.충돌 || {}).length >
                               0 && (
@@ -4602,11 +4750,13 @@ function CreateIPExpansionDialog({
 
                           {[
                             {
-                              label: '참조 데이터',
-                              value: `${selectedLorebooks.length}개의 설정집`,
-                              icon: BookOpen,
-                              color: 'text-indigo-600',
-                              bg: 'bg-indigo-50',
+                              label: '확장 포맷',
+                              value:
+                                formats.find((f) => f.id === selectedFormat)
+                                  ?.title || '미지정',
+                              icon: Layout,
+                              color: 'text-purple-600',
+                              bg: 'bg-purple-50',
                             },
                             {
                               label: '장르 설정',
@@ -4663,6 +4813,23 @@ function CreateIPExpansionDialog({
                               icon: DollarSign,
                               color: 'text-green-600',
                               bg: 'bg-green-50',
+                            },
+                            {
+                              label: '톤앤매너',
+                              value: business.toneManner || '미지정',
+                              icon: Palette,
+                              color: 'text-purple-600',
+                              bg: 'bg-purple-50',
+                            },
+                            {
+                              label: '세계관 설정',
+                              value:
+                                universeSetting === 'shared'
+                                  ? '공유 세계관'
+                                  : '평행 세계관',
+                              icon: Globe,
+                              color: 'text-indigo-600',
+                              bg: 'bg-indigo-50',
                             },
                             // Format Specific Details
                             ...(selectedFormat === 'webtoon'
@@ -4935,38 +5102,21 @@ function CreateIPExpansionDialog({
                               bg: 'bg-slate-50',
                             },
                           ]
-                            .filter((item) => item.value !== '미지정')
+                            .filter(
+                              (item) =>
+                                item.value !== '미지정' &&
+                                item.label !== '원천 설정집',
+                            )
                             .map((item, i) => (
                               <div
                                 key={i}
-                                className="bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group"
-                              >
-                                {item.label === '참조 데이터' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute top-1.5 right-1.5 h-5 w-5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => setShowReferenceModal(true)}
-                                  >
-                                    <Maximize2 className="w-3 h-3" />
-                                  </Button>
+                                onClick={() => {
+                                  // Click handler removed since '원천 설정집' is filtered out
+                                }}
+                                className={cn(
+                                  'bg-white rounded-lg p-3 border border-slate-200 shadow-sm flex items-start gap-2.5 relative group',
                                 )}
-                                {/* Reference Data Modal - Crown Logic */}
-                                {item.label === '참조 데이터' &&
-                                  selectedCrownSetting && (
-                                    <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger>
-                                            <Crown className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                            <p>핵심 설정 포함됨</p>
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    </div>
-                                  )}
+                              >
                                 <div
                                   className={cn(
                                     'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
@@ -5069,7 +5219,7 @@ function CreateIPExpansionDialog({
       <Dialog open={showReferenceModal} onOpenChange={setShowReferenceModal}>
         <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>참조 설정집 상세</DialogTitle>
+            <DialogTitle>원천 설정집 상세</DialogTitle>
             <Tabs
               value={referenceModalTab}
               onValueChange={setReferenceModalTab}
@@ -5081,7 +5231,7 @@ function CreateIPExpansionDialog({
                   { id: 'characters', label: '인물' },
                   { id: 'places', label: '장소' },
                   { id: 'items', label: '물건' },
-                  { id: 'groups', label: '단체' },
+                  { id: 'groups', label: '집단' },
                   { id: 'worldviews', label: '세계' },
                   { id: 'plots', label: '사건' },
                 ].map((tab) => (
@@ -5107,18 +5257,42 @@ function CreateIPExpansionDialog({
                         characters: '인물',
                         places: '장소',
                         items: '물건',
-                        groups: '단체',
+                        groups: '집단',
                         worldviews: '세계관',
                         plots: '사건',
                       }[referenceModalTab],
                 )
+                .sort((a, b) => {
+                  if (a.lorebookId === selectedCrownSetting) return -1;
+                  if (b.lorebookId === selectedCrownSetting) return 1;
+                  return 0;
+                })
                 .map((lorebook, i) => (
                   <div
                     key={i}
-                    className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm"
+                    className={`bg-white p-4 rounded-lg border shadow-sm relative ${
+                      selectedCrownSetting === lorebook.lorebookId
+                        ? 'border-amber-400 ring-1 ring-amber-400'
+                        : 'border-slate-200'
+                    }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="font-bold text-lg text-slate-800">
+                    {/* Crown Icon for Core Lorebook */}
+                    {selectedCrownSetting === lorebook.lorebookId && (
+                      <div className="absolute top-4 right-4">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Crown className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>핵심 설정집 (원천 데이터)</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-start mb-2 pr-8">
+                      <div className="font-bold text-lg text-slate-800 flex items-center gap-2">
                         {lorebook.keyword}
                       </div>
                       <Badge variant="secondary">{lorebook.category}</Badge>
@@ -5138,9 +5312,73 @@ function CreateIPExpansionDialog({
                       </div>
                     </div>
                     <div className="bg-slate-50 p-3 rounded text-sm text-slate-700 whitespace-pre-wrap">
-                      {typeof lorebook.setting === 'string'
-                        ? lorebook.setting
-                        : JSON.stringify(lorebook.setting, null, 2)}
+                      {(() => {
+                        let content = lorebook.description;
+
+                        // Try to parse if it's a JSON string
+                        if (
+                          typeof content === 'string' &&
+                          (content.startsWith('{') || content.startsWith('['))
+                        ) {
+                          try {
+                            const parsed = JSON.parse(content);
+                            // If it's an object, try to extract content excluding the keyword
+                            if (typeof parsed === 'object' && parsed !== null) {
+                              // If it has a specific key matching the keyword, exclude it
+                              const filteredEntries = Object.entries(
+                                parsed,
+                              ).filter(
+                                ([key]) =>
+                                  key !== lorebook.keyword &&
+                                  key !== '이름' &&
+                                  key !== 'name' &&
+                                  key !== '설정집명',
+                              );
+
+                              if (filteredEntries.length > 0) {
+                                content = filteredEntries
+                                  .map(([_, value]) => value)
+                                  .join('\n\n');
+                              } else {
+                                // Fallback: if all keys were filtered or empty, show values
+                                content = Object.values(parsed).join('\n\n');
+                              }
+                            }
+                          } catch (e) {
+                            // Keep original string if parsing fails
+                          }
+                        } else if (!content && lorebook.setting) {
+                          // Fallback to setting if description is empty
+                          try {
+                            const settingObj =
+                              typeof lorebook.setting === 'string'
+                                ? JSON.parse(lorebook.setting)
+                                : lorebook.setting;
+
+                            if (settingObj) {
+                              content =
+                                settingObj.description ||
+                                settingObj.summary ||
+                                Object.entries(settingObj)
+                                  .filter(
+                                    ([k]) =>
+                                      ![
+                                        'id',
+                                        'image',
+                                        lorebook.keyword,
+                                        '이름',
+                                        'name',
+                                        '설정집명',
+                                      ].includes(k),
+                                  )
+                                  .map(([_, v]) => v)
+                                  .join('\n\n');
+                            }
+                          } catch (e) {}
+                        }
+
+                        return content || '내용 없음';
+                      })()}
                     </div>
                   </div>
                 ))}
@@ -5152,13 +5390,13 @@ function CreateIPExpansionDialog({
                       characters: '인물',
                       places: '장소',
                       items: '물건',
-                      groups: '단체',
+                      groups: '집단',
                       worldviews: '세계관',
                       plots: '사건',
                     }[referenceModalTab],
               ).length === 0 && (
                 <div className="text-center text-slate-500 py-10">
-                  해당 카테고리의 참조 설정집이 없습니다.
+                  해당 카테고리의 원천 설정집이 없습니다.
                 </div>
               )}
             </div>
