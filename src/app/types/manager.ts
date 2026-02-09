@@ -49,6 +49,7 @@ export interface AuthorSummaryDto {
 
 export interface ManagerAuthorDto {
   id: number;
+  integrationId?: string;
   name: string;
   email: string;
   workCount: number;
