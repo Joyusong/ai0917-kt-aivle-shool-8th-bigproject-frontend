@@ -160,16 +160,16 @@ export const managerService = {
     return response.data;
   },
 
-  getManagerAuthors: async (managerId: number | string = 'me') => {
+  getManagerAuthors: async (managerId: number | string) => {
     const response = await apiClient.get<ManagerAuthorDto[]>(
       `/api/v1/manager/ipext/${managerId}/author`,
     );
     return response.data;
   },
 
-  getAuthorWorks: async (authorId: number) => {
+  getAuthorWorks: async (integrationId: string | number) => {
     const response = await apiClient.get<any[]>(
-      `/api/v1/manager/ipext/${authorId}/authorwork`,
+      `/api/v1/manager/ipext/${integrationId}/authorwork`,
     );
     return response.data;
   },
