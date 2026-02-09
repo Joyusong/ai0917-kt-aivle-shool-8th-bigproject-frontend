@@ -152,7 +152,13 @@ export function AuthorLorebookPanel({
         cat = '인물';
       else if (cat === 'Item' || cat === 'item' || cat === 'Object')
         cat = '물건';
-      else if (cat === 'Organization' || cat === 'Group') cat = '집단';
+      else if (
+        cat === 'Organization' ||
+        cat === 'Group' ||
+        cat === 'group' ||
+        cat === 'organization'
+      )
+        cat = '집단';
       else if (cat === 'World' || cat === 'Setting') cat = '세계';
       else if (cat === 'Event' || cat === 'Incident') cat = '사건';
 
@@ -1228,11 +1234,11 @@ export function AuthorLorebookPanel({
       )}
     >
       <div className="h-12 px-4 border-b border-border flex items-center justify-between bg-card shrink-0 whitespace-nowrap overflow-hidden">
-        <h3 className="font-semibold text-sm flex items-center gap-2 shrink-0">
-          <Settings className="w-4 h-4 text-purple-500" />
-          설정집
+        <h3 className="font-semibold text-sm flex items-center gap-2 flex-1 min-w-0 truncate">
+          <Settings className="w-4 h-4 text-purple-500 shrink-0" />
+          <span className="truncate">설정집</span>
         </h3>
-        <div className="flex gap-1 shrink-0 ml-auto">
+        <div className="flex gap-1 flex-1 justify-end ml-auto">
           <Button
             variant="ghost"
             size="icon"
@@ -1256,7 +1262,7 @@ export function AuthorLorebookPanel({
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-scroll overflow-x-hidden h-full">
-        <div className="p-4 space-y-6 min-w-[320px]">
+        <div className="p-4 space-y-6">
           {/* Work Info */}
           <div>
             <h2 className="text-lg font-bold flex items-center gap-2">
@@ -1272,13 +1278,13 @@ export function AuthorLorebookPanel({
           </div>
 
           {/* Category Grid */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-wrap gap-2">
             {categories.map((cat) => (
               <Button
                 key={cat.id}
                 variant={activeCategory === cat.id ? 'default' : 'outline'}
                 className={cn(
-                  'h-12 flex items-center justify-center gap-1',
+                  'h-12 flex-1 min-w-[80px] flex items-center justify-center gap-1',
                   activeCategory === cat.id
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-background hover:bg-accent',
@@ -1302,7 +1308,7 @@ export function AuthorLorebookPanel({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0"
+                className="h-6 w-6 p-0 shrink-0"
                 onClick={handleCreateClick}
               >
                 <Plus className="w-4 h-4" />
