@@ -58,6 +58,8 @@ export interface AuthorNoticeDto {
   writer: string;
   originalFilename?: string;
   category?: string;
+  read?: boolean; // System notice read status
+  source?: string;
 }
 
 // Lorebook DTO
@@ -141,11 +143,14 @@ export interface LorebookConflictSolveRequestDto {
 }
 
 export interface AuthorManagerResponseDto {
-  managerId: string;
-  managerName: string;
-  managerEmail: string;
+  ok: boolean;
   managerIntegrationId: string;
-  linkedAt: string;
+  managerName: string;
+  managerSiteEmail: string;
+  // Optional fields for compatibility if needed
+  managerId?: string;
+  managerEmail?: string;
+  linkedAt?: string;
   isOnline?: boolean;
 }
 
@@ -210,11 +215,24 @@ export interface IPProposalDto {
     | 'ACCEPTED'
     | 'REJECTED'
     | 'APPROVED'
-    | 'PROPOSED';
+    | 'PROPOSED'
+    | 'NEW'
+    | 'DELETED'
+    | 'COMPLETED';
   statusDescription: string;
   content?: string;
   receivedAt?: string;
   createdAt?: string;
+  contentStrategy?: any;
+  targetFormat?: string;
+  targetGenre?: string;
+  worldSetting?: string;
+  targetAges?: string;
+  targetGender?: string;
+  budgetScale?: string;
+  toneAndManner?: string;
+  addPrompt?: string;
+  mediaDetail?: any;
 }
 
 export interface IPMatchingDto {
