@@ -6,8 +6,10 @@ import {
   ArrowRight,
   BookOpen,
   Clock,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
-import { useContext, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -78,6 +80,20 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
 
   const handleNavigate = (path: string) => {
     navigate(path);
+  };
+
+  const [isNoticeDetailOpen, setIsNoticeDetailOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] =
+    useState<ManagerDashboardNoticeDto | null>(null);
+
+  const handlePrevNotice = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    // TODO: Implement previous notice logic
+  };
+
+  const handleNextNotice = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    // TODO: Implement next notice logic
   };
 
   return (
