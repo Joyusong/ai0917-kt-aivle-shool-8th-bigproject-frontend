@@ -4,7 +4,7 @@ import { cn } from '../../components/ui/utils';
 interface LogoProps {
   className?: string;
   onClick?: () => void;
-  role?: 'manager' | 'author' | 'admin' | 'default';
+  role?: 'Manager' | 'Author' | 'Admin' | 'Default';
 }
 
 export function Logo({ className, onClick, role }: LogoProps) {
@@ -13,21 +13,21 @@ export function Logo({ className, onClick, role }: LogoProps) {
 
   const getThemeColors = () => {
     // 1. Role prop 우선 적용
-    if (role === 'manager') {
+    if (role === 'Manager') {
       return {
         dot: 'bg-[#0984E3]',
         text: 'text-[#0984E3]',
         ping: 'bg-[#0984E3]',
       };
     }
-    if (role === 'author') {
+    if (role === 'Author') {
       return {
         dot: 'bg-[#6C5CE7]',
         text: 'text-[#6C5CE7]',
         ping: 'bg-[#6C5CE7]',
       };
     }
-    if (role === 'admin') {
+    if (role === 'Admin') {
       return {
         dot: 'bg-[#2D3436]',
         text: 'text-[#2D3436]',
