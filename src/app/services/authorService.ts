@@ -54,12 +54,19 @@ export const authorService = {
     const notices = Array.isArray(response.data)
       ? response.data
       : response.data.notices || [];
+      
+    // Normalize notices to ensure 'read' property exists (handle 'isRead' from backend if present)
+    const normalizedNotices = notices.map((n: any) => ({
+      ...n,
+      read: n.read !== undefined ? n.read : (n.isRead !== undefined ? n.isRead : false),
+    }));
+
     return {
-      content: notices,
-      totalElements: notices.length,
+      content: normalizedNotices,
+      totalElements: normalizedNotices.length,
       totalPages: 1,
       last: true,
-      size: notices.length,
+      size: normalizedNotices.length,
       number: 0,
       page: 0,
     } as PageResponse<AuthorNoticeDto>;
@@ -141,6 +148,49 @@ export const authorService = {
       relationship: string;
       timeline: string;
     }>(`/api/v1/ai/author/works/${workId}/analysis`);
+    return response.data;
+  },
+
+  // Analysis - Relationship
+  analyzeRelationship: async (
+    workId: number,
+    userId: string,
+    target: string,
+  ) => {
+    const response = await apiClient.post<string>(
+      `/api/v1/ai/author/works/${workId}/analysis/relationships`,
+      { user_id: userId, target: target },
+    );
+    return response.data;
+  },
+
+  // Analysis - Timeline
+  getTimelineEpisodes: async (workId: number) => {
+    const response = await apiClient.get<
+      { ep_num: number; subtitle: string; id: number }[]
+    >(`/api/v1/ai/author/works/${workId}/analysis/timeline/episodes`);
+    return response.data;
+  },
+
+  analyzeTimeline: async (workId: number, userId: string, target: number[]) => {
+    const response = await apiClient.post<string>(
+      `/api/v1/ai/author/works/${workId}/analysis/timeline`,
+      { user_id: userId, target: target },
+    );
+    return response.data;
+  },
+
+  getCharacterAnalysis: async (workId: number, characterName: string) => {
+    const response = await apiClient.get<{ relationship: string }>(
+      `/api/v1/ai/author/works/${workId}/character/${encodeURIComponent(characterName)}/relationship`,
+    );
+    return response.data;
+  },
+
+  getFullRelationshipAnalysis: async (workId: number) => {
+    const response = await apiClient.get<{ relationship: string }>(
+      `/api/v1/ai/author/works/${workId}/relationship`,
+    );
     return response.data;
   },
 
@@ -396,12 +446,14 @@ export const authorService = {
     title: string,
     tag: string,
     itemId: string,
+    workId: number,
     data: any,
   ) => {
     try {
       const response = await apiClient.patch(
         `/api/v1/ai/author/${userId}/${title}/lorebook/${tag}/${itemId}`,
         data,
+        { params: { workId } },
       );
       return response.data;
     } catch (error) {
