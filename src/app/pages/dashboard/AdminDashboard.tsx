@@ -215,7 +215,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
           className="h-16 flex items-center px-6 border-b border-sidebar-border mb-4 cursor-pointer"
           onClick={() => handleMenuClick('home')}
         >
-          <Logo />
+          <Logo role="Admin" />
         </div>
 
         {/* Navigation Menu */}
