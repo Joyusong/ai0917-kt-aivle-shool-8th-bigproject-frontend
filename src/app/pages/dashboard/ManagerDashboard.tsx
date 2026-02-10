@@ -246,7 +246,7 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
           className="h-16 flex items-center px-6 border-b border-sidebar-border cursor-pointer"
           onClick={() => handleMenuClick('home')}
         >
-          <Logo />
+          <Logo role="manager" />
         </div>
 
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
