@@ -16,21 +16,46 @@ import {
   LogOut,
   Settings,
   User,
+  CheckCheck,
+  Check,
 } from 'lucide-react';
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
-import { useState, useRef, useEffect } from 'react';
+import { Badge } from '../../components/ui/badge';
+import { Suspense, lazy, useState, useRef, useEffect } from 'react';
 import { ThemeToggle } from '../../components/ui/theme-toggle';
 import { useQuery } from '@tanstack/react-query';
 import { authService } from '../../services/authService';
+import { managerService } from '../../services/managerService';
+import { ManagerNotice as ManagerNoticeType } from '../../types/manager';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
 
-import { ManagerHome } from './manager/ManagerHome';
-import { ManagerIPTrend } from './manager/ManagerIPTrend';
-import { ManagerIPExpansion } from './manager/ManagerIPExpansion';
-import { ManagerAuthorManagement } from './manager/ManagerAuthorManagement';
-import { ManagerNotice } from './manager/ManagerNotice';
-import { ManagerMyPage } from './manager/ManagerMyPage';
-// import { ManagerSettings } from './manager/ManagerSettings';
+const ManagerHome = lazy(() =>
+  import('./manager/ManagerHome').then((m) => ({ default: m.ManagerHome })),
+);
+const ManagerIPTrend = lazy(() =>
+  import('./manager/ManagerIPTrend').then((m) => ({
+    default: m.ManagerIPTrend,
+  })),
+);
+const ManagerIPExpansion = lazy(() =>
+  import('./manager/ManagerIPExpansion').then((m) => ({
+    default: m.ManagerIPExpansion,
+  })),
+);
+const ManagerAuthorManagement = lazy(() =>
+  import('./manager/ManagerAuthorManagement').then((m) => ({
+    default: m.ManagerAuthorManagement,
+  })),
+);
+const ManagerNotice = lazy(() =>
+  import('./manager/ManagerNotice').then((m) => ({ default: m.ManagerNotice })),
+);
+const ManagerMyPage = lazy(() =>
+  import('./manager/ManagerMyPage').then((m) => ({ default: m.ManagerMyPage })),
+);
+
 import { PasswordChangeModal } from '../../components/dashboard/PasswordChangeModal';
 import { Logo } from '../../components/common/Logo';
 
@@ -39,13 +64,24 @@ interface ManagerDashboardProps {
   onHome?: () => void;
 }
 
+function DashboardContentLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[400px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
+}
+
 export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
   const [activeMenu, setActiveMenu] = useState('home');
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(4);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
+
+  const [newNotification, setNewNotification] = useState(false);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -81,6 +117,93 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
   const userName =
     userData && 'name' in userData ? (userData.name as string) : '매니저님';
   const userInitial = userName.charAt(0);
+  const integrationId =
+    userData && 'integrationId' in userData && userData.integrationId
+      ? userData.integrationId
+      : userData && 'userId' in userData
+        ? String(userData.userId)
+        : '';
+
+  // System Notices (Real-time)
+  const { data: notificationsData, refetch: refetchNotifications } = useQuery({
+    queryKey: ['manager', 'system-notices', integrationId],
+    queryFn: async () => {
+      // console.log('Fetching notices for:', integrationId);
+      if (!integrationId) return { notices: [], count: 0 };
+      try {
+        const result = await managerService.getNotices(integrationId);
+        // console.log('Notices fetched:', result);
+        return result;
+      } catch (error) {
+        // console.error('Error fetching notices:', error);
+        return { notices: [], count: 0 };
+      }
+    },
+    enabled: !!integrationId,
+    refetchInterval: 60000,
+  });
+
+  const notifications = notificationsData?.notices || [];
+  const unreadCount = notifications.filter(
+    (n: ManagerNoticeType) => !n.isRead,
+  ).length;
+
+  // SSE Subscription
+  useEffect(() => {
+    if (!integrationId) return;
+
+    const eventSource = new EventSource(
+      managerService.getSystemNoticeSubscribeUrl(integrationId),
+      { withCredentials: true },
+    );
+
+    eventSource.onopen = () => {
+      console.log('SSE Connected');
+    };
+
+    eventSource.addEventListener('system-notice', (event) => {
+      console.log('New Notification:', event.data);
+      try {
+        const newNotice = JSON.parse(event.data);
+        toast.info(newNotice.title || '새로운 알림이 도착했습니다.');
+        setNewNotification(true);
+        refetchNotifications();
+      } catch (e) {
+        console.error('Failed to parse notification', e);
+      }
+    });
+
+    eventSource.onerror = (err) => {
+      console.error('SSE Error:', err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [integrationId, refetchNotifications]);
+
+  const handleMarkAllAsRead = async () => {
+    if (!integrationId) return;
+    try {
+      await managerService.markAllNoticesAsRead(integrationId);
+      refetchNotifications();
+      toast.success('모든 알림을 읽음 처리했습니다.');
+    } catch (error) {
+      toast.error('알림 읽음 처리에 실패했습니다.');
+    }
+  };
+
+  const handleNotificationClick = async (notice: ManagerNoticeType) => {
+    if (!notice.isRead && integrationId) {
+      try {
+        await managerService.markNoticeAsRead(integrationId, notice.id);
+        refetchNotifications();
+      } catch (error) {
+        console.error('Failed to mark notice as read', error);
+      }
+    }
+  };
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu);
@@ -351,21 +474,132 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-muted-foreground"
+                  className="text-muted-foreground relative"
                   onClick={() => setShowActivityDropdown(!showActivityDropdown)}
                 >
                   <Bell className="w-5 h-5" />
+                  {(unreadCount > 0 || newNotification) && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-card" />
+                  )}
                 </Button>
 
                 {showActivityDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[32rem] bg-card border border-border rounded-lg shadow-xl py-2 z-50">
-                    <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border">
+                  <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[32rem] bg-card border border-border rounded-lg shadow-xl z-50">
+                    <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border flex justify-between items-center">
                       <h3 className="text-xs sm:text-sm font-semibold text-foreground">
-                        최근 활동
+                        시스템 알림
                       </h3>
+                      {unreadCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
+                          onClick={handleMarkAllAsRead}
+                          title="모두 읽음 처리"
+                        >
+                          <CheckCheck className="w-4 h-4 mr-1" />
+                          모두 읽음
+                        </Button>
+                      )}
                     </div>
-                    <div className="p-4 text-center text-sm text-muted-foreground">
-                      새로운 알림이 없습니다.
+                    <div
+                      className="max-h-[300px] overflow-y-auto"
+                      onScroll={(e) => {
+                        const { scrollTop, scrollHeight, clientHeight } =
+                          e.currentTarget;
+                        if (scrollHeight - scrollTop <= clientHeight + 50) {
+                          setVisibleCount((prev) => prev + 4);
+                        }
+                      }}
+                    >
+                      {notifications.length > 0 ? (
+                        <div className="divide-y divide-border">
+                          {notifications
+                            .slice(0, visibleCount)
+                            .map((notice: ManagerNoticeType) => (
+                              <div
+                                key={notice.id}
+                                className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
+                                  !notice.isRead ? 'bg-blue-50/10' : ''
+                                }`}
+                                onClick={() => handleNotificationClick(notice)}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-[10px] px-1 py-0 ${
+                                          notice.source === 'AUTHOR_PROPOSAL'
+                                            ? 'border-blue-500 text-blue-500'
+                                            : notice.source === 'IP_EXTREND'
+                                              ? 'border-purple-500 text-purple-500'
+                                              : 'border-green-500 text-green-500'
+                                        }`}
+                                      >
+                                        {notice.source === 'AUTHOR_PROPOSAL'
+                                          ? '작가 제안'
+                                          : notice.source === 'IP_EXTREND'
+                                            ? '트렌드'
+                                            : 'IP 확장'}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">
+                                        {format(
+                                          new Date(notice.createdAt),
+                                          'yyyy.MM.dd HH:mm',
+                                        )}
+                                      </span>
+                                    </div>
+                                    <p
+                                      className={`text-sm ${
+                                        !notice.isRead
+                                          ? 'font-medium text-foreground'
+                                          : 'text-muted-foreground'
+                                      }`}
+                                    >
+                                      {notice.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {notice.message}
+                                    </p>
+                                  </div>
+                                  {!notice.isRead && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-6 w-6 text-muted-foreground hover:text-primary shrink-0"
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        if (!integrationId) return;
+                                        try {
+                                          await managerService.markNoticeAsRead(
+                                            integrationId,
+                                            notice.id,
+                                          );
+                                          refetchNotifications();
+                                          toast.success(
+                                            '알림을 읽음 처리했습니다.',
+                                          );
+                                        } catch (error) {
+                                          toast.error(
+                                            '알림 읽음 처리에 실패했습니다.',
+                                          );
+                                        }
+                                      }}
+                                      title="읽음 처리"
+                                    >
+                                      <CheckCheck className="w-4 h-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 text-center text-sm text-muted-foreground">
+                          새로운 알림이 없습니다.
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -376,19 +610,21 @@ export function ManagerDashboard({ onLogout, onHome }: ManagerDashboardProps) {
 
         {/* Content Area */}
         <main className="flex-1 overflow-auto p-4 md:p-8">
-          {activeMenu === 'home' && (
-            <ManagerHome onNavigate={handleMenuClick} />
-          )}
-          {activeMenu === 'notice' && <ManagerNotice />}
-          {activeMenu === 'ip-trend-analysis' && <ManagerIPTrend />}
-          {activeMenu === 'ip-expansion' && <ManagerIPExpansion />}
-          {activeMenu === 'author-management' && <ManagerAuthorManagement />}
-          {activeMenu === 'mypage' && (
-            <ManagerMyPage
-              userData={userData}
-              onChangePassword={() => setShowPasswordModal(true)}
-            />
-          )}
+          <Suspense fallback={<DashboardContentLoader />}>
+            {activeMenu === 'home' && (
+              <ManagerHome onNavigate={handleMenuClick} />
+            )}
+            {activeMenu === 'notice' && <ManagerNotice />}
+            {activeMenu === 'ip-trend-analysis' && <ManagerIPTrend />}
+            {activeMenu === 'ip-expansion' && <ManagerIPExpansion />}
+            {activeMenu === 'author-management' && <ManagerAuthorManagement />}
+            {activeMenu === 'mypage' && (
+              <ManagerMyPage
+                userData={userData}
+                onChangePassword={() => setShowPasswordModal(true)}
+              />
+            )}
+          </Suspense>
           {/* {activeMenu === 'settings' && <ManagerSettings />} */}
         </main>
       </div>
