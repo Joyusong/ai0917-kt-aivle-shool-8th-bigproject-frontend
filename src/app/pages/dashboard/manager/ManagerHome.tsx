@@ -7,7 +7,7 @@ import {
   BookOpen,
   Clock,
 } from 'lucide-react';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import {
   Card,
   CardContent,
@@ -23,6 +23,14 @@ import { authorService } from '../../../services/authorService';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../../../components/ui/dialog';
+import { ManagerDashboardNoticeDto } from '../../../types/manager';
 
 interface ManagerHomeProps {
   onNavigate?: (menu: string) => void;
@@ -177,13 +185,66 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-center text-xs text-muted-foreground">
+              <div className="text-center text-xs text-muted-foreground">
                 등록된 공지사항이 없습니다.
               </div>
+            )}
+
+            {notices.length > 1 && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-background/50 hover:bg-background shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handlePrevNotice}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-background/50 hover:bg-background shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handleNextNotice}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={isNoticeDetailOpen} onOpenChange={setIsNoticeDetailOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>공지사항 상세</DialogTitle>
+          </DialogHeader>
+          {selectedNotice && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default">공지</Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {format(new Date(selectedNotice.createdAt), 'yyyy.MM.dd', {
+                      locale: ko,
+                    })}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold">{selectedNotice.title}</h3>
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg text-sm leading-relaxed whitespace-pre-wrap min-h-[200px]">
+                {selectedNotice.content}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                작성자: {selectedNotice.writer}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsNoticeDetailOpen(false)}>닫기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

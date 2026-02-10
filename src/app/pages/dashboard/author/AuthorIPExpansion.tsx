@@ -461,23 +461,23 @@ export function AuthorIPExpansion({
     <div className="space-y-6 max-w-7xl mx-auto font-sans pb-20">
       {/* 담당 매니저 정보 카드 */}
       {myManager && myManager.managerName ? (
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 dark:from-slate-900 dark:to-slate-900 dark:border-slate-800">
           <CardContent className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg">
                 {myManager.managerName.charAt(0)}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-blue-900">
+                <h3 className="text-lg font-semibold text-blue-900 dark:text-slate-100">
                   담당 운영자: {myManager.managerName}
                 </h3>
-                <p className="text-sm text-blue-700">
+                <p className="text-sm text-blue-700 dark:text-slate-400">
                   {myManager.managerSiteEmail || myManager.managerEmail}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-blue-600 font-medium">
+              <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
                 IP 확장을 위한 1:1 지원을 받고 있습니다
               </p>
               <Button

@@ -2,11 +2,18 @@ import { useState, useEffect, useCallback, useContext } from 'react';
 import { authorService } from '../../../services/authorService';
 import { AuthorBreadcrumbContext } from './AuthorBreadcrumbContext';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '../../../components/ui/dialog';
+import {
   Search,
   ChevronLeft,
   ChevronRight,
   FileText,
-  X as CloseIcon,
+  Download,
   ExternalLink,
 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
@@ -41,6 +48,7 @@ export function AuthorNotice({ integrationId }: AuthorNoticeProps) {
   const [selectedNotice, setSelectedNotice] = useState<AuthorNoticeDto | null>(
     null,
   );
+  const [isNoticeDetailOpen, setIsNoticeDetailOpen] = useState(false);
 
   // Search is purely visual for now as API doesn't support it
   const [searchInput, setSearchInput] = useState('');
@@ -62,6 +70,28 @@ export function AuthorNotice({ integrationId }: AuthorNoticeProps) {
   useEffect(() => {
     fetchNotices();
   }, [fetchNotices]);
+
+  const handleNoticeClick = (notice: AuthorNoticeDto) => {
+    setSelectedNotice(notice);
+    setIsNoticeDetailOpen(true);
+  };
+
+  const handleDownloadAttachment = async (noticeId: number) => {
+    try {
+      const fileData = await authorService.downloadNoticeAttachment(noticeId);
+      const url = window.URL.createObjectURL(new Blob([fileData]));
+      const link = document.createElement('a');
+      link.href = url;
+      const notice = notices.find((n) => n.id === noticeId);
+      link.setAttribute('download', notice?.originalFilename || 'download');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('파일 다운로드 실패', error);
+      // You can add user-facing error handling here, like a toast message
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -107,7 +137,7 @@ export function AuthorNotice({ integrationId }: AuthorNoticeProps) {
                   <tr
                     key={n.id}
                     className="hover:bg-muted/50 transition-colors cursor-pointer group"
-                    onClick={() => setSelectedNotice(n)}
+                    onClick={() => handleNoticeClick(n)}
                   >
                     <td className="px-4 py-4 text-center text-muted-foreground hidden md:table-cell">
                       {new Date(n.createdAt).toLocaleDateString()}
@@ -180,61 +210,55 @@ export function AuthorNotice({ integrationId }: AuthorNoticeProps) {
         </CardContent>
       </Card>
 
-      {/* View Modal */}
-      {selectedNotice && (
-        <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-          onClick={() => setSelectedNotice(null)}
-        >
-          <Card
-            className="w-full max-w-lg shadow-2xl border-none"
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          >
-            <CardHeader className="border-b flex flex-row items-center justify-between py-4">
-              <CardTitle className="text-lg">공지사항 상세</CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSelectedNotice(null)}
-              >
-                <CloseIcon className="w-4 h-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="p-6 space-y-5">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">
-                    {selectedNotice.title}
-                  </h3>
-                  <div className="flex gap-2 mt-2 text-xs text-slate-500">
-                    <span>작성자: {selectedNotice.writer}</span>
-                    <span>|</span>
-                    <span>
-                      날짜:{' '}
-                      {new Date(selectedNotice.createdAt).toLocaleString()}
-                    </span>
-                  </div>
+      {/* Notice Detail Dialog */}
+      <Dialog open={isNoticeDetailOpen} onOpenChange={setIsNoticeDetailOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>공지사항 상세</DialogTitle>
+          </DialogHeader>
+          {selectedNotice && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold">{selectedNotice.title}</h3>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{selectedNotice.writer}</span>
+                  <span>•</span>
+                  <span>
+                    {new Date(selectedNotice.createdAt).toLocaleDateString()}
+                  </span>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-lg text-slate-700 whitespace-pre-wrap min-h-[150px] text-sm leading-relaxed">
-                  {selectedNotice.content}
-                </div>
-                {selectedNotice.originalFilename && (
-                  <div className="flex items-center gap-2 p-3 border rounded-md bg-white">
+              </div>
+              <div className="p-4 bg-muted/50 rounded-lg text-sm leading-relaxed whitespace-pre-wrap min-h-[200px]">
+                {selectedNotice.content}
+              </div>
+              {selectedNotice.originalFilename && (
+                <div className="pt-4">
+                  <h4 className="text-sm font-semibold mb-2">첨부파일</h4>
+                  <div className="flex items-center gap-2 p-3 border rounded-md bg-white dark:bg-slate-900">
                     <FileText className="w-4 h-4 text-blue-500" />
                     <span className="text-sm flex-1 truncate">
                       {selectedNotice.originalFilename}
                     </span>
-                    {/* Download button could be added here if API supports it */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() =>
+                        handleDownloadAttachment(selectedNotice.id)
+                      }
+                    >
+                      다운로드
+                    </Button>
                   </div>
-                )}
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={() => setSelectedNotice(null)}>닫기</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setIsNoticeDetailOpen(false)}>닫기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

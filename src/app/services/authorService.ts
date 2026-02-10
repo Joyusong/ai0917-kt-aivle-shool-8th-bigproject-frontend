@@ -44,6 +44,16 @@ export const authorService = {
     return response.data;
   },
 
+  downloadNoticeAttachment: async (noticeId: number) => {
+    const response = await apiClient.get(
+      `/api/v1/author/notices/${noticeId}/attachment`,
+      {
+        responseType: 'blob',
+      },
+    );
+    return response.data;
+  },
+
   // System Notices (Real-time)
   getSystemNotices: async (integrationId: string) => {
     const response = await apiClient.get<any>('/api/v1/author/sysnotice', {
