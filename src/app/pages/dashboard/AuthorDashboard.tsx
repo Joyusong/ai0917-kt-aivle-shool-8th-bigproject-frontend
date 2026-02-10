@@ -24,6 +24,8 @@ import {
   KeyRound,
   Trophy,
   FlaskConical,
+  Check,
+  CheckCheck,
 } from 'lucide-react';
 import { maskName } from '../../utils/format';
 import { Button } from '../../components/ui/button';
@@ -42,6 +44,7 @@ import { authorService } from '../../services/authorService';
 import { AuthorNoticeDto } from '../../types/author';
 import { PasswordChangeModal } from '../../components/dashboard/PasswordChangeModal';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
 // Import sub-components
 import { AuthorHome } from './author/AuthorHome';
@@ -67,6 +70,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const [showNotificationDropdown, setShowNotificationDropdown] =
     useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(4);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -491,61 +495,93 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                 </Button>
 
                 {showNotificationDropdown && (
-                  <div className="absolute top-full right-0 mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[32rem] bg-card border border-border rounded-lg shadow-lg z-50">
-                    <div className="p-3 sm:p-4 border-b border-border flex justify-between items-center">
+                  <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-96 max-w-[32rem] bg-card border border-border rounded-lg shadow-xl z-50">
+                    <div className="px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border flex justify-between items-center">
                       <h3 className="text-xs sm:text-sm font-semibold text-foreground">
-                        알림
+                        시스템 알림
                       </h3>
                       {unreadCount > 0 && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-auto p-0 text-xs text-muted-foreground hover:text-primary"
+                          className="h-8 px-2 text-xs text-muted-foreground hover:text-primary"
                           onClick={handleMarkAllAsRead}
+                          title="모두 읽음 처리"
                         >
+                          <CheckCheck className="w-4 h-4 mr-1" />
                           모두 읽음
                         </Button>
                       )}
                     </div>
-                    <div className="p-0 max-h-96 overflow-y-auto">
+                    <div
+                      className="max-h-[300px] overflow-y-auto"
+                      onScroll={(e) => {
+                        const { scrollTop, scrollHeight, clientHeight } =
+                          e.currentTarget;
+                        if (scrollHeight - scrollTop <= clientHeight + 50) {
+                          setVisibleCount((prev) => prev + 4);
+                        }
+                      }}
+                    >
                       {notifications.length > 0 ? (
-                        notifications.map((notice) => (
-                          <div
-                            key={notice.id}
-                            className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 hover:bg-accent/50 transition-colors cursor-pointer border-b border-border last:border-0 ${
-                              !notice.read ? 'bg-accent/10' : ''
-                            }`}
-                            onClick={() => handleNotificationClick(notice)}
-                          >
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
-                              <Megaphone className="w-4 h-4 sm:w-5 sm:h-5" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-start mb-0.5">
-                                <span
-                                  className={`text-xs sm:text-sm font-medium ${
-                                    !notice.read
-                                      ? 'text-foreground'
-                                      : 'text-muted-foreground'
-                                  }`}
-                                >
-                                  {notice.title}
-                                </span>
-                                {!notice.read && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5" />
-                                )}
+                        <div className="divide-y divide-border">
+                          {notifications
+                            .slice(0, visibleCount)
+                            .map((notice: AuthorNoticeDto) => (
+                              <div
+                                key={notice.id}
+                                className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
+                                  !notice.read ? 'bg-blue-50/10' : ''
+                                }`}
+                                onClick={() => handleNotificationClick(notice)}
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-[10px] px-1 py-0 ${
+                                          notice.category === 'URGENT' ||
+                                          notice.category === 'ERROR'
+                                            ? 'border-red-500 text-red-500'
+                                            : notice.category === 'WARNING'
+                                              ? 'border-yellow-500 text-yellow-500'
+                                              : 'border-blue-500 text-blue-500'
+                                        }`}
+                                      >
+                                        {notice.category ||
+                                          notice.source ||
+                                          'SYSTEM'}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">
+                                        {format(
+                                          new Date(notice.createdAt),
+                                          'yyyy.MM.dd HH:mm',
+                                        )}
+                                      </span>
+                                    </div>
+                                    <p
+                                      className={`text-sm ${
+                                        !notice.read
+                                          ? 'font-medium text-foreground'
+                                          : 'text-muted-foreground'
+                                      }`}
+                                    >
+                                      {notice.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                      {notice.content}
+                                    </p>
+                                  </div>
+                                  {!notice.read && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5" />
+                                  )}
+                                </div>
                               </div>
-                              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
-                                {notice.content}
-                              </p>
-                              <div className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-                                {new Date(notice.createdAt).toLocaleString()}
-                              </div>
-                            </div>
-                          </div>
-                        ))
+                            ))}
+                        </div>
                       ) : (
-                        <div className="p-8 text-center text-muted-foreground text-sm">
+                        <div className="p-8 text-center text-sm text-muted-foreground">
                           새로운 알림이 없습니다.
                         </div>
                       )}
