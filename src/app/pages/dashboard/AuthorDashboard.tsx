@@ -6,6 +6,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '../../components/ui/breadcrumb';
+import { cn } from '../../components/ui/utils';
 import { AuthorBreadcrumbContext } from './author/AuthorBreadcrumbContext';
 import {
   BookOpen,
@@ -69,7 +70,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] =
     useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(4);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
@@ -277,7 +278,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
             onClick={() => handleMenuClick('home')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               activeMenu === 'home'
-                ? 'text-white dark:text-black'
+                ? 'text-primary-foreground'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
@@ -294,7 +295,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
             onClick={() => handleMenuClick('works')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
               activeMenu === 'works'
-                ? 'text-white dark:text-black'
+                ? 'text-primary-foreground'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent'
             }`}
             style={
@@ -450,32 +451,39 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-card border-b border-border px-4 md:px-8 flex items-center">
-          <div
-            className={`w-full flex items-center justify-between ${!sidebarOpen ? 'ml-16' : ''}`}
-          >
-            {/* Breadcrumb */}
-            <Breadcrumb>
-              <BreadcrumbList>
-                {breadcrumbs.map((item, index) => (
-                  <React.Fragment key={index}>
-                    <BreadcrumbItem>
-                      {item.onClick ? (
-                        <BreadcrumbLink
-                          className="cursor-pointer"
-                          onClick={item.onClick}
-                        >
-                          {item.label}
-                        </BreadcrumbLink>
-                      ) : (
-                        <BreadcrumbPage>{item.label}</BreadcrumbPage>
+        <header
+          className={cn(
+            'h-16 bg-card border-b border-border px-4 md:px-8 flex items-center transition-[padding] duration-300 ease-in-out',
+            !sidebarOpen && 'pl-16 md:pl-24',
+          )}
+        >
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {/* Breadcrumb */}
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {breadcrumbs.map((item, index) => (
+                    <React.Fragment key={index}>
+                      <BreadcrumbItem>
+                        {item.onClick ? (
+                          <BreadcrumbLink
+                            className="cursor-pointer"
+                            onClick={item.onClick}
+                          >
+                            {item.label}
+                          </BreadcrumbLink>
+                        ) : (
+                          <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                        )}
+                      </BreadcrumbItem>
+                      {index < breadcrumbs.length - 1 && (
+                        <BreadcrumbSeparator />
                       )}
-                    </BreadcrumbItem>
-                    {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-                  </React.Fragment>
-                ))}
-              </BreadcrumbList>
-            </Breadcrumb>
+                    </React.Fragment>
+                  ))}
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
 
             <div className="flex items-center gap-2">
               <ThemeToggle />
@@ -531,7 +539,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                               <div
                                 key={notice.id}
                                 className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
-                                  !notice.read ? 'bg-blue-50/10' : ''
+                                  !notice.read ? 'bg-primary/5' : ''
                                 }`}
                                 onClick={() => handleNotificationClick(notice)}
                               >
