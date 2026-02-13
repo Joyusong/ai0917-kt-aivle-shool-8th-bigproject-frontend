@@ -55,6 +55,7 @@ import {
   Info,
   ClipboardList,
   File,
+  RefreshCw,
 } from 'lucide-react';
 import { IPProposalCommentDto, IPProposalDto } from '../../../types/author';
 import { PdfPreview, VisualPreview } from '../../../components/ProjectPreviews';
@@ -598,11 +599,24 @@ export function AuthorIPExpansion({
     }
   };
 
-  const handleReviewAction = async (
+  const [showReviewConfirm, setShowReviewConfirm] = useState(false);
+  const [pendingReviewAction, setPendingReviewAction] = useState<{
+    action: 'APPROVED' | 'REJECTED';
+    comment: string;
+  } | null>(null);
+
+  const handleReviewAction = (
     action: 'APPROVED' | 'REJECTED',
     comment: string,
   ) => {
-    if (!selectedProposal || !me?.integrationId) return;
+    setPendingReviewAction({ action, comment });
+    setShowReviewConfirm(true);
+  };
+
+  const confirmReviewAction = async () => {
+    if (!selectedProposal || !me?.integrationId || !pendingReviewAction) return;
+
+    const { action, comment } = pendingReviewAction;
 
     try {
       const data = {
@@ -620,6 +634,8 @@ export function AuthorIPExpansion({
         toast.success('제안서가 반려되었습니다.');
       }
       setSelectedProposal(null);
+      setPendingReviewAction(null);
+      setShowReviewConfirm(false);
       queryClient.invalidateQueries({ queryKey: ['author', 'ip-proposals'] });
     } catch (error) {
       toast.error(
@@ -632,10 +648,10 @@ export function AuthorIPExpansion({
     <div className="space-y-6 max-w-7xl mx-auto font-sans pb-20">
       {/* 담당 매니저 정보 카드 */}
       {myManager && myManager.managerName ? (
-        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+        <Card className="bg-gradient-to-r from-[#0984E3]/5 to-[#0984E3]/10 dark:from-[#0984E3]/20 dark:to-[#0984E3]/10 border-[#0984E3]/20 dark:border-[#0984E3]/30">
           <CardContent className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-lg">
+              <div className="w-12 h-12 rounded-full bg-[#0984E3]/10 dark:bg-[#0984E3]/20 flex items-center justify-center text-[#0984E3] dark:text-[#0984E3] font-bold text-lg border border-[#0984E3]/20 dark:border-[#0984E3]/30">
                 {myManager.managerName.charAt(0)}
               </div>
               <div>
@@ -648,7 +664,7 @@ export function AuthorIPExpansion({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-primary font-medium">
+              <p className="text-sm text-[#0984E3] dark:text-[#0984E3] font-medium">
                 IP 확장을 위한 1:1 지원을 받고 있습니다
               </p>
               <Button
@@ -755,7 +771,7 @@ export function AuthorIPExpansion({
                                       ? 'from-amber-50 to-amber-100 dark:from-amber-950/40 dark:to-amber-900/40'
                                       : formatItem?.color === 'pink'
                                         ? 'from-pink-50 to-pink-100 dark:from-pink-950/40 dark:to-pink-900/40'
-                                        : 'from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900',
+                                        : 'from-muted/50 to-muted dark:from-muted/10 dark:to-muted/20',
                           )}
                         >
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -774,11 +790,11 @@ export function AuthorIPExpansion({
                                           ? 'text-amber-600 dark:text-amber-400'
                                           : formatItem?.color === 'pink'
                                             ? 'text-pink-600 dark:text-pink-400'
-                                            : 'text-slate-600 dark:text-slate-400',
+                                            : 'text-muted-foreground',
                               )}
                             />
                           </div>
-                          <Badge className="absolute top-2 left-2 bg-white/90 shadow-sm backdrop-blur-sm text-slate-700 hover:bg-white/90 border-0 text-[10px] h-5 px-1.5 dark:bg-slate-950/90 dark:text-slate-200">
+                          <Badge className="absolute top-2 left-2 bg-card/90 dark:bg-card/50 shadow-sm backdrop-blur-sm text-foreground hover:bg-card/90 dark:hover:bg-card/50 border-0 text-[10px] h-5 px-1.5">
                             {formatItem?.title ||
                               proposal.targetFormat ||
                               proposal.format ||
@@ -810,23 +826,19 @@ export function AuthorIPExpansion({
                         </div>
                       </CardHeader>
                       <CardContent className="p-3 pb-0">
-                        <h3 className="font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors text-xs">
+                        <h3 className="font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors text-xs">
                           {proposal.title}
                         </h3>
                       </CardContent>
-                      <div className="p-3 flex items-center justify-between text-[10px] text-slate-400">
+                      <div className="p-3 flex items-center justify-between text-[10px] text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          {proposal.createdAt
-                            ? new Date(proposal.createdAt).toLocaleDateString()
+                          {proposal.createdAt || proposal.receivedAt
+                            ? new Date(
+                                proposal.createdAt || proposal.receivedAt || '',
+                              ).toLocaleDateString()
                             : '-'}
                         </div>
-                        <Button
-                          variant="ghost"
-                          className="h-6 w-6 p-0 hover:bg-slate-100 rounded-full"
-                        >
-                          <ChevronRight className="h-3 w-3 text-slate-400" />
-                        </Button>
                       </div>
                     </Card>
                   );
@@ -850,6 +862,36 @@ export function AuthorIPExpansion({
           )}
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={showReviewConfirm} onOpenChange={setShowReviewConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              제안서를{' '}
+              {pendingReviewAction?.action === 'APPROVED' ? '승인' : '반려'}
+              하시겠습니까?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingReviewAction?.action === 'APPROVED'
+                ? '승인 처리 시 다음 단계로 진행되며, 매니저에게 알림이 전송됩니다.'
+                : '반려 처리 시 사유가 전달되며, 매니저에게 알림이 전송됩니다.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmReviewAction}
+              className={
+                pendingReviewAction?.action === 'APPROVED'
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-destructive hover:bg-destructive/90'
+              }
+            >
+              {pendingReviewAction?.action === 'APPROVED' ? '승인' : '반려'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Detail Modal */}
       {selectedProposal && (
@@ -916,6 +958,8 @@ function AuthorProjectDetailModal({
   const [actionComment, setActionComment] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Fetch existing comment if any
   const { data: existingComment, refetch: refetchComment } = useQuery({
@@ -1045,12 +1089,15 @@ function AuthorProjectDetailModal({
     }
   };
 
-  const handleReviewSubmit = async () => {
+  const handleReviewSubmitConfirm = () => {
     if (actionType === 'REJECTED' && !actionComment.trim()) {
       toast.error('반려 사유를 입력해주세요.');
       return;
     }
+    setShowConfirmDialog(true);
+  };
 
+  const executeReviewSubmit = async () => {
     if (!authorId) {
       toast.error('작가 정보를 찾을 수 없습니다.');
       return;
@@ -1090,6 +1137,7 @@ function AuthorProjectDetailModal({
       });
       setShowReviewModal(false);
       setIsEditMode(false);
+      setShowConfirmDialog(false);
     } catch (e) {
       toast.error('처리 중 오류가 발생했습니다.');
     }
@@ -1111,7 +1159,7 @@ function AuthorProjectDetailModal({
             <Button
               variant="ghost"
               size="icon"
-              className="text-slate-500 hover:text-slate-900 bg-white/50 hover:bg-white/80 h-6 w-6 rounded-full"
+              className="text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background/80 h-6 w-6 rounded-full"
               onClick={() => setIsExpanded(!isExpanded)}
             >
               {isExpanded ? (
@@ -1133,7 +1181,7 @@ function AuthorProjectDetailModal({
               <div className="relative z-10 w-full flex justify-between items-end">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-white border-slate-200 text-slate-500 hover:bg-slate-50 uppercase tracking-wider shadow-sm text-[10px]">
+                    <Badge className="bg-card border-border text-muted-foreground hover:bg-accent uppercase tracking-wider shadow-sm text-[10px]">
                       {project.targetFormat || project.format || 'FORMAT'}
                     </Badge>
                     <Badge
@@ -1150,7 +1198,7 @@ function AuthorProjectDetailModal({
                           ? 'bg-emerald-500 text-white hover:bg-emerald-600'
                           : project.status === 'PENDING_APPROVAL'
                             ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                            : 'bg-rose-500 text-white hover:bg-rose-600',
+                            : 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
                       )}
                     >
                       {project.status === 'APPROVED'
@@ -1160,18 +1208,21 @@ function AuthorProjectDetailModal({
                           : '반려'}
                     </Badge>
                   </div>
-                  <DialogTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+                  <DialogTitle className="text-2xl font-bold text-foreground tracking-tight">
                     {project.title}
                   </DialogTitle>
-                  <div className="text-slate-500 text-xs mt-2 flex items-center gap-4">
+                  <div className="text-muted-foreground text-xs mt-2 flex items-center gap-4">
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />{' '}
+                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />{' '}
                       {new Date(project.createdAt).toLocaleDateString()}
                     </span>
-                    <span className="w-0.5 h-3 bg-slate-300" />
+                    <span className="w-0.5 h-3 bg-border" />
                     <span className="flex items-center gap-1.5">
                       <Users className="w-3.5 h-3.5 text-slate-400" />{' '}
-                      {project.authorName || '작가 미정'}
+                      {project.matchedAuthorNames &&
+                      project.matchedAuthorNames.length > 0
+                        ? project.matchedAuthorNames.join(', ')
+                        : project.authorName || '작가 미정'}
                     </span>
                   </div>
                 </div>
@@ -1370,8 +1421,8 @@ function AuthorProjectDetailModal({
                               (project.mediaDetail || project.mediaDetails)
                                 ?.style || '미지정',
                             icon: ImageIcon,
-                            color: 'text-pink-600',
-                            bg: 'bg-pink-50',
+                            color: 'text-pink-600 dark:text-pink-400',
+                            bg: 'bg-pink-50 dark:bg-pink-900/20',
                           },
                           {
                             label: '연출 호흡',
@@ -1379,8 +1430,8 @@ function AuthorProjectDetailModal({
                               (project.mediaDetail || project.mediaDetails)
                                 ?.pacing || '미지정',
                             icon: Clock,
-                            color: 'text-indigo-600',
-                            bg: 'bg-indigo-50',
+                            color: 'text-indigo-600 dark:text-indigo-400',
+                            bg: 'bg-indigo-50 dark:bg-indigo-900/20',
                           },
                           {
                             label: '엔딩 포인트',
@@ -1388,8 +1439,8 @@ function AuthorProjectDetailModal({
                               (project.mediaDetail || project.mediaDetails)
                                 ?.endingPoint || '미지정',
                             icon: Target,
-                            color: 'text-rose-600',
-                            bg: 'bg-rose-50',
+                            color: 'text-rose-600 dark:text-rose-400',
+                            bg: 'bg-rose-50 dark:bg-rose-900/20',
                           },
                         ]
                       : []),
@@ -1403,15 +1454,15 @@ function AuthorProjectDetailModal({
                               (project.mediaDetail || project.mediaDetails)
                                 ?.seasonType || '미지정',
                             icon: Calendar,
-                            color: 'text-pink-600',
-                            bg: 'bg-pink-50',
+                            color: 'text-pink-600 dark:text-pink-400',
+                            bg: 'bg-pink-50 dark:bg-pink-900/20',
                           },
                           {
                             label: '회차당 분량',
                             value: `${(project.mediaDetail || project.mediaDetails)?.episodeDuration || 60}분`,
                             icon: Clock,
-                            color: 'text-indigo-600',
-                            bg: 'bg-indigo-50',
+                            color: 'text-indigo-600 dark:text-indigo-400',
+                            bg: 'bg-indigo-50 dark:bg-indigo-900/20',
                           },
                           {
                             label: '서브 포커스',
@@ -1419,8 +1470,8 @@ function AuthorProjectDetailModal({
                               (project.mediaDetail || project.mediaDetails)
                                 ?.subFocus || '미지정',
                             icon: Zap,
-                            color: 'text-yellow-600',
-                            bg: 'bg-yellow-50',
+                            color: 'text-yellow-600 dark:text-yellow-400',
+                            bg: 'bg-yellow-50 dark:bg-yellow-900/20',
                           },
                         ]
                       : []),
@@ -1432,8 +1483,8 @@ function AuthorProjectDetailModal({
                             label: '러닝타임',
                             value: `${(project.mediaDetail || project.mediaDetails)?.runningTime || 120}분`,
                             icon: Clock,
-                            color: 'text-indigo-600',
-                            bg: 'bg-indigo-50',
+                            color: 'text-indigo-600 dark:text-indigo-400',
+                            bg: 'bg-indigo-50 dark:bg-indigo-900/20',
                           },
                           {
                             label: '컬러 테마',
@@ -1441,8 +1492,8 @@ function AuthorProjectDetailModal({
                               (project.mediaDetail || project.mediaDetails)
                                 ?.colorTheme || '미지정',
                             icon: Palette,
-                            color: 'text-purple-600',
-                            bg: 'bg-purple-50',
+                            color: 'text-purple-600 dark:text-purple-400',
+                            bg: 'bg-purple-50 dark:bg-purple-900/20',
                           },
                           {
                             label: '중점 막(Act)',
@@ -1450,8 +1501,58 @@ function AuthorProjectDetailModal({
                               (project.mediaDetail || project.mediaDetails)
                                 ?.focusAct || '미지정',
                             icon: Layout,
-                            color: 'text-emerald-600',
-                            bg: 'bg-emerald-50',
+                            color: 'text-emerald-600 dark:text-emerald-400',
+                            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+                          },
+                        ]
+                      : []),
+                    ...(project.targetFormat === 'GAME' ||
+                    project.format === 'game'
+                      ? [
+                          {
+                            label: '게임 장르',
+                            value:
+                              (project.mediaDetail || project.mediaDetails)
+                                ?.genre || '미지정',
+                            icon: Gamepad2,
+                            color: 'text-purple-600 dark:text-purple-400',
+                            bg: 'bg-purple-50 dark:bg-purple-900/20',
+                          },
+                          {
+                            label: '핵심 재미',
+                            value:
+                              (project.mediaDetail || project.mediaDetails)
+                                ?.coreFun || '미지정',
+                            icon: Sparkles,
+                            color: 'text-amber-600 dark:text-amber-400',
+                            bg: 'bg-amber-50 dark:bg-amber-900/20',
+                          },
+                          {
+                            label: '타겟 플랫폼',
+                            value:
+                              (project.mediaDetail || project.mediaDetails)
+                                ?.platform || '미지정',
+                            icon: Monitor,
+                            color: 'text-blue-600 dark:text-blue-400',
+                            bg: 'bg-blue-50 dark:bg-blue-900/20',
+                          },
+                          {
+                            label: '핵심 루프',
+                            value:
+                              (project.mediaDetail || project.mediaDetails)
+                                ?.coreLoop || '미지정',
+                            icon: RefreshCw,
+                            color: 'text-indigo-600 dark:text-indigo-400',
+                            bg: 'bg-indigo-50 dark:bg-indigo-900/20',
+                          },
+                          {
+                            label: '수익 모델 (BM)',
+                            value:
+                              (project.mediaDetail || project.mediaDetails)
+                                ?.platformBM || '미지정',
+                            icon: DollarSign,
+                            color: 'text-green-600 dark:text-green-400',
+                            bg: 'bg-green-50 dark:bg-green-900/20',
                           },
                         ]
                       : []),
@@ -1699,7 +1800,7 @@ function AuthorProjectDetailModal({
                 >
                   취소
                 </Button>
-                <Button onClick={handleReviewSubmit}>
+                <Button onClick={handleReviewSubmitConfirm}>
                   {existingComment ? '수정완료' : '제출하기'}
                 </Button>
               </>
@@ -1817,6 +1918,36 @@ function AuthorProjectDetailModal({
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {actionType === 'APPROVED' ? '승인' : '반려'} 확인
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionType === 'APPROVED'
+                ? '제안서를 승인하시겠습니까?'
+                : '제안서를 반려하시겠습니까?'}
+              <br />
+              {existingComment && '기존 검토 내용이 수정됩니다.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={executeReviewSubmit}
+              className={
+                actionType === 'APPROVED'
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-rose-600 hover:bg-rose-700'
+              }
+            >
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
