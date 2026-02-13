@@ -349,6 +349,68 @@ const normalizeAnalysisData = (data: PublishAnalysisResponseDto): any => {
       }
     }
 
+    // Case 3: Handle Conflict Object Structure (Name: Reason, 신규설정: ...)
+    if ('신규설정' in item || '기존설정' in item) {
+      const reservedKeys = [
+        '신규설정',
+        '기존설정',
+        '분석',
+        '이름',
+        'id',
+        'category',
+      ];
+      const nameKey = Object.keys(item).find((k) => !reservedKeys.includes(k));
+
+      const category = item.category || defaultCategory;
+      let entityName = item['이름'] || nameKey || 'Unknown';
+      let analysisStr = '';
+
+      // Try to find analysis string (Reason)
+      if (item['분석']) {
+        analysisStr = item['분석'];
+      } else if (nameKey && typeof item[nameKey] === 'string') {
+        analysisStr = item[nameKey];
+      }
+
+      const newSettings =
+        item['신규설정'] ||
+        (nameKey && item[nameKey] !== analysisStr ? item[nameKey] : null);
+      // For original, first try explicit '기존설정', then fall back to existing map lookup
+      let oldSettings = item['기존설정'];
+
+      if (!oldSettings && existingSettingsMap && entityName) {
+        const existing = existingSettingsMap[entityName];
+        if (existing) {
+          oldSettings = existing.description || existing;
+          if (
+            oldSettings &&
+            typeof oldSettings === 'object' &&
+            oldSettings.setting
+          ) {
+            oldSettings = oldSettings.setting;
+          }
+        }
+      }
+
+      // Parse analysis string: [결과: 충돌] [판단사유: ...]
+      const resultMatch = analysisStr.match(/\[결과:\s*(.*?)\]/);
+      const reasonMatch = analysisStr.match(/\[판단사유:\s*([\s\S]*?)\]/);
+      const result = resultMatch ? resultMatch[1].trim() : '충돌';
+      // If reason is captured, use it. Otherwise use the whole string.
+      const reason = reasonMatch ? reasonMatch[1].trim() : analysisStr;
+
+      return {
+        id: item.id || `${category}-${entityName}`,
+        name: entityName,
+        category: category,
+        reason: reason,
+        original: cleanValue(oldSettings), // Use looked up original
+        new: cleanValue(newSettings),
+        result: result,
+        rawAnalysis: analysisStr,
+      };
+    }
+
     // Case 2: Standard Object
     let name = item.name;
     let description = item.description || item.setting;
@@ -430,7 +492,7 @@ const normalizeAnalysisData = (data: PublishAnalysisResponseDto): any => {
   }
 
   return {
-    충돌: normalize(data['충돌']),
+    충돌: normalize(data['충돌'], existingMap),
     '설정 결합': normalize(data['설정 결합'], existingMap),
     '신규 업로드': normalize(data['신규 업로드']),
     기존설정: normalizedExisting,
@@ -547,6 +609,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
     useState<ManuscriptDto | null>(null);
   const [reviewConfirmText, setReviewConfirmText] = useState('');
   const [isFinalReviewConfirmed, setIsFinalReviewConfirmed] = useState(false);
+  const [isPublishSuccess, setIsPublishSuccess] = useState(false);
   const [resolvedConflicts, setResolvedConflicts] = useState<Set<string>>(
     new Set(),
   );
@@ -1540,6 +1603,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       }
     },
     onSuccess: () => {
+      setIsPublishSuccess(true);
       toast.success('설정집이 업데이트되었습니다.');
       setIsFinalReviewOpen(false);
       setSettingBookDiff(null);
@@ -1592,6 +1656,40 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       if (timer) clearInterval(timer);
     };
   }, [isGlobalLoading]);
+
+  const handleCloseFinalReview = () => {
+    setIsFinalReviewOpen(false);
+    // Reset workflow to initial state
+    setExtractedKeywords(null);
+    setSelectedKeywords({});
+    setIsKeywordSelectionConfirmed(false);
+    setSettingBookDiff(null);
+    setResolvedConflicts(new Set());
+    setEditingItems(new Set());
+    setEditingContent({});
+
+    if (selectedManuscript) {
+      setProcessingStatus((prev) => {
+        const next = { ...prev };
+        delete next[selectedManuscript.id];
+        return next;
+      });
+      setAnalysisResults((prev) => {
+        const next = { ...prev };
+        delete next[selectedManuscript.id];
+        return next;
+      });
+
+      // Revert readOnly if not published successfully
+      if (!isPublishSuccess) {
+        setSelectedManuscript((prev) =>
+          prev && prev.readOnly ? { ...prev, readOnly: false } : prev,
+        );
+      }
+    }
+    // Reset success flag for next time
+    setIsPublishSuccess(false);
+  };
 
   return (
     <div className="h-[calc(100vh-6rem)] -m-4 bg-background overflow-hidden relative">
@@ -2134,29 +2232,10 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       <Dialog
         open={isFinalReviewOpen}
         onOpenChange={(open) => {
-          setIsFinalReviewOpen(open);
-          if (!open) {
-            // Reset workflow to initial state (Keyword Selection)
-            setExtractedKeywords(null);
-            setSelectedKeywords({});
-            setIsKeywordSelectionConfirmed(false);
-            setSettingBookDiff(null);
-            setResolvedConflicts(new Set());
-            setEditingItems(new Set());
-            setEditingContent({});
-
-            if (selectedManuscript) {
-              setProcessingStatus((prev) => {
-                const next = { ...prev };
-                delete next[selectedManuscript.id];
-                return next;
-              });
-              setAnalysisResults((prev) => {
-                const next = { ...prev };
-                delete next[selectedManuscript.id];
-                return next;
-              });
-            }
+          if (open) {
+            setIsFinalReviewOpen(true);
+          } else {
+            handleCloseFinalReview();
           }
         }}
       >
@@ -2314,27 +2393,18 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="text-sm text-muted-foreground bg-muted/30 p-4 rounded-lg">
-                                    <p className="font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
-                                      <AlertTriangle className="w-4 h-4" />
-                                      {item.reason}
-                                    </p>
-                                    <DiffView
-                                      original={
-                                        typeof item.original === 'string'
-                                          ? item.original
-                                          : JSON.stringify(
-                                              item.original,
-                                              null,
-                                              2,
-                                            )
-                                      }
-                                      current={
-                                        typeof item.new === 'string'
-                                          ? item.new
-                                          : JSON.stringify(item.new, null, 2)
-                                      }
-                                    />
+
+                                  {/* Conflict Reason Box */}
+                                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 p-4 rounded-lg flex items-start gap-3 text-sm animate-in fade-in zoom-in-95 duration-200">
+                                    <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                                    <div className="flex flex-col gap-1">
+                                      <span className="font-bold text-red-700 dark:text-red-300">
+                                        판단 사유
+                                      </span>
+                                      <p className="text-red-600 dark:text-red-400 leading-relaxed break-keep">
+                                        {item.reason}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -2597,19 +2667,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsFinalReviewOpen(false);
-                      if (selectedManuscript) {
-                        setProcessingStatus((prev) => {
-                          const next = { ...prev };
-                          delete next[selectedManuscript.id];
-                          return next;
-                        });
-                      }
-                    }}
-                  >
+                  <Button variant="outline" onClick={handleCloseFinalReview}>
                     닫기
                   </Button>
                 </div>
@@ -2653,19 +2711,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                     </label>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setIsFinalReviewOpen(false);
-                        if (selectedManuscript) {
-                          setProcessingStatus((prev) => {
-                            const next = { ...prev };
-                            delete next[selectedManuscript.id];
-                            return next;
-                          });
-                        }
-                      }}
-                    >
+                    <Button variant="ghost" onClick={handleCloseFinalReview}>
                       취소
                     </Button>
                     <Button
