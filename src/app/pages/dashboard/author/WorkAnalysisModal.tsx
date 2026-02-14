@@ -30,17 +30,16 @@ import {
 } from '../../../components/ui/command';
 import {
   Loader2,
-  X,
   GitGraph,
   Clock,
   PlayCircle,
   Check,
   ChevronsUpDown,
 } from 'lucide-react';
-// import mermaid from 'mermaid'; // Lazy load instead
 import { authorService } from '../../../services/authorService';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { cn } from '../../../components/ui/utils';
+import { Mermaid } from '../../../components/Mermaid';
 
 interface WorkAnalysisModalProps {
   isOpen: boolean;
@@ -180,11 +179,7 @@ export function WorkAnalysisModal({
                       <p>전체 인물 관계도를 분석하고 있습니다...</p>
                     </div>
                   ) : relationshipChart ? (
-                    <MermaidChart
-                      chart={relationshipChart}
-                      id="relationship-chart"
-                      className="m-auto"
-                    />
+                    <Mermaid chart={relationshipChart} />
                   ) : (
                     <div className="text-center text-muted-foreground h-full flex items-center justify-center">
                       <Button
@@ -287,11 +282,7 @@ export function WorkAnalysisModal({
                 <div className="bg-card rounded-xl shadow-sm border flex-1 overflow-auto relative flex flex-col">
                   <div className="min-w-full min-h-full p-6 flex items-center justify-center">
                     {timelineChart ? (
-                      <MermaidChart
-                        chart={timelineChart}
-                        id="timeline-chart"
-                        className="m-auto"
-                      />
+                      <Mermaid chart={timelineChart} />
                     ) : (
                       <div className="text-center text-muted-foreground h-full flex flex-col items-center justify-center">
                         <Clock className="w-12 h-12 mx-auto mb-3 opacity-20" />
@@ -312,75 +303,5 @@ export function WorkAnalysisModal({
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function MermaidChart({
-  chart,
-  id,
-  className,
-}: {
-  chart: string;
-  id: string;
-  className?: string;
-}) {
-  const [svg, setSvg] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const renderChart = async () => {
-      if (!chart) return;
-      try {
-        setError(null);
-        // Dynamically import mermaid
-        const mermaid = (await import('mermaid')).default;
-
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: 'default',
-          securityLevel: 'loose',
-          fontFamily: 'Pretendard, sans-serif',
-        });
-
-        // Inject font size configuration if not already present
-        const initString = `%%{init: {'themeVariables': { 'fontSize': '24px'}}}%%\n`;
-        const chartToRender = chart.startsWith('%%{init')
-          ? chart
-          : initString + chart;
-
-        // Clear previous SVG to prevent ID conflicts or artifacts if needed
-        const { svg } = await mermaid.render(id, chartToRender);
-        setSvg(svg);
-      } catch (e) {
-        console.error('Mermaid render error:', e);
-        setError('차트를 렌더링하는 중 오류가 발생했습니다.');
-      }
-    };
-
-    // Slight delay to ensure DOM is ready and prevent race conditions
-    const timer = setTimeout(() => {
-      renderChart();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [chart, id]);
-
-  if (error) {
-    return (
-      <div className="text-destructive text-sm flex flex-col items-center gap-2">
-        <X className="w-6 h-6" />
-        {error}
-        <pre className="text-xs bg-muted p-2 rounded mt-2 max-w-lg overflow-auto">
-          {chart}
-        </pre>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={cn('mermaid flex items-center justify-center', className)}
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
   );
 }
