@@ -1008,11 +1008,23 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       if (!deletingWorkId) return;
       return authorService.deleteWork(deletingWorkId);
     },
+    onMutate: async () => {
+      if (!deletingWorkId) return;
+      await queryClient.cancelQueries({ queryKey: ['author', 'works'] });
+      const previousWorks = queryClient.getQueryData(['author', 'works']);
+
+      queryClient.setQueryData(['author', 'works'], (old: any) => {
+        if (!old) return old;
+        return old.filter((w: any) => w.id !== deletingWorkId);
+      });
+
+      return { previousWorks };
+    },
     onSuccess: () => {
       toast.success('작품이 삭제되었습니다.');
       setIsDeleteAlertOpen(false);
       setDeletingWorkId(null);
-      queryClient.invalidateQueries({ queryKey: ['author', 'works'] });
+      
       // If deleted work was selected, deselect it
       if (selectedWorkId === deletingWorkId) {
         setSelectedWorkId(null);
@@ -1020,8 +1032,14 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
         setEditorContent('');
       }
     },
-    onError: () => {
+    onError: (err, newTodo, context) => {
+      if (context?.previousWorks) {
+        queryClient.setQueryData(['author', 'works'], context.previousWorks);
+      }
       toast.error('작품 삭제에 실패했습니다.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['author', 'works'] });
     },
   });
 
