@@ -26,6 +26,7 @@ export const PdfPreview = ({
   pdfUrl,
   onDownload,
   isLoading,
+  fileName,
 }: {
   className?: string;
   isFullScreen?: boolean;
@@ -33,6 +34,7 @@ export const PdfPreview = ({
   pdfUrl?: string;
   onDownload?: () => void;
   isLoading?: boolean;
+  fileName?: string;
 }) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
@@ -67,14 +69,7 @@ export const PdfPreview = ({
         className,
       )}
     >
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
-          <p className="text-sm font-medium">
-            제안서 PDF를 불러오는 중입니다...
-          </p>
-        </div>
-      ) : pdfUrl ? (
+      {pdfUrl ? (
         <div className="w-full h-full flex flex-col relative bg-muted/50">
           <div className="flex-1 overflow-auto p-4 relative">
             <div className="flex justify-center min-h-full">
@@ -82,9 +77,10 @@ export const PdfPreview = ({
                 file={pdfUrl}
                 onLoadSuccess={onDocumentLoadSuccess}
                 loading={
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground self-center mt-20">
-                    <Loader2 className="w-8 h-8 animate-spin" />
-                    <span className="text-xs">PDF 로딩 중...</span>
+                  <div className="flex items-center justify-center h-full min-h-[200px]">
+                    <p className="text-sm text-muted-foreground animate-pulse">
+                      PDF 미리보기를 불러오는 중...
+                    </p>
                   </div>
                 }
                 error={
@@ -198,7 +194,7 @@ export const PdfPreview = ({
               <FileText className="w-10 h-10" />
             </div>
             <h3 className="text-xl font-bold text-foreground mb-2">
-              IP 확장 기획 제안서.pdf
+              {fileName || 'IP 확장 기획 제안서.pdf'}
             </h3>
             <p className="text-sm text-muted-foreground mb-8 max-w-[240px]">
               AI가 생성한 기획 제안서의 전체 내용을 PDF 형식으로 미리볼 수
