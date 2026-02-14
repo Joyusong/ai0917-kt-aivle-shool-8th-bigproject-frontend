@@ -737,9 +737,30 @@ export function AuthorIPExpansion({
                 </div>
               ) : proposalList.length > 0 ? (
                 proposalList.map((proposal) => {
-                  const formatId = (
-                    proposal.targetFormat || proposal.format
+                  let formatId = (
+                    proposal.targetFormat ||
+                    proposal.format ||
+                    proposal.ipProposal?.targetFormat ||
+                    proposal.ipProposal?.format ||
+                    proposal.target_format ||
+                    ''
                   )?.toLowerCase();
+
+                  // Handle mapping for Korean format names
+                  const formatMap: Record<string, string> = {
+                    웹툰: 'webtoon',
+                    드라마: 'drama',
+                    게임: 'game',
+                    영화: 'movie',
+                    스핀오프: 'spinoff',
+                    '상업 이미지': 'commercial',
+                    commercial_image: 'commercial',
+                  };
+
+                  if (formatMap[formatId]) {
+                    formatId = formatMap[formatId];
+                  }
+
                   const formatItem = formats.find((f) => f.id === formatId);
                   const Icon = formatItem?.icon || Zap;
 
@@ -914,8 +935,8 @@ export function AuthorIPExpansion({
               아래 ID를 담당 운영자에게 전달하여 연동을 요청하세요.
             </DialogDescription>
           </DialogHeader>
-          <div className="p-4 bg-slate-100 rounded text-center">
-            <span className="text-2xl font-bold tracking-wider select-all">
+          <div className="p-4 bg-muted rounded text-center">
+            <span className="text-2xl font-bold tracking-wider select-all text-foreground">
               {generatedAuthorCode}
             </span>
           </div>
@@ -1097,50 +1118,120 @@ function AuthorProjectDetailModal({
     setShowConfirmDialog(true);
   };
 
-  const executeReviewSubmit = async () => {
+  const reviewMutation = useMutation({
+    mutationFn: async ({
+      isUpdate,
+      data,
+    }: {
+      isUpdate: boolean;
+      data: any;
+    }) => {
+      if (isUpdate) {
+        return authorService.updateProposalComment(project.id, data);
+      } else {
+        return authorService.createProposalComment(data);
+      }
+    },
+    onMutate: async ({ isUpdate, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['author', 'ip-proposals'] });
+      await queryClient.cancelQueries({
+        queryKey: ['author', 'proposal-comment-detail', project.id, authorId],
+      });
+
+      const previousProposals = queryClient.getQueriesData({
+        queryKey: ['author', 'ip-proposals'],
+      });
+      const previousDetail = queryClient.getQueryData([
+        'author',
+        'proposal-comment-detail',
+        project.id,
+        authorId,
+      ]);
+
+      queryClient.setQueryData(
+        ['author', 'proposal-comment-detail', project.id, authorId],
+        (old: any) => {
+          return {
+            ...(old || {}),
+            status: data.status,
+            comment: data.comment,
+            updatedAt: new Date().toISOString(),
+          };
+        },
+      );
+
+      queryClient.setQueriesData(
+        { queryKey: ['author', 'ip-proposals'] },
+        (old: any) => {
+          if (!old || !old.content) return old;
+          return {
+            ...old,
+            content: old.content.map((p: any) =>
+              p.id === project.id ? { ...p, myStatus: data.status } : p,
+            ),
+          };
+        },
+      );
+
+      return { previousProposals, previousDetail };
+    },
+    onError: (err, newTodo, context) => {
+      if (context?.previousDetail) {
+        queryClient.setQueryData(
+          ['author', 'proposal-comment-detail', project.id, authorId],
+          context.previousDetail,
+        );
+      }
+      if (context?.previousProposals) {
+        context.previousProposals.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error('처리 중 오류가 발생했습니다.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['author', 'ip-proposals'] });
+      queryClient.invalidateQueries({
+        queryKey: ['author', 'proposal-comment-detail'],
+      });
+    },
+  });
+
+  const executeReviewSubmit = () => {
     if (!authorId) {
       toast.error('작가 정보를 찾을 수 없습니다.');
       return;
     }
 
-    try {
-      if (existingComment) {
-        const updateData = {
+    const isUpdate = !!existingComment;
+    const data = isUpdate
+      ? {
           authorIntegrationId: authorId,
           status: actionType,
           comment: actionComment,
-        };
-        await authorService.updateProposalComment(project.id, updateData);
-        toast.success('검토 내용이 수정되었습니다.');
-      } else {
-        const createData = {
+        }
+      : {
           proposalId: project.id,
           authorIntegrationId: authorId,
           status: actionType,
           comment: actionComment,
         };
-        await authorService.createProposalComment(createData);
-        toast.success(
-          actionType === 'APPROVED'
-            ? '제안서가 승인되었습니다.'
-            : '제안서가 반려되었습니다.',
-        );
-      }
 
-      await refetchComment();
-      await queryClient.invalidateQueries({
-        queryKey: ['author', 'ip-proposals'],
-      });
-      // Also invalidate the comment detail
-      await queryClient.invalidateQueries({
-        queryKey: ['author', 'proposal-comment-detail'],
-      });
-      setShowReviewModal(false);
-      setIsEditMode(false);
-      setShowConfirmDialog(false);
-    } catch (e) {
-      toast.error('처리 중 오류가 발생했습니다.');
-    }
+    reviewMutation.mutate(
+      { isUpdate, data },
+      {
+        onSuccess: () => {
+          toast.success(
+            actionType === 'APPROVED'
+              ? '제안서가 승인되었습니다.'
+              : '제안서가 반려되었습니다.',
+          );
+          setShowReviewModal(false);
+          setIsEditMode(false);
+          setShowConfirmDialog(false);
+        },
+      },
+    );
   };
 
   return (
@@ -1218,7 +1309,7 @@ function AuthorProjectDetailModal({
                     </span>
                     <span className="w-0.5 h-3 bg-border" />
                     <span className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />{' '}
+                      <Users className="w-3.5 h-3.5 text-muted-foreground" />{' '}
                       {project.matchedAuthorNames &&
                       project.matchedAuthorNames.length > 0
                         ? project.matchedAuthorNames.join(', ')
@@ -1239,12 +1330,16 @@ function AuthorProjectDetailModal({
                   pdfUrl={pdfBlobUrl || undefined}
                   onDownload={handleDownloadPdf}
                   isLoading={isLoadingPdf}
+                  fileName={
+                    project.ipProposal?.filePath?.split('/').pop() ||
+                    project.title
+                  }
                 />
               </div>
 
               {/* 2. Core Content Strategy (6 Grid) */}
               <section>
-                <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-900">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-foreground">
                   <Sparkles className="w-5 h-5 text-purple-500" />
                   핵심 내용 요약
                 </h3>
@@ -1297,10 +1392,10 @@ function AuthorProjectDetailModal({
                       return (
                         <Card
                           key={i}
-                          className="border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all hover:-translate-y-1 duration-300 bg-card dark:bg-card"
+                          className="border-border shadow-sm hover:shadow-md transition-all hover:-translate-y-1 duration-300 bg-card"
                         >
                           <CardHeader className="pb-2">
-                            <CardTitle className="text-sm flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                            <CardTitle className="text-sm flex items-center gap-2 text-foreground">
                               <div className={`p-1.5 rounded-md ${item.bg}`}>
                                 <Icon className={`w-3.5 h-3.5 ${item.color}`} />
                               </div>
@@ -1315,8 +1410,8 @@ function AuthorProjectDetailModal({
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
-                            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
-                              {item.content || '내용이 없습니다.'}
+                            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                              {item.content || '내용 없음'}
                             </p>
                           </CardContent>
                         </Card>
@@ -1327,9 +1422,9 @@ function AuthorProjectDetailModal({
               </section>
 
               {/* 3. Input Setting Summary & Lorebooks */}
-              <div className="space-y-6 pt-6 border-t border-slate-100">
-                <h3 className="text-lg font-bold flex items-center gap-2 text-slate-800 pt-6 border-t border-slate-100">
-                  <Settings className="w-5 h-5 text-slate-500" />
+              <div className="space-y-6 pt-6 border-t border-border">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-foreground pt-6 border-t border-border">
+                  <Settings className="w-5 h-5 text-muted-foreground" />
                   입력 설정 요약
                 </h3>
 
@@ -1562,8 +1657,8 @@ function AuthorProjectDetailModal({
                             label: '추가 요청사항 (Prompt)',
                             value: project.addPrompt,
                             icon: MessageSquare,
-                            color: 'text-slate-600',
-                            bg: 'bg-slate-50',
+                            color: 'text-muted-foreground',
+                            bg: 'bg-muted/50',
                             isFullWidth: true,
                           },
                         ]
@@ -1573,23 +1668,25 @@ function AuthorProjectDetailModal({
                       key={i}
                       onClick={item.onClick}
                       className={cn(
-                        `flex items-start gap-3 p-3 rounded-lg border border-slate-100 ${item.bg}`,
+                        `flex items-start gap-3 p-3 rounded-lg border border-border ${item.bg}`,
                         item.onClick &&
                           'cursor-pointer hover:bg-opacity-80 transition-colors',
                         item.isFullWidth &&
                           'col-span-1 md:col-span-2 lg:col-span-3',
                       )}
                     >
-                      <div className={`p-1.5 rounded-md bg-white/60 shrink-0`}>
+                      <div
+                        className={`p-1.5 rounded-md bg-background/60 shrink-0`}
+                      >
                         <item.icon className={`w-4 h-4 ${item.color}`} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-0.5">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
                           {item.label}
                         </p>
                         <p
                           className={cn(
-                            'text-sm font-semibold text-slate-900',
+                            'text-sm font-semibold text-foreground',
                             item.isFullWidth
                               ? 'whitespace-pre-wrap leading-relaxed'
                               : 'truncate',
@@ -1605,11 +1702,11 @@ function AuthorProjectDetailModal({
             </div>
           </ScrollArea>
 
-          <DialogFooter className="p-4 bg-white border-t flex items-center justify-between z-20">
+          <DialogFooter className="p-4 bg-background border-t flex items-center justify-between z-20">
             <Button
               variant="outline"
               onClick={onClose}
-              className="text-slate-500"
+              className="text-muted-foreground"
             >
               닫기
             </Button>
@@ -1646,7 +1743,7 @@ function AuthorProjectDetailModal({
             {existingComment && !isEditMode ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-slate-500">
+                  <span className="text-sm font-medium text-muted-foreground">
                     상태:
                   </span>
                   <Badge
@@ -1665,10 +1762,10 @@ function AuthorProjectDetailModal({
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-sm font-medium text-slate-500">
-                    코멘트:
+                  <span className="text-sm font-medium text-muted-foreground">
+                    검토 코멘트
                   </span>
-                  <div className="p-3 bg-slate-50 rounded-md text-sm text-slate-700 whitespace-pre-wrap">
+                  <div className="p-3 bg-muted/50 rounded-md text-sm text-foreground whitespace-pre-wrap">
                     {existingComment.comment || '내용 없음'}
                   </div>
                 </div>
@@ -1682,7 +1779,7 @@ function AuthorProjectDetailModal({
                       'cursor-pointer rounded-xl border-2 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-200',
                       actionType === 'APPROVED'
                         ? 'border-emerald-500 bg-emerald-50/50'
-                        : 'border-slate-200 hover:border-emerald-200 hover:bg-slate-50',
+                        : 'border-border hover:border-emerald-200 hover:bg-accent',
                     )}
                   >
                     <div
@@ -1690,7 +1787,7 @@ function AuthorProjectDetailModal({
                         'w-12 h-12 rounded-full flex items-center justify-center transition-colors',
                         actionType === 'APPROVED'
                           ? 'bg-emerald-100 text-emerald-600'
-                          : 'bg-slate-100 text-slate-400',
+                          : 'bg-muted text-muted-foreground',
                       )}
                     >
                       <Check className="w-6 h-6" />
@@ -1701,12 +1798,12 @@ function AuthorProjectDetailModal({
                           'font-bold',
                           actionType === 'APPROVED'
                             ? 'text-emerald-700'
-                            : 'text-slate-600',
+                            : 'text-foreground',
                         )}
                       >
                         승인 (Approve)
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         제안서를 승인하고 다음 단계로 진행합니다
                       </div>
                     </div>
@@ -1718,7 +1815,7 @@ function AuthorProjectDetailModal({
                       'cursor-pointer rounded-xl border-2 p-4 flex flex-col items-center justify-center gap-3 transition-all duration-200',
                       actionType === 'REJECTED'
                         ? 'border-rose-500 bg-rose-50/50'
-                        : 'border-slate-200 hover:border-rose-200 hover:bg-slate-50',
+                        : 'border-border hover:border-rose-200 hover:bg-accent',
                     )}
                   >
                     <div
@@ -1726,7 +1823,7 @@ function AuthorProjectDetailModal({
                         'w-12 h-12 rounded-full flex items-center justify-center transition-colors',
                         actionType === 'REJECTED'
                           ? 'bg-rose-100 text-rose-600'
-                          : 'bg-slate-100 text-slate-400',
+                          : 'bg-muted text-muted-foreground',
                       )}
                     >
                       <X className="w-6 h-6" />
@@ -1737,12 +1834,12 @@ function AuthorProjectDetailModal({
                           'font-bold',
                           actionType === 'REJECTED'
                             ? 'text-rose-700'
-                            : 'text-slate-600',
+                            : 'text-foreground',
                         )}
                       >
                         반려 (Reject)
                       </div>
-                      <div className="text-xs text-slate-500 mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         제안서를 반려하고 사유를 전달합니다
                       </div>
                     </div>
@@ -1836,7 +1933,7 @@ function AuthorProjectDetailModal({
         open={showLorebookListModal}
         onOpenChange={setShowLorebookListModal}
       >
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col bg-slate-50">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto flex flex-col bg-background">
           <DialogHeader className="px-1">
             <DialogTitle className="flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-indigo-600" />
@@ -1887,7 +1984,7 @@ function AuthorProjectDetailModal({
                   (lb: any) =>
                     lorebookFilter === '전체' || lb.category === lorebookFilter,
                 ).length === 0) && (
-                <div className="col-span-full py-12 text-center text-slate-500">
+                <div className="col-span-full py-12 text-center text-muted-foreground">
                   해당 카테고리의 설정집이 없습니다.
                 </div>
               )}
@@ -1906,14 +2003,16 @@ function AuthorProjectDetailModal({
 
       {/* PDF Full Screen Modal */}
       <Dialog open={showPdfFullScreen} onOpenChange={setShowPdfFullScreen}>
-        <DialogContent className="!w-screen !h-screen !max-w-none rounded-none border-0 p-0 overflow-y-auto bg-slate-50">
+        <DialogContent className="!w-screen !h-screen !max-w-none rounded-none border-0 p-0 overflow-y-auto bg-background">
           <div className="relative w-full min-h-full flex items-center justify-center p-8">
             <PdfPreview
               className="w-full h-full shadow-none border-0"
               isFullScreen={true}
               pdfUrl={pdfBlobUrl || undefined}
               onDownload={handleDownloadPdf}
-              isLoading={isLoadingPdf}
+              fileName={
+                project.ipProposal?.filePath?.split('/').pop() || project.title
+              }
             />
           </div>
         </DialogContent>
