@@ -80,71 +80,49 @@ export function DynamicSettingEditor({
               label="설정집명 (키워드)"
               value={formData['name'] || formData['keyword'] || ''}
               onChange={(v) => handleChange('name', v)}
+              required
             />
             <Field
               label="별명"
-              value={formData['별명'] || []}
-              isArray
+              value={formData['별명'] || ''}
               onChange={(v) => handleChange('별명', v)}
-              onArrayChange={(idx, v) => handleArrayChange('별명', idx, v)}
-              onAdd={() => handleAddArrayItem('별명')}
-              onRemove={(idx) => handleRemoveArrayItem('별명', idx)}
+            />
+            <Field
+              label="부제/별칭"
+              value={formData['subtitle'] || ''}
+              onChange={(v) => handleChange('subtitle', v)}
             />
             <Field
               label="배경"
-              value={formData['배경'] || []}
-              isArray
+              value={formData['배경'] || ''}
               onChange={(v) => handleChange('배경', v)}
-              onArrayChange={(idx, v) => handleArrayChange('배경', idx, v)}
-              onAdd={() => handleAddArrayItem('배경')}
-              onRemove={(idx) => handleRemoveArrayItem('배경', idx)}
+              isTextarea
             />
             <Field
               label="종족"
-              value={formData['종족'] || []}
-              isArray
+              value={formData['종족'] || ''}
               onChange={(v) => handleChange('종족', v)}
-              onArrayChange={(idx, v) => handleArrayChange('종족', idx, v)}
-              onAdd={() => handleAddArrayItem('종족')}
-              onRemove={(idx) => handleRemoveArrayItem('종족', idx)}
             />
             <Field
               label="연령"
-              value={formData['연령'] || formData['age'] || []}
-              isArray
+              value={formData['연령'] || formData['age'] || ''}
               onChange={(v) => handleChange('연령', v)}
-              onArrayChange={(idx, v) => handleArrayChange('연령', idx, v)}
-              onAdd={() => handleAddArrayItem('연령')}
-              onRemove={(idx) => handleRemoveArrayItem('연령', idx)}
             />
             <Field
               label="직업/신분"
-              value={formData['직업/신분'] || formData['role'] || []}
-              isArray
+              value={formData['직업/신분'] || formData['role'] || ''}
               onChange={(v) => handleChange('직업/신분', v)}
-              onArrayChange={(idx, v) => handleArrayChange('직업/신분', idx, v)}
-              onAdd={() => handleAddArrayItem('직업/신분')}
-              onRemove={(idx) => handleRemoveArrayItem('직업/신분', idx)}
             />
             <Field
               label="소속집단/가문"
-              value={formData['소속집단/가문'] || []}
-              isArray
+              value={formData['소속집단/가문'] || ''}
               onChange={(v) => handleChange('소속집단/가문', v)}
-              onArrayChange={(idx, v) =>
-                handleArrayChange('소속집단/가문', idx, v)
-              }
-              onAdd={() => handleAddArrayItem('소속집단/가문')}
-              onRemove={(idx) => handleRemoveArrayItem('소속집단/가문', idx)}
             />
             <Field
               label="외형"
-              value={formData['외형'] || []}
-              isArray
+              value={formData['외형'] || ''}
               onChange={(v) => handleChange('외형', v)}
-              onArrayChange={(idx, v) => handleArrayChange('외형', idx, v)}
-              onAdd={() => handleAddArrayItem('외형')}
-              onRemove={(idx) => handleRemoveArrayItem('외형', idx)}
+              isTextarea
             />
             <Field
               label="성격"
@@ -199,30 +177,18 @@ export function DynamicSettingEditor({
             />
             <Field
               label="핵심 결핍"
-              value={formData['핵심 결핍'] || []}
-              isArray
+              value={formData['핵심 결핍'] || ''}
               onChange={(v) => handleChange('핵심 결핍', v)}
-              onArrayChange={(idx, v) => handleArrayChange('핵심 결핍', idx, v)}
-              onAdd={() => handleAddArrayItem('핵심 결핍')}
-              onRemove={(idx) => handleRemoveArrayItem('핵심 결핍', idx)}
             />
             <Field
               label="내적 갈등"
-              value={formData['내적 갈등'] || []}
-              isArray
+              value={formData['내적 갈등'] || ''}
               onChange={(v) => handleChange('내적 갈등', v)}
-              onArrayChange={(idx, v) => handleArrayChange('내적 갈등', idx, v)}
-              onAdd={() => handleAddArrayItem('내적 갈등')}
-              onRemove={(idx) => handleRemoveArrayItem('내적 갈등', idx)}
             />
             <Field
               label="외적 갈등"
-              value={formData['외적 갈등'] || []}
-              isArray
+              value={formData['외적 갈등'] || ''}
               onChange={(v) => handleChange('외적 갈등', v)}
-              onArrayChange={(idx, v) => handleArrayChange('외적 갈등', idx, v)}
-              onAdd={() => handleAddArrayItem('외적 갈등')}
-              onRemove={(idx) => handleRemoveArrayItem('외적 갈등', idx)}
             />
             <Field
               label="대사"
@@ -251,6 +217,12 @@ export function DynamicSettingEditor({
               label="설정집명 (키워드)"
               value={formData['name'] || formData['keyword'] || ''}
               onChange={(v) => handleChange('name', v)}
+              required
+            />
+            <Field
+              label="부제/별칭"
+              value={formData['subtitle'] || ''}
+              onChange={(v) => handleChange('subtitle', v)}
             />
             <Field
               label="종류"
@@ -315,51 +287,43 @@ export function DynamicSettingEditor({
               label="설정집명 (키워드)"
               value={formData['name'] || formData['keyword'] || ''}
               onChange={(v) => handleChange('name', v)}
+              required
             />
             <Field
-              label="별칭"
-              value={formData['별칭'] || []}
-              isArray
-              onChange={(v) => handleChange('별칭', v)}
-              onArrayChange={(idx, v) => handleArrayChange('별칭', idx, v)}
-              onAdd={() => handleAddArrayItem('별칭')}
-              onRemove={(idx) => handleRemoveArrayItem('별칭', idx)}
-            />
-            <Field
-              label="분위기"
-              value={formData['분위기'] || []}
-              isArray
-              onChange={(v) => handleChange('분위기', v)}
-              onArrayChange={(idx, v) => handleArrayChange('분위기', idx, v)}
-              onAdd={() => handleAddArrayItem('분위기')}
-              onRemove={(idx) => handleRemoveArrayItem('분위기', idx)}
-            />
-            <Field
-              label="역사"
-              value={formData['역사'] || []}
-              isArray
-              onChange={(v) => handleChange('역사', v)}
-              onArrayChange={(idx, v) => handleArrayChange('역사', idx, v)}
-              onAdd={() => handleAddArrayItem('역사')}
-              onRemove={(idx) => handleRemoveArrayItem('역사', idx)}
+              label="부제/별칭"
+              value={formData['subtitle'] || ''}
+              onChange={(v) => handleChange('subtitle', v)}
             />
             <Field
               label="위치"
-              value={formData['위치'] || []}
-              isArray
-              onChange={(v) => handleChange('위치', v)}
-              onArrayChange={(idx, v) => handleArrayChange('위치', idx, v)}
-              onAdd={() => handleAddArrayItem('위치')}
-              onRemove={(idx) => handleRemoveArrayItem('위치', idx)}
+              value={formData['location'] || ''}
+              onChange={(v) => handleChange('location', v)}
             />
             <Field
-              label="집단"
-              value={formData['집단'] || []}
-              isArray
-              onChange={(v) => handleChange('집단', v)}
-              onArrayChange={(idx, v) => handleArrayChange('집단', idx, v)}
-              onAdd={() => handleAddArrayItem('집단')}
-              onRemove={(idx) => handleRemoveArrayItem('집단', idx)}
+              label="규모"
+              value={formData['scale'] || ''}
+              onChange={(v) => handleChange('scale', v)}
+            />
+            <Field
+              label="분위기"
+              value={formData['atmosphere'] || ''}
+              onChange={(v) => handleChange('atmosphere', v)}
+            />
+            <Field
+              label="기능/용도"
+              value={formData['function'] || ''}
+              onChange={(v) => handleChange('function', v)}
+            />
+            <Field
+              label="소유자/관리자"
+              value={formData['owner'] || ''}
+              onChange={(v) => handleChange('owner', v)}
+            />
+            <Field
+              label="역사/배경"
+              value={formData['history'] || ''}
+              onChange={(v) => handleChange('history', v)}
+              isTextarea
             />
             <Field
               label="하부지역"
@@ -371,15 +335,6 @@ export function DynamicSettingEditor({
               onRemove={(idx) => handleRemoveArrayItem('하부지역', idx)}
             />
             <Field
-              label="작중묘사"
-              value={formData['작중묘사'] || []}
-              isArray
-              onChange={(v) => handleChange('작중묘사', v)}
-              onArrayChange={(idx, v) => handleArrayChange('작중묘사', idx, v)}
-              onAdd={() => handleAddArrayItem('작중묘사')}
-              onRemove={(idx) => handleRemoveArrayItem('작중묘사', idx)}
-            />
-            <Field
               label="규칙"
               value={formData['규칙'] || []}
               isArray
@@ -389,22 +344,10 @@ export function DynamicSettingEditor({
               onRemove={(idx) => handleRemoveArrayItem('규칙', idx)}
             />
             <Field
-              label="금기"
-              value={formData['금기'] || []}
-              isArray
-              onChange={(v) => handleChange('금기', v)}
-              onArrayChange={(idx, v) => handleArrayChange('금기', idx, v)}
-              onAdd={() => handleAddArrayItem('금기')}
-              onRemove={(idx) => handleRemoveArrayItem('금기', idx)}
-            />
-            <Field
-              label="필수 제약"
-              value={formData['필수 제약'] || []}
-              isArray
-              onChange={(v) => handleChange('필수 제약', v)}
-              onArrayChange={(idx, v) => handleArrayChange('필수 제약', idx, v)}
-              onAdd={() => handleAddArrayItem('필수 제약')}
-              onRemove={(idx) => handleRemoveArrayItem('필수 제약', idx)}
+              label="상세 설명"
+              value={formData['description'] || ''}
+              onChange={(v) => handleChange('description', v)}
+              isTextarea
             />
           </>
         );
@@ -415,51 +358,66 @@ export function DynamicSettingEditor({
               label="설정집명 (키워드)"
               value={formData['name'] || formData['keyword'] || ''}
               onChange={(v) => handleChange('name', v)}
+              required
+            />
+            <Field
+              label="부제/별칭"
+              value={formData['subtitle'] || ''}
+              onChange={(v) => handleChange('subtitle', v)}
+            />
+            <Field
+              label="유형"
+              value={formData['type'] || ''}
+              onChange={(v) => handleChange('type', v)}
+            />
+            <Field
+              label="발생 시점"
+              value={formData['date'] || ''}
+              onChange={(v) => handleChange('date', v)}
+            />
+            <Field
+              label="발생 장소"
+              value={formData['location'] || ''}
+              onChange={(v) => handleChange('location', v)}
+            />
+            <Field
+              label="원인/배경"
+              value={formData['cause'] || ''}
+              onChange={(v) => handleChange('cause', v)}
+              isTextarea
+            />
+            <Field
+              label="전개 과정"
+              value={formData['flow'] || ''}
+              onChange={(v) => handleChange('flow', v)}
+              isTextarea
+            />
+            <Field
+              label="결과"
+              value={formData['result'] || ''}
+              onChange={(v) => handleChange('result', v)}
+              isTextarea
+            />
+            <Field
+              label="영향/여파"
+              value={formData['influence'] || ''}
+              onChange={(v) => handleChange('influence', v)}
+              isTextarea
             />
             <Field
               label="관련 인물"
-              value={formData['관련 인물'] || []}
+              value={formData['participants'] || []}
               isArray
-              onChange={(v) => handleChange('관련 인물', v)}
-              onArrayChange={(idx, v) => handleArrayChange('관련 인물', idx, v)}
-              onAdd={() => handleAddArrayItem('관련 인물')}
-              onRemove={(idx) => handleRemoveArrayItem('관련 인물', idx)}
+              onChange={(v) => handleChange('participants', v)}
+              onArrayChange={(idx, v) => handleArrayChange('participants', idx, v)}
+              onAdd={() => handleAddArrayItem('participants')}
+              onRemove={(idx) => handleRemoveArrayItem('participants', idx)}
             />
             <Field
-              label="설명"
-              value={formData['설명'] || []}
-              isArray
-              onChange={(v) => handleChange('설명', v)}
-              onArrayChange={(idx, v) => handleArrayChange('설명', idx, v)}
-              onAdd={() => handleAddArrayItem('설명')}
-              onRemove={(idx) => handleRemoveArrayItem('설명', idx)}
-            />
-            <Field
-              label="트리거"
-              value={formData['트리거'] || []}
-              isArray
-              onChange={(v) => handleChange('트리거', v)}
-              onArrayChange={(idx, v) => handleArrayChange('트리거', idx, v)}
-              onAdd={() => handleAddArrayItem('트리거')}
-              onRemove={(idx) => handleRemoveArrayItem('트리거', idx)}
-            />
-            <Field
-              label="영향 범위"
-              value={formData['영향 범위'] || []}
-              isArray
-              onChange={(v) => handleChange('영향 범위', v)}
-              onArrayChange={(idx, v) => handleArrayChange('영향 범위', idx, v)}
-              onAdd={() => handleAddArrayItem('영향 범위')}
-              onRemove={(idx) => handleRemoveArrayItem('영향 범위', idx)}
-            />
-            <Field
-              label="변화점"
-              value={formData['변화점'] || []}
-              isArray
-              onChange={(v) => handleChange('변화점', v)}
-              onArrayChange={(idx, v) => handleArrayChange('변화점', idx, v)}
-              onAdd={() => handleAddArrayItem('변화점')}
-              onRemove={(idx) => handleRemoveArrayItem('변화점', idx)}
+              label="상세 설명"
+              value={formData['description'] || ''}
+              onChange={(v) => handleChange('description', v)}
+              isTextarea
             />
           </>
         );
@@ -468,124 +426,136 @@ export function DynamicSettingEditor({
           <>
             <Field
               label="설정집명 (키워드)"
-              value={formData['name'] || formData['keyword'] || ''}
+              value={formData['name'] || formData['keyword'] || formData['title'] || ''}
               onChange={(v) => handleChange('name', v)}
+              required
             />
             <Field
-              label="설명"
-              value={formData['설명'] || []}
-              isArray
-              onChange={(v) => handleChange('설명', v)}
-              onArrayChange={(idx, v) => handleArrayChange('설명', idx, v)}
-              onAdd={() => handleAddArrayItem('설명')}
-              onRemove={(idx) => handleRemoveArrayItem('설명', idx)}
+              label="부제/별칭"
+              value={formData['subtitle'] || ''}
+              onChange={(v) => handleChange('subtitle', v)}
             />
             <Field
-              label="관련인물"
-              value={formData['관련인물'] || []}
-              isArray
-              onChange={(v) => handleChange('관련인물', v)}
-              onArrayChange={(idx, v) => handleArrayChange('관련인물', idx, v)}
-              onAdd={() => handleAddArrayItem('관련인물')}
-              onRemove={(idx) => handleRemoveArrayItem('관련인물', idx)}
+              label="종류"
+              value={formData['type'] || ''}
+              onChange={(v) => handleChange('type', v)}
             />
             <Field
-              label="리스크"
-              value={formData['리스크'] || []}
-              isArray
-              onChange={(v) => handleChange('리스크', v)}
-              onArrayChange={(idx, v) => handleArrayChange('리스크', idx, v)}
-              onAdd={() => handleAddArrayItem('리스크')}
-              onRemove={(idx) => handleRemoveArrayItem('리스크', idx)}
+              label="등급/가치"
+              value={formData['rank'] || ''}
+              onChange={(v) => handleChange('rank', v)}
             />
             <Field
-              label="능력"
-              value={formData['능력'] || []}
-              isArray
-              onChange={(v) => handleChange('능력', v)}
-              onArrayChange={(idx, v) => handleArrayChange('능력', idx, v)}
-              onAdd={() => handleAddArrayItem('능력')}
-              onRemove={(idx) => handleRemoveArrayItem('능력', idx)}
+              label="효과/능력"
+              value={formData['effect'] || ''}
+              onChange={(v) => handleChange('effect', v)}
             />
             <Field
-              label="유래"
-              value={formData['유래'] || []}
-              isArray
-              onChange={(v) => handleChange('유래', v)}
-              onArrayChange={(idx, v) => handleArrayChange('유래', idx, v)}
-              onAdd={() => handleAddArrayItem('유래')}
-              onRemove={(idx) => handleRemoveArrayItem('유래', idx)}
+              label="기원/출처"
+              value={formData['origin'] || ''}
+              onChange={(v) => handleChange('origin', v)}
             />
             <Field
-              label="귀속상태"
-              value={formData['귀속상태'] || []}
-              isArray
-              onChange={(v) => handleChange('귀속상태', v)}
-              onArrayChange={(idx, v) => handleArrayChange('귀속상태', idx, v)}
-              onAdd={() => handleAddArrayItem('귀속상태')}
-              onRemove={(idx) => handleRemoveArrayItem('귀속상태', idx)}
+              label="재질"
+              value={formData['material'] || ''}
+              onChange={(v) => handleChange('material', v)}
+            />
+            <Field
+              label="소유자"
+              value={formData['owner'] || ''}
+              onChange={(v) => handleChange('owner', v)}
+            />
+            <Field
+              label="내력/전설"
+              value={formData['history'] || ''}
+              onChange={(v) => handleChange('history', v)}
+              isTextarea
+            />
+            <Field
+              label="상세 설명"
+              value={formData['description'] || ''}
+              onChange={(v) => handleChange('description', v)}
+              isTextarea
             />
           </>
         );
-      case '단체': // organizations
+      case '집단': // organizations
+      case '단체':
         return (
           <>
             <Field
               label="설정집명 (키워드)"
-              value={formData['name'] || formData['keyword'] || ''}
+              value={formData['name'] || formData['keyword'] || formData['title'] || ''}
               onChange={(v) => handleChange('name', v)}
+              required
             />
             <Field
-              label="설명"
-              value={formData['설명'] || []}
-              isArray
-              onChange={(v) => handleChange('설명', v)}
-              onArrayChange={(idx, v) => handleArrayChange('설명', idx, v)}
-              onAdd={() => handleAddArrayItem('설명')}
-              onRemove={(idx) => handleRemoveArrayItem('설명', idx)}
+              label="부제/별칭"
+              value={formData['subtitle'] || ''}
+              onChange={(v) => handleChange('subtitle', v)}
             />
             <Field
-              label="구성원"
-              value={formData['구성원'] || []}
-              isArray
-              onChange={(v) => handleChange('구성원', v)}
-              onArrayChange={(idx, v) => handleArrayChange('구성원', idx, v)}
-              onAdd={() => handleAddArrayItem('구성원')}
-              onRemove={(idx) => handleRemoveArrayItem('구성원', idx)}
+              label="유형"
+              value={formData['type'] || ''}
+              onChange={(v) => handleChange('type', v)}
             />
             <Field
-              label="의사결정 구조"
-              value={formData['의사결정 구조'] || []}
-              isArray
-              onChange={(v) => handleChange('의사결정 구조', v)}
-              onArrayChange={(idx, v) =>
-                handleArrayChange('의사결정 구조', idx, v)
-              }
-              onAdd={() => handleAddArrayItem('의사결정 구조')}
-              onRemove={(idx) => handleRemoveArrayItem('의사결정 구조', idx)}
+              label="규모"
+              value={formData['scale'] || ''}
+              onChange={(v) => handleChange('scale', v)}
             />
             <Field
-              label="유지 동력"
-              value={formData['유지 동력'] || []}
-              isArray
-              onChange={(v) => handleChange('유지 동력', v)}
-              onArrayChange={(idx, v) => handleArrayChange('유지 동력', idx, v)}
-              onAdd={() => handleAddArrayItem('유지 동력')}
-              onRemove={(idx) => handleRemoveArrayItem('유지 동력', idx)}
+              label="목적/목표"
+              value={formData['purpose'] || ''}
+              onChange={(v) => handleChange('purpose', v)}
             />
             <Field
-              label="대외적 평판"
-              value={formData['대외적 평판'] || []}
+              label="주요 활동"
+              value={formData['activity'] || ''}
+              onChange={(v) => handleChange('activity', v)}
+              isTextarea
+            />
+            <Field
+              label="상징/문장"
+              value={formData['symbol'] || ''}
+              onChange={(v) => handleChange('symbol', v)}
+            />
+            <Field
+              label="조직도/계급"
+              value={formData['hierarchy'] || ''}
+              onChange={(v) => handleChange('hierarchy', v)}
+              isTextarea
+            />
+            <Field
+              label="규율/규칙"
+              value={formData['rules'] || ''}
+              onChange={(v) => handleChange('rules', v)}
+              isTextarea
+            />
+            <Field
+              label="역사/연혁"
+              value={formData['history'] || ''}
+              onChange={(v) => handleChange('history', v)}
+              isTextarea
+            />
+            <Field
+              label="주요 소속원"
+              value={formData['members'] || []}
               isArray
-              onChange={(v) => handleChange('대외적 평판', v)}
-              onArrayChange={(idx, v) =>
-                handleArrayChange('대외적 평판', idx, v)
-              }
-              onAdd={() => handleAddArrayItem('대외적 평판')}
-              onRemove={(idx) => handleRemoveArrayItem('대외적 평판', idx)}
+              onChange={(v) => handleChange('members', v)}
+              onArrayChange={(idx, v) => handleArrayChange('members', idx, v)}
+              onAdd={() => handleAddArrayItem('members')}
+              onRemove={(idx) => handleRemoveArrayItem('members', idx)}
+            />
+            <Field
+              label="상세 설명"
+              value={formData['description'] || ''}
+              onChange={(v) => handleChange('description', v)}
+              isTextarea
             />
           </>
         );
+
       // Add other cases as needed, fallback to generic
       default:
         // Generic renderer for unknown categories or "all"
@@ -680,6 +650,7 @@ interface FieldProps {
   isObjectArray?: boolean;
   objectFields?: { key: string; label: string }[];
   onObjectArrayChange?: (index: number, field: string, val: string) => void;
+  required?: boolean;
 }
 
 function Field({
@@ -694,11 +665,12 @@ function Field({
   isObjectArray,
   objectFields,
   onObjectArrayChange,
+  required,
 }: FieldProps) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-semibold text-muted-foreground">
-        {label}
+        {label} {required && <span className="text-red-500">*</span>}
       </Label>
       {isObjectArray ? (
         <div className="space-y-2">
@@ -744,28 +716,31 @@ function Field({
         </div>
       ) : isArray ? (
         <div className="space-y-2">
-          {(Array.isArray(value) ? value : []).map(
-            (item: string, idx: number) => (
-              <div key={idx} className="flex gap-2">
-                <Input
-                  value={item}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    onArrayChange?.(idx, e.target.value)
-                  }
-                  className="h-8 text-sm"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 text-red-400 hover:text-red-500"
-                  onClick={() => onRemove?.(idx)}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ),
-          )}
+          {(Array.isArray(value)
+            ? value
+            : typeof value === 'string'
+            ? value.split(',').map((s) => s.trim()).filter(Boolean)
+            : []
+          ).map((item: string, idx: number) => (
+            <div key={idx} className="flex gap-2">
+              <Input
+                value={item}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onArrayChange?.(idx, e.target.value)
+                }
+                className="h-8 text-sm"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0 text-red-400 hover:text-red-500"
+                onClick={() => onRemove?.(idx)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          ))}
           <Button
             type="button"
             variant="outline"
@@ -783,6 +758,7 @@ function Field({
             onChange?.(e.target.value)
           }
           className="min-h-[80px] text-sm resize-none"
+          required={required}
         />
       ) : (
         <Input
@@ -791,6 +767,7 @@ function Field({
             onChange?.(e.target.value)
           }
           className="h-9 text-sm"
+          required={required}
         />
       )}
     </div>
