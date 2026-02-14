@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { WorkAnalysisModal } from './WorkAnalysisModal';
 import { DynamicSettingEditor } from '../../../components/dashboard/author/DynamicSettingEditor';
+import { LorebookCard } from '../../../components/dashboard/author/LorebookCard';
+import { getTagsForItem } from '../../../utils/lorebookUtils';
 import { Button } from '../../../components/ui/button';
 import {
   Card,
@@ -187,54 +189,59 @@ export function AuthorLorebookPanel({
         : []) || [];
 
   const displayItems =
-    lorebooks.map((item: any) => {
-      let parsedSettings: any = {};
-      try {
-        // item.setting is JsonNode (any), which can be an object or a JSON string depending on serialization
-        if (item.setting && typeof item.setting === 'object') {
-          parsedSettings = item.setting;
-        } else if (typeof item.setting === 'string') {
-          parsedSettings = JSON.parse(item.setting);
+    lorebooks
+      .filter(
+        (item: any, index: number, self: any[]) =>
+          index === self.findIndex((t) => t.id === item.id),
+      )
+      .map((item: any) => {
+        let parsedSettings: any = {};
+        try {
+          // item.setting is JsonNode (any), which can be an object or a JSON string depending on serialization
+          if (item.setting && typeof item.setting === 'object') {
+            parsedSettings = item.setting;
+          } else if (typeof item.setting === 'string') {
+            parsedSettings = JSON.parse(item.setting);
+          }
+        } catch (e) {
+          console.error('Failed to parse settings', e);
         }
-      } catch (e) {
-        console.error('Failed to parse settings', e);
-      }
 
-      // Handle nested structure: { "Keyword": { ... } }
-      let content = parsedSettings;
-      const keyword = item.keyword;
-      if (keyword && parsedSettings[keyword]) {
-        content = parsedSettings[keyword];
-      }
-
-      // Handle Event type where content is a string
-      let description = '';
-      if (typeof content === 'string') {
-        description = content;
-      } else {
-        const descField =
-          content.description ||
-          content.배경 ||
-          content.summary ||
-          content.상세설명 ||
-          content.설명 || // Added for Item type
-          content.작중묘사; // Added for Place type
-
-        if (Array.isArray(descField)) {
-          description = descField.join(' ');
-        } else if (typeof descField === 'string') {
-          description = descField;
+        // Handle nested structure: { "Keyword": { ... } }
+        let content = parsedSettings;
+        const keyword = item.keyword;
+        if (keyword && parsedSettings[keyword]) {
+          content = parsedSettings[keyword];
         }
-      }
 
-      return {
-        ...item,
-        name: keyword || '',
-        title: keyword || '',
-        description,
-        ...(typeof content === 'object' ? content : {}),
-      };
-    }) || [];
+        // Handle Event type where content is a string
+        let description = '';
+        if (typeof content === 'string') {
+          description = content;
+        } else {
+          const descField =
+            content.description ||
+            content.배경 ||
+            content.summary ||
+            content.상세설명 ||
+            content.설명 || // Added for Item type
+            content.작중묘사; // Added for Place type
+
+          if (Array.isArray(descField)) {
+            description = descField.join(' ');
+          } else if (typeof descField === 'string') {
+            description = descField;
+          }
+        }
+
+        return {
+          ...item,
+          name: keyword || '',
+          title: keyword || '',
+          description,
+          ...(typeof content === 'object' ? content : {}),
+        };
+      }) || [];
 
   const [searchResults, setSearchResults] = useState<any[]>([]);
 
@@ -415,9 +422,26 @@ export function AuthorLorebookPanel({
       }
 
       const transformed = data.map((item: any) => {
-        if (!Array.isArray(item)) return item; // Fallback if already object
+        let id, category, setting, episodes, score;
 
-        const [id, category, setting, episodes, score] = item;
+        if (Array.isArray(item)) {
+          [id, category, setting, episodes, score] = item;
+        } else {
+          // Handle object response
+          ({ id, category, setting, episodes, score } = item);
+          // Fallback for score if named differently
+          if (score === undefined) {
+            score = item.similarity || item.sim || item.distance || item.score;
+          }
+        }
+
+        try {
+          if (typeof setting === 'string') {
+            setting = JSON.parse(setting);
+          }
+        } catch (e) {
+          console.error('Failed to parse setting JSON', e);
+        }
 
         // Extract keyword/title from setting object keys
         // setting is like { "강 팀장": { ... } }
@@ -503,6 +527,8 @@ export function AuthorLorebookPanel({
         userId,
         work!.title,
         workId,
+        0,
+        1000,
       );
 
       let items: any[] = [];
@@ -691,16 +717,6 @@ export function AuthorLorebookPanel({
     searchMutation.mutate({ category: searchCategory, query: searchQuery });
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = e.target;
-    setEditorData((prev: any) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     // Always use editorData as it is now updated in real-time for all categories
@@ -805,471 +821,20 @@ export function AuthorLorebookPanel({
   };
 
   const renderFormFields = () => {
-    if (activeCategory === '인물' || activeCategory === '세계') {
-      return (
-        <DynamicSettingEditor
-          data={editorData}
-          category={activeCategory}
-          onChange={setEditorData}
-        />
-      );
-    }
+    return (
+      <DynamicSettingEditor
+        data={editorData}
+        category={activeCategory}
+        onChange={setEditorData}
+      />
+    );
+  };
 
-    switch (activeCategory) {
-      case '장소':
-        return (
-          <>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">이름</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={editorData.name || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 마법사의 탑"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">부제/별칭</Label>
-                <Input
-                  id="subtitle"
-                  name="subtitle"
-                  value={editorData.subtitle || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 고대 마법의 중심지"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="location">위치</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  value={editorData.location || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 왕국 북부 숲 속"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="scale">규모</Label>
-                <Input
-                  id="scale"
-                  name="scale"
-                  value={editorData.scale || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 높이 100m, 5층 건물"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="atmosphere">분위기</Label>
-              <Input
-                id="atmosphere"
-                name="atmosphere"
-                value={editorData.atmosphere || ''}
-                onChange={handleInputChange}
-                placeholder="예: 신비롭고 조용함"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="function">기능/용도</Label>
-              <Input
-                id="function"
-                name="function"
-                value={editorData.function || ''}
-                onChange={handleInputChange}
-                placeholder="예: 마법 연구 및 교육"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="owner">소유자/관리자</Label>
-              <Input
-                id="owner"
-                name="owner"
-                value={editorData.owner || ''}
-                onChange={handleInputChange}
-                placeholder="예: 대마법사 엘리온"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="history">역사/배경</Label>
-              <Textarea
-                id="history"
-                name="history"
-                value={editorData.history || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 300년 전 건설되어..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">상세 설명</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={editorData.description || ''}
-                onChange={handleInputChange}
-                required
-                className="min-h-[100px]"
-                placeholder="상세한 묘사를 입력하세요."
-              />
-            </div>
-          </>
-        );
-      case '물건':
-        return (
-          <>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">이름</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={editorData.name || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 엑스칼리버"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">부제/별칭</Label>
-                <Input
-                  id="subtitle"
-                  name="subtitle"
-                  value={editorData.subtitle || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 약속된 승리의 검"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">종류</Label>
-                <Input
-                  id="type"
-                  name="type"
-                  value={editorData.type || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 장검, 아티팩트"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rank">등급/가치</Label>
-                <Input
-                  id="rank"
-                  name="rank"
-                  value={editorData.rank || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: S급, 전설 등급"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="effect">효과/능력</Label>
-              <Input
-                id="effect"
-                name="effect"
-                value={editorData.effect || ''}
-                onChange={handleInputChange}
-                placeholder="예: 모든 상처 치유, 빛의 일격"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="origin">기원/출처</Label>
-                <Input
-                  id="origin"
-                  name="origin"
-                  value={editorData.origin || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 호수의 여인"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="material">재질</Label>
-                <Input
-                  id="material"
-                  name="material"
-                  value={editorData.material || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 정령석, 미스릴"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="owner">소유자</Label>
-              <Input
-                id="owner"
-                name="owner"
-                value={editorData.owner || ''}
-                onChange={handleInputChange}
-                placeholder="예: 아서 왕"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="history">내력/전설</Label>
-              <Textarea
-                id="history"
-                name="history"
-                value={editorData.history || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 바위에 꽂혀 있던 검..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">상세 설명</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={editorData.description || ''}
-                onChange={handleInputChange}
-                required
-                className="min-h-[100px]"
-                placeholder="상세한 묘사를 입력하세요."
-              />
-            </div>
-          </>
-        );
-      case '집단':
-        return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="name">이름</Label>
-              <Input
-                id="name"
-                name="name"
-                value={editorData.name || ''}
-                onChange={handleInputChange}
-                required
-                placeholder="예: 그림자 길드"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="subtitle">부제/별칭</Label>
-              <Input
-                id="subtitle"
-                name="subtitle"
-                value={editorData.subtitle || ''}
-                onChange={handleInputChange}
-                placeholder="예: 어둠 속의 수호자들"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="type">유형</Label>
-                <Input
-                  id="type"
-                  name="type"
-                  value={editorData.type || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 비밀결사, 상인 조합"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="scale">규모</Label>
-                <Input
-                  id="scale"
-                  name="scale"
-                  value={editorData.scale || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 500명 규모, 3개 대륙 활동"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="symbol">상징/문장</Label>
-              <Input
-                id="symbol"
-                name="symbol"
-                value={editorData.symbol || ''}
-                onChange={handleInputChange}
-                placeholder="예: 검은 독수리 문장"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="purpose">목적/이념</Label>
-              <Input
-                id="purpose"
-                name="purpose"
-                value={editorData.purpose || ''}
-                onChange={handleInputChange}
-                placeholder="예: 왕권 수호 및 정보 수집"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="activity">주요 활동</Label>
-              <Textarea
-                id="activity"
-                name="activity"
-                value={editorData.activity || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 암살, 첩보, 밀무역"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="history">역사</Label>
-              <Textarea
-                id="history"
-                name="history"
-                value={editorData.history || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 1차 대전쟁 직후 설립..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">상세 설명</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={editorData.description || ''}
-                onChange={handleInputChange}
-                required
-                className="min-h-[100px]"
-                placeholder="상세한 묘사를 입력하세요."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="members">주요 구성원 (쉼표로 구분)</Label>
-              <Input
-                id="members"
-                name="members"
-                value={
-                  Array.isArray(editorData.members)
-                    ? editorData.members.join(', ')
-                    : editorData.members || ''
-                }
-                onChange={handleInputChange}
-                placeholder="예: 길드장, 부길드장, 행동대장"
-              />
-            </div>
-          </>
-        );
-      case '사건':
-        return (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="title">사건명</Label>
-              <Input
-                id="title"
-                name="title"
-                value={editorData.title || ''}
-                onChange={handleInputChange}
-                required
-                placeholder="예: 대화재 사건"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="subtitle">부제/별칭</Label>
-              <Input
-                id="subtitle"
-                name="subtitle"
-                value={editorData.subtitle || ''}
-                onChange={handleInputChange}
-                placeholder="예: 왕궁을 뒤흔든 밤"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">발생 시점</Label>
-                <Input
-                  id="date"
-                  name="date"
-                  value={editorData.date || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 제국력 520년 3월 15일"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">발생 장소</Label>
-                <Input
-                  id="location"
-                  name="location"
-                  value={editorData.location || ''}
-                  onChange={handleInputChange}
-                  placeholder="예: 수도 중앙 광장"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cause">원인/배경</Label>
-              <Textarea
-                id="cause"
-                name="cause"
-                value={editorData.cause || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 마법 실험 실패"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="flow">전개 과정</Label>
-              <Textarea
-                id="flow"
-                name="flow"
-                value={editorData.flow || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 폭발 후 화재 확산, 진압 시도"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="result">결과</Label>
-              <Textarea
-                id="result"
-                name="result"
-                value={editorData.result || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 왕궁 별관 소실"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="influence">영향/여파</Label>
-              <Textarea
-                id="influence"
-                name="influence"
-                value={editorData.influence || ''}
-                onChange={handleInputChange}
-                className="min-h-[60px]"
-                placeholder="예: 마법 금지법 제정"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="participants">관련 인물 (쉼표로 구분)</Label>
-              <Input
-                id="participants"
-                name="participants"
-                value={
-                  Array.isArray(editorData.participants)
-                    ? editorData.participants.join(', ')
-                    : editorData.participants || ''
-                }
-                onChange={handleInputChange}
-                placeholder="예: 마법사 길드, 왕실 근위대"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">상세 설명</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={editorData.description || ''}
-                onChange={handleInputChange}
-                required
-                className="min-h-[100px]"
-                placeholder="상세한 묘사를 입력하세요."
-              />
-            </div>
-          </>
-        );
-      default:
-        return null;
+  const handleEditOpenChange = (open: boolean) => {
+    setIsEditOpen(open);
+    if (!open) {
+      setEditingItem(null);
+      setEditorData({});
     }
   };
 
@@ -1356,8 +921,8 @@ export function AuthorLorebookPanel({
           </div>
 
           {/* Content List */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-3">
+            <div className="col-span-full flex items-center justify-between">
               <h4 className="text-sm font-semibold">
                 {categories.find((c) => c.id === activeCategory)?.label} 목록
               </h4>
@@ -1377,8 +942,8 @@ export function AuthorLorebookPanel({
 
       {/* Search Dialog */}
       <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
-        <DialogContent className="max-w-xl max-h-[80vh] flex flex-col p-6 gap-6">
-          <DialogHeader className="px-0 pt-0 pb-2 border-b">
+        <DialogContent className="sm:max-w-[90vw] lg:max-w-[1000px] h-[80vh] flex flex-col gap-6 p-6">
+          <DialogHeader className="px-0 pt-0 pb-2 border-b shrink-0">
             <DialogTitle className="text-lg font-semibold">
               설정집 검색
             </DialogTitle>
@@ -1387,7 +952,7 @@ export function AuthorLorebookPanel({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Select
               value={searchCategory}
               onValueChange={(val) => setSearchCategory(val as Category)}
@@ -1433,9 +998,9 @@ export function AuthorLorebookPanel({
             </Button>
           </div>
 
-          <ScrollArea className="flex-1 h-[50vh] -mx-2 px-2 overflow-y-auto">
+          <ScrollArea className="flex-1 -mx-2 px-2 overflow-y-auto border rounded-md">
             {searchResults.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 p-2">
                 {searchResults.map((item) => (
                   <LorebookCard
                     key={item.id}
@@ -1453,7 +1018,7 @@ export function AuthorLorebookPanel({
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2 py-10">
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2 py-10 min-h-[300px]">
                 <Search className="w-8 h-8 opacity-20" />
                 <p className="text-sm">검색 결과가 없습니다.</p>
               </div>
@@ -1467,7 +1032,7 @@ export function AuthorLorebookPanel({
         open={isSimilarityCheckOpen}
         onOpenChange={setIsSimilarityCheckOpen}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>유사 설정 확인</DialogTitle>
             <DialogDescription>
@@ -1483,23 +1048,53 @@ export function AuthorLorebookPanel({
               </div>
             ) : similaritySearchResults.length > 0 ? (
               <div className="space-y-4">
-                {similaritySearchResults.map((result, idx) => (
-                  <Card key={idx} className="bg-muted/50">
-                    <CardHeader className="py-3">
-                      <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        {result.keyword}
-                        <Badge variant="outline" className="text-[10px]">
-                          {result.category}
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="py-2 text-xs text-muted-foreground">
-                      {typeof result.setting === 'string'
-                        ? JSON.parse(result.setting).description
-                        : result.setting?.description || '설명 없음'}
-                    </CardContent>
-                  </Card>
-                ))}
+                {similaritySearchResults.map((result, idx) => {
+                  let setting = result.setting;
+                  let keyword = result.keyword;
+                  let description = '';
+
+                  try {
+                    if (typeof setting === 'string')
+                      setting = JSON.parse(setting);
+                  } catch (e) {}
+
+                  if (setting && typeof setting === 'object') {
+                    const keys = Object.keys(setting);
+                    if (keys.length > 0) {
+                      const key = keys[0];
+                      if (!keyword) keyword = key;
+                      const content = setting[key];
+                      if (content) {
+                        description =
+                          content.description ||
+                          content.summary ||
+                          content.배경 ||
+                          content.설명 ||
+                          content.상세설명 ||
+                          content.작중묘사 ||
+                          '';
+                        if (Array.isArray(description))
+                          description = description.join(' ');
+                      }
+                    }
+                  }
+
+                  return (
+                    <Card key={idx} className="bg-muted/50">
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium flex items-center gap-2">
+                          {keyword || '제목 없음'}
+                          <Badge variant="outline" className="text-[10px]">
+                            {result.category}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="py-2 text-xs text-muted-foreground">
+                        {description || '설명 없음'}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center text-muted-foreground py-8">
@@ -1538,22 +1133,25 @@ export function AuthorLorebookPanel({
       </Dialog>
 
       {/* Edit/Create Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
+      <Dialog open={isEditOpen} onOpenChange={handleEditOpenChange}>
+        <DialogContent className="sm:max-w-[90vw] lg:max-w-[1200px] h-[80vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
             <DialogTitle>
               {editingItem?.id ? '설정집 수정' : '설정집 생성'}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSave}>
-            <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto px-1">
+          <form
+            onSubmit={handleSave}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {renderFormFields()}
             </div>
-            <DialogFooter>
+            <DialogFooter className="p-4 border-t bg-muted/20 shrink-0">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsEditOpen(false)}
+                onClick={() => handleEditOpenChange(false)}
               >
                 취소
               </Button>
@@ -1581,194 +1179,5 @@ export function AuthorLorebookPanel({
   );
 }
 
-export function LorebookCard({
-  item,
-  title,
-  description,
-  tags = [],
-  category,
-  onEdit,
-  onDelete,
-  onAnalyze,
-}: {
-  item: any;
-  title: string;
-  description: string;
-  tags?: string[];
-  category?: string;
-  onEdit: (item: any) => void;
-  onDelete: (id: number) => void;
-  onAnalyze?: () => void;
-}) {
-  const isCharacter = category === '인물';
-  const isWorld = category === '세계';
-
-  return (
-    <Card className="relative group hover:border-primary/50 transition-colors">
-      <CardContent className="p-3 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-1 flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h5 className="font-semibold text-sm line-clamp-1">{title}</h5>
-              {category && (
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-1 h-5 shrink-0"
-                >
-                  {category}
-                </Badge>
-              )}
-            </div>
-            {isCharacter &&
-              item['별명'] &&
-              Array.isArray(item['별명']) &&
-              item['별명'].length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {item['별명'].map((alias: string, i: number) => (
-                    <span
-                      key={i}
-                      className="text-[10px] text-muted-foreground bg-muted px-1 rounded"
-                    >
-                      {alias}
-                    </span>
-                  ))}
-                </div>
-              )}
-          </div>
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-            {isCharacter && onAnalyze && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-indigo-600"
-                onClick={onAnalyze}
-                title="인물 관계도 분석"
-              >
-                <Network className="w-3 h-3" />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => onEdit(item)}
-            >
-              <Edit className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-destructive"
-              onClick={() => onDelete(item.id)}
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-
-        <p className="text-xs text-muted-foreground line-clamp-2">
-          {description}
-        </p>
-
-        {isCharacter && (
-          <div className="flex gap-2 text-[10px] text-muted-foreground">
-            {item['기술/능력'] &&
-              Array.isArray(item['기술/능력']) &&
-              item['기술/능력'].length > 0 && (
-                <span>기술 {item['기술/능력'].length}개</span>
-              )}
-            {item['인물관계'] &&
-              Array.isArray(item['인물관계']) &&
-              item['인물관계'].length > 0 && (
-                <span>관계 {item['인물관계'].length}명</span>
-              )}
-          </div>
-        )}
-
-        {isWorld && (
-          <div className="flex gap-2 text-[10px] text-muted-foreground">
-            {item['규칙'] &&
-              Array.isArray(item['규칙']) &&
-              item['규칙'].length > 0 && (
-                <span>규칙 {item['규칙'].length}개</span>
-              )}
-            {item['금기'] &&
-              Array.isArray(item['금기']) &&
-              item['금기'].length > 0 && (
-                <span>금기 {item['금기'].length}개</span>
-              )}
-            {item['필수 제약'] &&
-              Array.isArray(item['필수 제약']) &&
-              item['필수 제약'].length > 0 && (
-                <span>제약 {item['필수 제약'].length}개</span>
-              )}
-          </div>
-        )}
-
-        {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {tags.slice(0, 5).map((tag, i) => (
-              <Badge key={i} variant="secondary" className="text-[10px] px-1">
-                {tag}
-              </Badge>
-            ))}
-            {tags.length > 5 && (
-              <span className="text-[10px] text-muted-foreground">
-                +{tags.length - 5}
-              </span>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export const getTagsForItem = (item: any, defaultCategory = '인물') => {
-  const category = item.category || defaultCategory;
-  const flatten = (val: any) => (Array.isArray(val) ? val : [val]);
-
-  switch (category) {
-    case '인물':
-      return [
-        ...flatten(item.species || item['종족']),
-        ...flatten(item.role || item['직업/신분']),
-        ...flatten(item.age || item['연령']),
-        ...flatten(item.traits || item['성격']),
-      ].filter(Boolean) as string[];
-    case '장소':
-      return [
-        item.location,
-        item['위치'],
-        item.scale,
-        item['규모'],
-        item['분위기'],
-        ...(item['집단'] || []),
-      ].filter(Boolean) as string[];
-    case '물건':
-      return [
-        item.type,
-        item['종류'],
-        item.grade,
-        item['등급'],
-        ...(item['관련인물'] || []),
-      ].filter(Boolean) as string[];
-    case '집단':
-      return [item.leader, item['수장'], item.scale, item['규모']].filter(
-        Boolean,
-      ) as string[];
-    case '세계':
-      return [...flatten(item['종류']), ...flatten(item['분위기'])].filter(
-        Boolean,
-      ) as string[];
-    case '사건':
-      return [
-        item.importance,
-        item['중요도'],
-        item.date,
-        item['발생 시점'],
-      ].filter(Boolean) as string[];
-    default:
-      return [item.role, item.type, item.category].filter(Boolean) as string[];
-  }
-};
+// Removed LorebookCard component definition from here
+// Removed getTagsForItem function definition from here
