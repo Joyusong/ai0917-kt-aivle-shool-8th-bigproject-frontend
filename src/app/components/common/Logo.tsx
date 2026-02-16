@@ -5,9 +5,10 @@ interface LogoProps {
   className?: string;
   onClick?: () => void;
   role?: 'Manager' | 'Author' | 'Admin' | 'Default';
+  collapsed?: boolean;
 }
 
-export function Logo({ className, onClick, role }: LogoProps) {
+export function Logo({ className, onClick, role, collapsed }: LogoProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -127,7 +128,7 @@ export function Logo({ className, onClick, role }: LogoProps) {
         <div className="absolute -bottom-1 flex flex-col items-center">
           <span
             className={cn(
-              'opacity-0 translate-y-1 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 text-[9px] font-black italic tracking-[0.3em]',
+              'opacity-0 translate-y-1 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 text-xs font-black italic tracking-[0.3em]',
               theme.text,
             )}
           >
