@@ -96,47 +96,68 @@ export function Logo({ className, onClick, role, collapsed }: LogoProps) {
     <div
       className={cn(
         'flex items-center gap-2 cursor-pointer select-none',
+        collapsed ? 'justify-center' : '',
         className,
       )}
       onClick={handleClick}
     >
-      <div className="group relative flex flex-col items-center cursor-pointer select-none px-4 py-2">
+      <div
+        className={cn(
+          'group relative flex flex-col items-center cursor-pointer select-none',
+          collapsed ? 'px-0 py-2' : 'px-4 py-2',
+        )}
+      >
         {/* 메인 로고 영역 */}
         <div className="flex items-baseline tracking-tighter transition-all duration-500 ease-in-out">
           {/* IP: 본질 (정적이고 단단하게) */}
-          <span className="text-2xl font-black text-foreground transition-transform duration-300 group-hover:scale-105">
+          <span
+            className={cn(
+              'font-black text-foreground transition-transform duration-300 group-hover:scale-105',
+              collapsed ? 'text-xl' : 'text-2xl',
+            )}
+          >
             IP
           </span>
 
           {/* . : 중심점 (정적인 강조) */}
-          <span className="relative mx-1 flex h-2 w-2 mb-1">
+          <span
+            className={cn(
+              'relative flex mb-1',
+              collapsed ? 'mx-0.5 h-1.5 w-1.5' : 'mx-1 h-2 w-2',
+            )}
+          >
             <span
               className={cn(
-                'relative inline-flex rounded-full h-2 w-2',
+                'relative inline-flex rounded-full',
+                collapsed ? 'h-1.5 w-1.5' : 'h-2 w-2',
                 theme.dot,
               )}
             ></span>
           </span>
 
           {/* SUM: 확장 (부드러운 이동) */}
-          <span className="text-2xl font-extralight text-foreground/80 transition-all duration-300 group-hover:text-foreground">
-            SUM
-          </span>
+          {!collapsed && (
+            <span className="text-2xl font-extralight text-foreground/80 transition-all duration-300 group-hover:text-foreground">
+              SUM
+            </span>
+          )}
         </div>
 
         {/* 하단 툴팁형 ergo: 논리적 가교 */}
-        <div className="absolute -bottom-1 flex flex-col items-center">
-          <span
-            className={cn(
-              'opacity-0 translate-y-1 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 text-xs font-black italic tracking-[0.3em]',
-              theme.text,
-            )}
-          >
-            ergo
-          </span>
-          {/* 툴팁을 받쳐주는 미세한 광채 (선택 사항) */}
-          <div className="w-0 h-[1px] bg-gradient-to-r from-transparent via-foreground/40 to-transparent transition-all duration-700 group-hover:w-12"></div>
-        </div>
+        {!collapsed && (
+          <div className="absolute -bottom-1 flex flex-col items-center">
+            <span
+              className={cn(
+                'opacity-0 translate-y-1 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 text-xs font-black italic tracking-[0.3em]',
+                theme.text,
+              )}
+            >
+              ergo
+            </span>
+            {/* 툴팁을 받쳐주는 미세한 광채 (선택 사항) */}
+            <div className="w-0 h-[1px] bg-gradient-to-r from-transparent via-foreground/40 to-transparent transition-all duration-700 group-hover:w-12"></div>
+          </div>
+        )}
       </div>
     </div>
   );

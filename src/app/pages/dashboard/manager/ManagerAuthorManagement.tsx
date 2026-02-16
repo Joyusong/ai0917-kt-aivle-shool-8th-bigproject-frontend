@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { managerService } from '../../../services/managerService';
 import {
@@ -58,6 +58,12 @@ export function ManagerAuthorManagement() {
   const [manualAuthorId, setManualAuthorId] = useState('');
   const [linking, setLinking] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (showIdModal) {
+      setManualAuthorId('');
+    }
+  }, [showIdModal]);
 
   // Fetch Summary
   const { data: summary } = useQuery<AuthorSummaryDto>({
@@ -174,7 +180,7 @@ export function ManagerAuthorManagement() {
                 </SelectContent>
               </Select>
               <Button variant="outline" onClick={() => setShowIdModal(true)}>
-                작가 코드 입력
+                작가 매칭코드 입력
               </Button>
             </div>
           </div>
@@ -331,7 +337,7 @@ export function ManagerAuthorManagement() {
       <Dialog open={showIdModal} onOpenChange={setShowIdModal}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>작가 코드 입력</DialogTitle>
+            <DialogTitle>작가 매칭코드 입력</DialogTitle>
             <DialogDescription>
               운영자와 작가의 매칭 기능 • 작가에게서 전달받은 코드를 입력하세요.
             </DialogDescription>
@@ -341,7 +347,11 @@ export function ManagerAuthorManagement() {
               placeholder="예: 123456"
               value={manualAuthorId}
               onChange={(e) => setManualAuthorId(e.target.value)}
+              autoFocus
             />
+            <p className="text-xs text-muted-foreground">
+              * 모든 항목은 필수 입력 사항입니다.
+            </p>
           </div>
           <DialogFooter>
             <Button

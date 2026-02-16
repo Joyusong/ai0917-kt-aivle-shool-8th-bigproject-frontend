@@ -100,51 +100,51 @@
 }
 
 .dark {
-  /* 기본 배경 및 텍스트 - Zinc/Slate Palette for crisp dark mode */
-  --background: rgba(2, 6, 23, 1); /* Slate 950 - Deep rich background */
-  --foreground: rgba(248, 250, 252, 1); /* Slate 50 - High contrast text */
+  /* 기본 배경 및 텍스트 - Zinc Palette for neutral dark mode */
+  --background: rgba(9, 9, 11, 1); /* Zinc 950 - Neutral deep background */
+  --foreground: rgba(250, 250, 250, 1); /* Zinc 50 - High contrast text */
 
   /* 컨테이너 (카드, 모달 등) */
-  --card: rgba(15, 23, 42, 1); /* Slate 900 - Distinct card background */
-  --card-foreground: rgba(248, 250, 252, 1);
+  --card: rgba(24, 24, 27, 1); /* Zinc 900 - Distinct card background */
+  --card-foreground: rgba(250, 250, 250, 1);
 
-  --popover: rgba(15, 23, 42, 1); /* Slate 900 */
-  --popover-foreground: rgba(248, 250, 252, 1);
+  --popover: rgba(24, 24, 27, 1); /* Zinc 900 */
+  --popover-foreground: rgba(250, 250, 250, 1);
 
   /* 기본 프라이머리 */
-  --primary: rgba(248, 250, 252, 1); /* Slate 50 */
-  --primary-foreground: rgba(2, 6, 23, 1); /* Slate 950 */
+  --primary: rgba(250, 250, 250, 1); /* Zinc 50 */
+  --primary-foreground: rgba(9, 9, 11, 1); /* Zinc 950 */
 
   /* 세컨더리 및 뮤트 */
-  --secondary: rgba(30, 41, 59, 1); /* Slate 800 */
-  --secondary-foreground: rgba(248, 250, 252, 1);
+  --secondary: rgba(39, 39, 42, 1); /* Zinc 800 */
+  --secondary-foreground: rgba(250, 250, 250, 1);
 
-  --muted: rgba(30, 41, 59, 1); /* Slate 800 */
-  --muted-foreground: rgba(148, 163, 184, 1); /* Slate 400 */
+  --muted: rgba(39, 39, 42, 1); /* Zinc 800 */
+  --muted-foreground: rgba(161, 161, 170, 1); /* Zinc 400 */
 
   /* 액센트 (호버 시 강조) */
-  --accent: rgba(30, 41, 59, 1); /* Slate 800 */
-  --accent-foreground: rgba(248, 250, 252, 1);
+  --accent: rgba(39, 39, 42, 1); /* Zinc 800 */
+  --accent-foreground: rgba(250, 250, 250, 1);
 
   /* 파괴적 액션 */
   --destructive: rgba(127, 29, 29, 1);
-  --destructive-foreground: rgba(248, 250, 252, 1);
+  --destructive-foreground: rgba(250, 250, 250, 1);
 
   /* 경계선 및 입력창 */
-  --border: rgba(30, 41, 59, 1); /* Slate 800 */
-  --input: rgba(30, 41, 59, 1);
-  --input-background: rgba(2, 6, 23, 1); /* Slate 950 */
-  --ring: rgba(203, 213, 225, 1); /* Slate 300 - lighter ring for visibility */
+  --border: rgba(39, 39, 42, 1); /* Zinc 800 */
+  --input: rgba(39, 39, 42, 1);
+  --input-background: rgba(9, 9, 11, 1); /* Zinc 950 */
+  --ring: rgba(212, 212, 216, 1); /* Zinc 300 - lighter ring for visibility */
 
   /* 사이드바 전용 */
-  --sidebar: rgba(2, 6, 23, 1); /* Slate 950 */
-  --sidebar-foreground: rgba(248, 250, 252, 1);
+  --sidebar: rgba(9, 9, 11, 1); /* Zinc 950 */
+  --sidebar-foreground: rgba(250, 250, 250, 1);
   --sidebar-primary: rgba(59, 130, 246, 1);
   --sidebar-primary-foreground: rgba(255, 255, 255, 1);
-  --sidebar-accent: rgba(30, 41, 59, 1);
-  --sidebar-accent-foreground: rgba(248, 250, 252, 1);
-  --sidebar-border: rgba(30, 41, 59, 1);
-  --sidebar-ring: rgba(203, 213, 225, 1);
+  --sidebar-accent: rgba(39, 39, 42, 1);
+  --sidebar-accent-foreground: rgba(250, 250, 250, 1);
+  --sidebar-border: rgba(39, 39, 42, 1);
+  --sidebar-ring: rgba(212, 212, 216, 1);
 
   /* 차트 색상 (다크모드용으로 채도 조정) */
   --chart-1: rgba(96, 165, 250, 1);
@@ -180,7 +180,17 @@
   --role-accent: rgba(71, 85, 105, 1);
 }
 
-/* Author (작가): Indigo - Dark Mode 보정 */
+/* Paper Texture Utility */
+.paper-texture {
+  background-color: #fcfcfc;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+.dark .paper-texture {
+  background-color: #18181b; /* Zinc 900 */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+}
+
 /* 채도를 유지하며 명도를 살짝 높여 어두운 배경에서 더 잘 보이게 조정 */
 [data-role='author'].dark {
   --role-primary: rgba(162, 155, 254, 1); /* 조금 더 밝은 연보라 톤 */

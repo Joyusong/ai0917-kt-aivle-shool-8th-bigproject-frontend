@@ -112,7 +112,7 @@ export function ManagerIPTrend() {
   // Fetch Reports List
   const { data: reportsData, isLoading: isReportsLoading } = useQuery({
     queryKey: ['manager', 'iptrend', 'list', selectedYear, page],
-    queryFn: () => managerService.getIPTrendList(page, PAGE_SIZE),
+    queryFn: () => managerService.getIPTrendList(page, PAGE_SIZE, selectedYear),
   });
 
   // Fetch Preview Data when ID is selected
@@ -237,28 +237,6 @@ export function ManagerIPTrend() {
             {reportsData?.totalElements ?? 0}
           </span>
         </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">필터:</span>
-          </div>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="연도 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from(
-                { length: currentYear - 2025 + 1 },
-                (_, i) => currentYear - i,
-              ).map((year) => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}년
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Reports Grid */}
@@ -274,7 +252,10 @@ export function ManagerIPTrend() {
               {gridPreviewUrl ? (
                 <PdfThumbnail fileUrl={gridPreviewUrl} />
               ) : (
-                <div className="w-full h-40 flex items-center justify-center bg-muted/50 group-hover:bg-muted transition-colors"></div>
+                <div className="w-full h-40 flex items-center justify-center bg-muted/50 group-hover:bg-muted transition-colors relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+                  <FileText className="w-12 h-12 text-muted-foreground/20" />
+                </div>
               )}
 
               {/* Overlay Actions */}
@@ -284,21 +265,21 @@ export function ManagerIPTrend() {
                 </Button>
               </div>
 
-              {/* Status Badge */}
-              <div className="absolute top-3 right-3 z-20">
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded-md text-xs font-medium shadow-sm',
-                    report.status === 'COMPLETED'
-                      ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                      : report.status === 'FAILED'
+              {/* Status Badge - Only show if NOT completed */}
+              {report.status !== 'COMPLETED' && (
+                <div className="absolute top-3 right-3 z-20">
+                  <span
+                    className={cn(
+                      'px-2 py-0.5 rounded-md text-xs font-medium shadow-sm',
+                      report.status === 'FAILED'
                         ? 'bg-destructive/10 text-destructive dark:text-destructive'
                         : 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400',
-                  )}
-                >
-                  {report.status}
-                </span>
-              </div>
+                    )}
+                  >
+                    {report.status}
+                  </span>
+                </div>
+              )}
             </div>
 
             <CardContent className="p-4">

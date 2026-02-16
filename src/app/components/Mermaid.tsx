@@ -5,9 +5,15 @@ import { Button } from './ui/button';
 
 interface MermaidProps {
   chart: string;
+  className?: string;
+  showControls?: boolean;
 }
 
-export function Mermaid({ chart }: MermaidProps) {
+export function Mermaid({
+  chart,
+  className,
+  showControls = true,
+}: MermaidProps) {
   const ref = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null); // 전체화면용 컨테이너
   const uniqueId = useRef(`mermaid-${Math.random().toString(36).substr(2, 9)}`);
@@ -75,28 +81,30 @@ export function Mermaid({ chart }: MermaidProps) {
     <div
       ref={containerRef}
       className={`relative bg-card border rounded-lg overflow-hidden flex flex-col items-center justify-center 
-        ${isFullscreen ? 'w-screen h-screen p-10 fixed top-0 left-0 z-50' : 'w-full min-h-[400px] p-4'}`}
+        ${isFullscreen ? 'w-screen h-screen p-10 fixed top-0 left-0 z-50' : 'w-full min-h-[400px] p-4'} ${className || ''}`}
     >
       {/* 전체화면 버튼: 우측 상단 배치 */}
-      <div className="absolute top-2 right-2 z-10">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={toggleFullscreen}
-          className="h-8 w-8"
-        >
-          {isFullscreen ? (
-            <Minimize2 className="h-4 w-4" />
-          ) : (
-            <Maximize2 className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
+      {showControls && (
+        <div className="absolute top-2 right-2 z-10">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={toggleFullscreen}
+            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-accent"
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* 차트가 그려질 영역 */}
       <div
         ref={ref}
-        className="mermaid w-full h-full flex items-center justify-center overflow-auto"
+        className="mermaid w-full h-full flex items-center justify-center overflow-hidden"
       />
 
       <style>{`

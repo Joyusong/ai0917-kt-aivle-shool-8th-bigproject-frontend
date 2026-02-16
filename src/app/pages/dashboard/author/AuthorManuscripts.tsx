@@ -127,7 +127,34 @@ export function AuthorManuscripts() {
       title: newTitle,
       writer,
     };
-    let sent = false;
+
+    // Optimistic Update: Create the new item and add it to the list immediately
+    const newItem = {
+      writer,
+      title: newTitle,
+      subtitle,
+      episode: ep,
+      updatedAt: '방금 전',
+      files: createFiles,
+    };
+
+    // Backup current state for rollback
+    const previousOriginals = [...originals];
+
+    // Apply optimistic update
+    setOriginals([newItem, ...originals]);
+    setOpenCreate(false);
+    
+    // Reset form immediately
+    setWriter('');
+    setNewTitle('');
+    setSubtitle('');
+    setEpisode('');
+    setTxt('');
+    setCreateFiles([]);
+    
+    toast.info('원고를 업로드하고 있습니다...');
+
     try {
       // 1. Try sending to AI Server
       const aiBaseUrl = import.meta.env.VITE_AI_BASE_URL;
@@ -173,33 +200,24 @@ export function AuthorManuscripts() {
         },
       );
 
-      alert('성공적으로 업로드되었습니다.');
-      sent = true;
+      toast.success('성공적으로 업로드되었습니다.');
     } catch (e) {
       console.error(e);
-      alert('업로드 중 오류가 발생했습니다.');
+      // Rollback on error
+      setOriginals(previousOriginals);
+      toast.error('업로드 중 오류가 발생했습니다.');
+      
+      // Restore form state (optional, but helpful for retry)
+      setWriter(newItem.writer);
+      setNewTitle(newItem.title);
+      setSubtitle(newItem.subtitle || '');
+      setEpisode(newItem.episode ? String(newItem.episode) : '');
+      setTxt(txt); // txt was captured in closure
+      setCreateFiles(newItem.files || []);
+      setOpenCreate(true); // Re-open modal
+    } finally {
+      setSubmitting(false);
     }
-    if (sent) {
-      setOriginals([
-        {
-          writer,
-          title: newTitle,
-          subtitle,
-          episode: ep,
-          updatedAt: '방금 전',
-          files: createFiles,
-        },
-        ...originals,
-      ]);
-    }
-    setOpenCreate(false);
-    setWriter('');
-    setNewTitle('');
-    setSubtitle('');
-    setEpisode('');
-    setTxt('');
-    setCreateFiles([]);
-    setSubmitting(false);
   };
 
   return (
