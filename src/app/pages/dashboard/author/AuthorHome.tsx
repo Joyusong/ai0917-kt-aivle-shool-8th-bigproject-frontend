@@ -170,7 +170,7 @@ export function AuthorHome({ integrationId }: AuthorHomeProps) {
                         ? 'destructive'
                         : 'default'
                     }
-                    className="text-[10px] h-5 px-1.5"
+                    className="text-xs h-5 px-1.5"
                   >
                     {currentNotice.category === 'URGENT' ? '긴급' : '공지'}
                   </Badge>
