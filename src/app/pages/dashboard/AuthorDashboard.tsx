@@ -70,7 +70,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] =
     useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [visibleCount, setVisibleCount] = useState(4);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
@@ -236,12 +236,12 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
 
   return (
     <div className="flex h-screen bg-background" data-role="author">
-      {/* Sidebar Open Button (when closed) */}
+      {/* Mobile Sidebar Open Button (floating) */}
       {!sidebarOpen && (
         <Button
           onClick={() => setSidebarOpen(true)}
           size="icon"
-          className="fixed top-4 left-4 z-50 bg-card shadow-lg border border-border text-muted-foreground hover:bg-accent"
+          className="fixed top-4 left-4 z-50 bg-card shadow-lg border border-border text-muted-foreground hover:bg-accent md:hidden"
         >
           <Menu className="w-5 h-5" />
         </Button>
@@ -249,98 +249,154 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
 
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? 'w-full md:w-64' : 'w-0'} bg-sidebar border-r border-sidebar-border flex flex-col overflow-hidden fixed md:relative h-full z-40`}
+        className={cn(
+          'bg-sidebar border-r border-sidebar-border flex flex-col fixed md:relative h-full z-40 transition-all duration-300 ease-in-out',
+          sidebarOpen ? 'w-full md:w-56' : 'w-0 md:w-16',
+        )}
       >
-        {/* Toggle Button */}
+        {/* Toggle Button (Desktop) */}
+        <div className="hidden md:flex absolute top-4 right-[-12px] z-50 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* This might be tricky if overflow hidden. Let's put it inside or use the header toggle. */}
+        </div>
+
+        {/* Desktop Toggle Button inside Sidebar (Header area or bottom) */}
+        {/* Actually, let's use the Chevrons in the header or absolute position if open. */}
         {sidebarOpen && (
           <Button
             onClick={() => setSidebarOpen(false)}
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-3 z-10 text-muted-foreground hover:text-foreground hover:bg-muted"
+            className="absolute top-4 right-3 z-10 text-muted-foreground hover:text-foreground hover:bg-muted md:flex hidden"
           >
             <ChevronsLeft className="w-5 h-5" />
           </Button>
         )}
+        {/* When closed, we need a way to open. Let's make the logo area clickable or add a button. */}
 
         {/* Logo */}
         <div
-          className="h-16 flex items-center px-6 border-b border-sidebar-border cursor-pointer"
-          onClick={() => handleMenuClick('home')}
+          className={cn(
+            'h-16 flex items-center border-b border-sidebar-border cursor-pointer transition-all duration-300',
+            sidebarOpen ? 'px-6' : 'justify-center px-0',
+          )}
+          onClick={() => {
+            if (!sidebarOpen) setSidebarOpen(true);
+            else handleMenuClick('home');
+          }}
         >
-          <Logo role="Author" />
+          <Logo role="Author" collapsed={!sidebarOpen} />
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          {/* Home - Hidden on mobile */}
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto overflow-x-hidden">
+          {/* Home */}
           <button
             onClick={() => handleMenuClick('home')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative',
+              sidebarOpen ? 'px-4 py-3' : 'justify-center py-3 px-0',
               activeMenu === 'home'
                 ? 'text-primary-foreground'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
+                : 'text-sidebar-foreground hover:bg-sidebar-accent',
+            )}
             style={
               activeMenu === 'home'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
+            title={!sidebarOpen ? '홈' : undefined}
           >
-            <Home className="w-5 h-5" />
-            <span className="text-sm font-medium">홈</span>
+            <Home className="w-5 h-5 shrink-0" />
+            <span
+              className={cn(
+                'text-sm font-medium whitespace-nowrap transition-all duration-200',
+                !sidebarOpen && 'hidden opacity-0 w-0',
+              )}
+            >
+              홈
+            </span>
           </button>
 
           <button
             onClick={() => handleMenuClick('works')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative',
+              sidebarOpen ? 'px-4 py-3' : 'justify-center py-3 px-0',
               activeMenu === 'works'
                 ? 'text-primary-foreground'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
+                : 'text-sidebar-foreground hover:bg-sidebar-accent',
+            )}
             style={
               activeMenu === 'works'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
+            title={!sidebarOpen ? '작품' : undefined}
           >
-            <BookOpen className="w-5 h-5" />
-            <span className="text-sm font-medium">작품</span>
+            <BookOpen className="w-5 h-5 shrink-0" />
+            <span
+              className={cn(
+                'text-sm font-medium whitespace-nowrap transition-all duration-200',
+                !sidebarOpen && 'hidden opacity-0 w-0',
+              )}
+            >
+              작품
+            </span>
           </button>
 
-          {/* IP 확장장 */}
+          {/* IP 확장 */}
           <button
             onClick={() => handleMenuClick('ip-expansion')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative',
+              sidebarOpen ? 'px-4 py-3' : 'justify-center py-3 px-0',
               activeMenu === 'ip-expansion'
                 ? 'text-white dark:text-black'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
+                : 'text-sidebar-foreground hover:bg-sidebar-accent',
+            )}
             style={
               activeMenu === 'ip-expansion'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
+            title={!sidebarOpen ? 'IP 확장' : undefined}
           >
-            <Database className="w-5 h-5" />
-            <span className="text-sm font-medium">IP 확장</span>
+            <Database className="w-5 h-5 shrink-0" />
+            <span
+              className={cn(
+                'text-sm font-medium whitespace-nowrap transition-all duration-200',
+                !sidebarOpen && 'hidden opacity-0 w-0',
+              )}
+            >
+              IP 확장
+            </span>
           </button>
 
           <button
             onClick={() => handleMenuClick('notice')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative',
+              sidebarOpen ? 'px-4 py-3' : 'justify-center py-3 px-0',
               activeMenu === 'notice'
                 ? 'text-white dark:text-black'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
+                : 'text-sidebar-foreground hover:bg-sidebar-accent',
+            )}
             style={
               activeMenu === 'notice'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
+            title={!sidebarOpen ? '공지사항' : undefined}
           >
-            <Megaphone className="w-5 h-5" />
-            <span className="text-sm font-medium">공지사항</span>
+            <Megaphone className="w-5 h-5 shrink-0" />
+            <span
+              className={cn(
+                'text-sm font-medium whitespace-nowrap transition-all duration-200',
+                !sidebarOpen && 'hidden opacity-0 w-0',
+              )}
+            >
+              공지사항
+            </span>
           </button>
         </nav>
 
@@ -353,30 +409,48 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
           <div className="hidden md:block relative">
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="w-full flex items-center gap-3 p-3 bg-sidebar-accent hover:bg-muted transition-colors"
+              className={cn(
+                'w-full flex items-center gap-3 hover:bg-muted transition-colors',
+                sidebarOpen ? 'p-3' : 'justify-center p-3',
+              )}
             >
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white dark:text-black text-sm font-semibold"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white dark:text-black text-xs font-semibold shrink-0"
                 style={{
                   backgroundColor: 'var(--role-primary)',
                 }}
               >
                 {userName.charAt(0)}
               </div>
-              <div className="flex-1 text-left">
-                <div className="text-sm font-medium text-sidebar-foreground">
-                  {maskName(userName)}
-                </div>
-                <div className="text-xs text-muted-foreground">작가</div>
-              </div>
-              <ChevronDown
-                className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`}
-              />
+
+              {sidebarOpen && (
+                <>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="text-sm font-medium text-sidebar-foreground truncate">
+                      {maskName(userName)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">작가</div>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      'w-4 h-4 text-muted-foreground transition-transform shrink-0',
+                      showProfileDropdown ? 'rotate-180' : '',
+                    )}
+                  />
+                </>
+              )}
             </button>
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border shadow-lg py-1 z-50">
+              <div
+                className={cn(
+                  'absolute bg-card border border-border shadow-lg py-1 z-50 rounded-md',
+                  sidebarOpen
+                    ? 'bottom-full left-4 right-4 mb-2'
+                    : 'bottom-0 left-full ml-2 w-56 mb-4',
+                )}
+              >
                 <button
                   onClick={() => {
                     handleMenuClick('mypage');
@@ -454,7 +528,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
         <header
           className={cn(
             'h-16 bg-card border-b border-border px-4 md:px-8 flex items-center transition-[padding] duration-300 ease-in-out',
-            !sidebarOpen && 'pl-16 md:pl-24',
+            !sidebarOpen && 'pl-16',
           )}
         >
           <div className="w-full flex items-center justify-between">
@@ -548,7 +622,7 @@ export function AuthorDashboard({ onLogout, onHome }: AuthorDashboardProps) {
                                     <div className="flex items-center gap-2 mb-1">
                                       <Badge
                                         variant="outline"
-                                        className={`text-[10px] px-1 py-0 ${
+                                        className={`text-xs px-1 py-0 ${
                                           notice.category === 'URGENT' ||
                                           notice.category === 'ERROR'
                                             ? 'border-red-500 text-red-500'

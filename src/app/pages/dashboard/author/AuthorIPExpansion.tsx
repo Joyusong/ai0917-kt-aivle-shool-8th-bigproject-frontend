@@ -448,13 +448,13 @@ const SettingComparison = ({
             className="grid grid-cols-2 border-b last:border-0 border-border"
           >
             <div className={origClass}>
-              <span className="font-bold mr-2 text-[10px] text-muted-foreground block mb-1">
+              <span className="font-bold mr-2 text-xs text-muted-foreground block mb-1">
                 {key}
               </span>
               {formatValue(origVal)}
             </div>
             <div className={newClass}>
-              <span className="font-bold mr-2 text-[10px] text-muted-foreground block mb-1">
+              <span className="font-bold mr-2 text-xs text-muted-foreground block mb-1">
                 {key}
               </span>
               {formatValue(newVal)}
@@ -815,7 +815,7 @@ export function AuthorIPExpansion({
                               )}
                             />
                           </div>
-                          <Badge className="absolute top-2 left-2 bg-card/90 dark:bg-card/50 shadow-sm backdrop-blur-sm text-foreground hover:bg-card/90 dark:hover:bg-card/50 border-0 text-[10px] h-5 px-1.5">
+                          <Badge className="absolute top-2 left-2 bg-card/90 dark:bg-card/50 shadow-sm backdrop-blur-sm text-foreground hover:bg-card/90 dark:hover:bg-card/50 border-0 text-xs h-5 px-1.5">
                             {formatItem?.title ||
                               proposal.targetFormat ||
                               proposal.format ||
@@ -823,7 +823,7 @@ export function AuthorIPExpansion({
                           </Badge>
                           <Badge
                             className={cn(
-                              'absolute top-2 right-2 shadow-sm border-0 text-[10px] h-5 px-1.5',
+                              'absolute top-2 right-2 shadow-sm border-0 text-xs h-5 px-1.5',
                               proposal.status === 'APPROVED'
                                 ? 'bg-emerald-500 hover:bg-emerald-600'
                                 : proposal.status === 'PENDING_APPROVAL'
@@ -851,7 +851,7 @@ export function AuthorIPExpansion({
                           {proposal.title}
                         </h3>
                       </CardContent>
-                      <div className="p-3 flex items-center justify-between text-[10px] text-muted-foreground">
+                      <div className="p-3 flex items-center justify-between text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {proposal.createdAt || proposal.receivedAt
@@ -1272,7 +1272,7 @@ function AuthorProjectDetailModal({
               <div className="relative z-10 w-full flex justify-between items-end">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-card border-border text-muted-foreground hover:bg-accent uppercase tracking-wider shadow-sm text-[10px]">
+                    <Badge className="bg-card border-border text-muted-foreground hover:bg-accent uppercase tracking-wider shadow-sm text-xs">
                       {project.targetFormat || project.format || 'FORMAT'}
                     </Badge>
                     <Badge
@@ -1284,7 +1284,7 @@ function AuthorProjectDetailModal({
                             : 'destructive'
                       }
                       className={cn(
-                        'border-0 text-[10px]',
+                        'border-0 text-xs',
                         project.status === 'APPROVED'
                           ? 'bg-emerald-500 text-white hover:bg-emerald-600'
                           : project.status === 'PENDING_APPROVAL'
@@ -1402,7 +1402,7 @@ function AuthorProjectDetailModal({
                               <div>
                                 <div>{strategyItem?.title || item.title}</div>
                                 {strategyItem?.sub && (
-                                  <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
+                                  <div className="text-xs text-muted-foreground font-normal mt-0.5">
                                     {strategyItem.sub}
                                   </div>
                                 )}
@@ -1681,7 +1681,7 @@ function AuthorProjectDetailModal({
                         <item.icon className={`w-4 h-4 ${item.color}`} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
                           {item.label}
                         </p>
                         <p

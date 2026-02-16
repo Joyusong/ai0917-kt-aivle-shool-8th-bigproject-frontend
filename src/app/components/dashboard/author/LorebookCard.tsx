@@ -104,7 +104,8 @@ export function LorebookCard({
           !excludedKeys.includes(key) &&
           value !== null &&
           value !== undefined &&
-          value !== '' &&
+          String(value).trim() !== '' &&
+          String(value).trim() !== '""' &&
           typeof value !== 'object' // Simple values only for card view, or handle arrays specifically
         );
       })
@@ -123,7 +124,7 @@ export function LorebookCard({
               {category && (
                 <Badge
                   variant="outline"
-                  className="text-[10px] px-1.5 h-5 shrink-0 font-normal text-muted-foreground"
+                  className="text-xs px-1.5 h-5 shrink-0 font-normal text-muted-foreground"
                 >
                   {category}
                 </Badge>
@@ -138,7 +139,7 @@ export function LorebookCard({
                   .map((alias: string, i: number) => (
                     <span
                       key={i}
-                      className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded"
+                      className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded"
                     >
                       {alias}
                     </span>
@@ -188,7 +189,7 @@ export function LorebookCard({
           <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground bg-muted/30 p-2.5 rounded-md mt-auto">
             {displayFields.map(([key, value]) => (
               <div key={key} className="flex gap-1.5 truncate items-center">
-                <span className="font-medium opacity-70 shrink-0 text-[11px]">
+                <span className="font-medium opacity-70 shrink-0 text-xs">
                   {key}
                 </span>
                 <span className="truncate">{String(value)}</span>

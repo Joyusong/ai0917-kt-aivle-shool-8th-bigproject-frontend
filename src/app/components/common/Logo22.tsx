@@ -30,7 +30,7 @@
 
   {/* 서사적 요소: ergo (호버 시 슬며시 나타남) */}
   <div className="overflow-hidden w-0 group-hover:w-12 transition-all duration-500 ease-in-out">
-    <span className="pl-2 text-[10px] font-bold uppercase tracking-widest text-primary/70">
+    <span className="pl-2 text-xs font-bold uppercase tracking-widest text-primary/70">
       ergo
     </span>
   </div>
@@ -61,7 +61,7 @@
 
   {/* 서사적 장치: ergo (호버 시 자연스럽게 등장) */}
   <div className="w-0 overflow-hidden transition-all duration-500 ease-in-out group-hover:w-16">
-    <span className="pl-2 text-[9px] font-bold tracking-[0.2em] text-indigo-500/80 uppercase italic">
+    <span className="pl-2 text-xs font-bold tracking-[0.2em] text-indigo-500/80 uppercase italic">
       ergo
     </span>
   </div>
@@ -93,7 +93,7 @@
 
   {/* ergo: 존재의 당위성 (호버 시에만 슬며시 나타나는 위트) */}
   <div className="w-0 overflow-hidden transition-all duration-700 ease-in-out group-hover:w-16">
-    <span className="pl-2 text-[10px] font-bold tracking-[0.3em] text-indigo-500/90 uppercase italic">
+    <span className="pl-2 text-xs font-bold tracking-[0.3em] text-indigo-500/90 uppercase italic">
       ergo
     </span>
   </div>
@@ -127,7 +127,7 @@
 
   {/* ergo: 존재의 결과 (호버 시 자연스럽게 등장하는 위트) */}
   <div className="w-0 overflow-hidden transition-all duration-700 ease-in-out group-hover:w-14">
-    <span className="pl-2 text-[9px] font-bold tracking-[0.25em] text-[#6C5CE7]/90 uppercase italic">
+    <span className="pl-2 text-xs font-bold tracking-[0.25em] text-[#6C5CE7]/90 uppercase italic">
       ergo
     </span>
   </div>
@@ -158,7 +158,7 @@
 
   {/* 하단 툴팁형 ergo: 논리적 가교 */}
   <div className="absolute -bottom-1 flex flex-col items-center">
-    <span className="opacity-0 translate-y-1 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 text-[9px] font-black italic tracking-[0.3em] text-[#6C5CE7]">
+    <span className="opacity-0 translate-y-1 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-y-0 text-xs font-black italic tracking-[0.3em] text-[#6C5CE7]">
       ergo
     </span>
     {/* 툴팁을 받쳐주는 미세한 광채 (선택 사항) */}

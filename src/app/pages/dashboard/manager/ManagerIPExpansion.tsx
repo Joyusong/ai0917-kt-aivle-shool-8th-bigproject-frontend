@@ -316,13 +316,13 @@ const SettingComparison = ({
             className="grid grid-cols-2 border-b last:border-0 border-border"
           >
             <div className={origClass}>
-              <span className="font-bold mr-2 text-[10px] text-muted-foreground block mb-1">
+              <span className="font-bold mr-2 text-xs text-muted-foreground block mb-1">
                 {key}
               </span>
               {formatValue(origVal)}
             </div>
             <div className={newClass}>
-              <span className="font-bold mr-2 text-[10px] text-muted-foreground block mb-1">
+              <span className="font-bold mr-2 text-xs text-muted-foreground block mb-1">
                 {key}
               </span>
               {formatValue(newVal)}
@@ -855,7 +855,7 @@ export function ManagerIPExpansion() {
                         )}
                       />
                     </div>
-                    <Badge className="absolute top-2 left-2 bg-card/90 dark:bg-card/50 shadow-sm backdrop-blur-sm text-foreground hover:bg-card/90 dark:hover:bg-card/50 border-0 text-[10px] h-5 px-1.5">
+                    <Badge className="absolute top-2 left-2 bg-card/90 dark:bg-card/50 shadow-sm backdrop-blur-sm text-foreground hover:bg-card/90 dark:hover:bg-card/50 border-0 text-xs h-5 px-1.5">
                       {formatItem?.title ||
                         proposal.targetFormat ||
                         proposal.format ||
@@ -863,7 +863,7 @@ export function ManagerIPExpansion() {
                     </Badge>
                     <Badge
                       className={cn(
-                        'absolute top-2 right-2 shadow-sm border-0 text-[10px] h-5 px-1.5',
+                        'absolute top-2 right-2 shadow-sm border-0 text-xs h-5 px-1.5',
                         proposal.status === 'APPROVED'
                           ? 'bg-emerald-500 hover:bg-emerald-600'
                           : proposal.status === 'PENDING_APPROVAL'
@@ -891,7 +891,7 @@ export function ManagerIPExpansion() {
                     {proposal.title}
                   </h3>
                 </CardContent>
-                <div className="p-3 flex items-center justify-between text-[10px] text-muted-foreground">
+                <div className="p-3 flex items-center justify-between text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     {proposal.createdAt || proposal.receivedAt
@@ -1270,7 +1270,7 @@ function ProjectDetailModal({
               <div className="relative z-10 w-full flex justify-between items-end">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Badge className="bg-card border-border text-muted-foreground hover:bg-accent uppercase tracking-wider shadow-sm text-[10px]">
+                    <Badge className="bg-card border-border text-muted-foreground hover:bg-accent uppercase tracking-wider shadow-sm text-xs">
                       {project.targetFormat || project.format || 'FORMAT'}
                     </Badge>
                     <Badge
@@ -1282,7 +1282,7 @@ function ProjectDetailModal({
                             : 'destructive'
                       }
                       className={cn(
-                        'border-0 text-[10px]',
+                        'border-0 text-xs',
                         project.status === 'APPROVED'
                           ? 'bg-emerald-500 text-white hover:bg-emerald-600'
                           : project.status === 'PENDING_APPROVAL'
@@ -1395,7 +1395,7 @@ function ProjectDetailModal({
                               <div>
                                 <div>{strategyItem?.title || item.title}</div>
                                 {strategyItem?.sub && (
-                                  <div className="text-[10px] text-muted-foreground font-normal mt-0.5">
+                                  <div className="text-xs text-muted-foreground font-normal mt-0.5">
                                     {strategyItem.sub}
                                   </div>
                                 )}
@@ -1686,7 +1686,7 @@ function ProjectDetailModal({
                         <item.icon className={`w-4 h-4 ${item.color}`} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
                           {item.label}
                         </p>
                         <p
@@ -1808,7 +1808,7 @@ function ProjectDetailModal({
                                   : 'secondary'
                             }
                             className={cn(
-                              'text-[10px] px-2 py-0.5',
+                              'text-xs px-2 py-0.5',
                               comment.status === 'APPROVED' &&
                                 'bg-emerald-600 hover:bg-emerald-700',
                               comment.status === 'REJECTED' &&
@@ -1828,7 +1828,7 @@ function ProjectDetailModal({
                         ) : (
                           <Badge
                             variant="outline"
-                            className="text-[10px] bg-muted/50 text-muted-foreground border-border font-normal"
+                            className="text-xs bg-muted/50 text-muted-foreground border-border font-normal"
                           >
                             아직 검토하지 않음
                           </Badge>
@@ -3039,7 +3039,7 @@ function CreateIPExpansionDialog({
                   ? 'IP 확장 프로젝트 수정'
                   : '새로운 IP 확장 프로젝트 생성'}
               </DialogTitle>
-              <DialogDescription className="mt-0.5 text-[10px]">
+              <DialogDescription className="mt-0.5 text-xs">
                 6단계 프로세스를 통해 AI 기반 기획 제안서를 생성합니다.
               </DialogDescription>
             </div>
@@ -3099,7 +3099,7 @@ function CreateIPExpansionDialog({
                       </div>
                       <span
                         className={cn(
-                          'text-[10px] font-medium absolute -bottom-4 w-20 text-center',
+                          'text-xs font-medium absolute -bottom-4 w-20 text-center',
                           isActive
                             ? 'text-foreground'
                             : isCompleted
@@ -3247,7 +3247,7 @@ function CreateIPExpansionDialog({
                                     className="w-10 h-14 object-cover rounded-md shadow-sm bg-muted"
                                   />
                                 ) : (
-                                  <div className="w-10 h-14 rounded-md bg-muted flex items-center justify-center text-[10px] text-muted-foreground font-medium">
+                                  <div className="w-10 h-14 rounded-md bg-muted flex items-center justify-center text-xs text-muted-foreground font-medium">
                                     No Img
                                   </div>
                                 )}
@@ -3338,7 +3338,7 @@ function CreateIPExpansionDialog({
                                 <TabsTrigger
                                   key={tab.id}
                                   value={tab.id}
-                                  className="text-[10px] font-bold px-0.5 py-1.5 h-7 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center justify-center transition-all text-muted-foreground"
+                                  className="text-xs font-bold px-0.5 py-1.5 h-7 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm flex items-center justify-center transition-all text-muted-foreground"
                                 >
                                   {tab.label}
                                 </TabsTrigger>
@@ -3490,7 +3490,7 @@ function CreateIPExpansionDialog({
                                         />
                                         <Badge
                                           variant="secondary"
-                                          className="text-[10px] h-4 px-1 bg-muted text-muted-foreground border-border"
+                                          className="text-xs h-4 px-1 bg-muted text-muted-foreground border-border"
                                         >
                                           {lorebook.category}
                                         </Badge>
@@ -3596,7 +3596,7 @@ function CreateIPExpansionDialog({
                                         <span className="font-bold text-xs text-sky-200">
                                           {tip.label}
                                         </span>
-                                        <span className="text-[11px] text-muted-foreground leading-tight">
+                                        <span className="text-xs text-muted-foreground leading-tight">
                                           {tip.text}
                                         </span>
                                       </li>
@@ -3677,7 +3677,7 @@ function CreateIPExpansionDialog({
                         <span className="font-semibold">AI 분석 결과</span>
                         <Badge
                           variant="secondary"
-                          className="ml-2 bg-amber-50 text-amber-700 border-amber-200 text-[10px] h-5"
+                          className="ml-2 bg-amber-50 text-amber-700 border-amber-200 text-xs h-5"
                         >
                           {Object.values(conflictResult?.충돌 || {}).reduce(
                             (acc: number, items: any) =>
@@ -3687,7 +3687,7 @@ function CreateIPExpansionDialog({
                           건의 충돌 감지
                         </Badge>
                       </CardTitle>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         Analysis ID: #EXP-
                         {Math.floor(Math.random() * 10000)
                           .toString()
@@ -3722,14 +3722,14 @@ function CreateIPExpansionDialog({
                               >
                                 <div className="flex items-start justify-between mb-2">
                                   <h4 className="font-bold text-foreground flex items-center gap-2 text-sm">
-                                    <span className="w-5 h-5 rounded-full bg-card border border-border flex items-center justify-center text-[10px] text-muted-foreground group-hover:border-amber-300 group-hover:text-amber-600 transition-colors">
+                                    <span className="w-5 h-5 rounded-full bg-card border border-border flex items-center justify-center text-xs text-muted-foreground group-hover:border-amber-300 group-hover:text-amber-600 transition-colors">
                                       !
                                     </span>
                                     {category} - {itemName}
                                   </h4>
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] font-normal text-muted-foreground border-border"
+                                    className="text-xs font-normal text-muted-foreground border-border"
                                   >
                                     상세 보기 &gt;
                                   </Badge>
@@ -3895,7 +3895,7 @@ function CreateIPExpansionDialog({
                           )}
                         >
                           {isRecommended && (
-                            <div className="absolute top-0 right-0 bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-bl-lg z-10">
+                            <div className="absolute top-0 right-0 bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-0.5 rounded-bl-lg z-10">
                               AI 추천
                             </div>
                           )}
@@ -4084,7 +4084,7 @@ function CreateIPExpansionDialog({
                             </div>
                             <div
                               className={cn(
-                                'text-[10px] mt-0.5',
+                                'text-xs mt-0.5',
                                 business.budgetRange === opt.val
                                   ? 'text-primary-foreground/70'
                                   : 'text-muted-foreground',
@@ -4283,7 +4283,7 @@ function CreateIPExpansionDialog({
                                   </div>
                                   <div
                                     className={cn(
-                                      'text-[10px] mt-0.5',
+                                      'text-xs mt-0.5',
                                       universeSetting === option.id
                                         ? 'text-primary-foreground/70'
                                         : 'text-muted-foreground',
@@ -4360,7 +4360,7 @@ function CreateIPExpansionDialog({
                                   </div>
                                   <div
                                     className={cn(
-                                      'text-[10px]',
+                                      'text-xs',
                                       mediaDetails.style === style.id
                                         ? 'text-primary-foreground/70'
                                         : 'text-muted-foreground',
@@ -4417,7 +4417,7 @@ function CreateIPExpansionDialog({
                                     <div className="font-bold text-foreground text-xs">
                                       {pacing.label}
                                     </div>
-                                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                                    <div className="text-xs text-muted-foreground mt-0.5">
                                       {pacing.desc}
                                     </div>
                                   </div>
@@ -4537,7 +4537,7 @@ function CreateIPExpansionDialog({
                                   </div>
                                   <div
                                     className={cn(
-                                      'text-[10px] mt-0.5',
+                                      'text-xs mt-0.5',
                                       mediaDetails.runningTime === time.id
                                         ? 'text-primary-foreground/80'
                                         : 'text-muted-foreground/80',
@@ -4632,7 +4632,7 @@ function CreateIPExpansionDialog({
                                   <div className="font-bold text-foreground text-xs">
                                     단막극/미니시리즈
                                   </div>
-                                  <div className="text-[10px] text-muted-foreground">
+                                  <div className="text-xs text-muted-foreground">
                                     1시즌 완결, 밀도 높은 전개
                                   </div>
                                 </div>
@@ -4658,7 +4658,7 @@ function CreateIPExpansionDialog({
                                   <div className="font-bold text-foreground text-xs">
                                     멀티 시즌
                                   </div>
-                                  <div className="text-[10px] text-muted-foreground">
+                                  <div className="text-xs text-muted-foreground">
                                     장기적인 세계관 확장 가능
                                   </div>
                                 </div>
@@ -4812,7 +4812,7 @@ function CreateIPExpansionDialog({
                                   <div className="font-bold text-foreground text-xs">
                                     모바일 (F2P)
                                   </div>
-                                  <div className="text-[10px] text-muted-foreground">
+                                  <div className="text-xs text-muted-foreground">
                                     광고/인앱결제 수익화
                                   </div>
                                 </div>
@@ -4838,7 +4838,7 @@ function CreateIPExpansionDialog({
                                   <div className="font-bold text-foreground text-xs">
                                     PC/콘솔 (Package)
                                   </div>
-                                  <div className="text-[10px] text-muted-foreground">
+                                  <div className="text-xs text-muted-foreground">
                                     판매 수익 및 DLC
                                   </div>
                                 </div>
@@ -4921,7 +4921,7 @@ function CreateIPExpansionDialog({
                                     </div>
                                     <div
                                       className={cn(
-                                        'text-[10px] mt-0.5',
+                                        'text-xs mt-0.5',
                                         mediaDetails.spinoffType === type.id
                                           ? 'text-primary-foreground/80'
                                           : 'text-muted-foreground',
@@ -5051,7 +5051,7 @@ function CreateIPExpansionDialog({
                                   </div>
                                   <div
                                     className={cn(
-                                      'text-[10px] mt-0.5',
+                                      'text-xs mt-0.5',
                                       mediaDetails.visualFormat === type.id
                                         ? 'text-primary-foreground/80'
                                         : 'text-muted-foreground',
@@ -5199,7 +5199,7 @@ function CreateIPExpansionDialog({
                             </div>
                             <div className="overflow-hidden flex-1">
                               <div className="flex items-center justify-between mb-0.5">
-                                <p className="text-[10px] font-bold text-muted-foreground">
+                                <p className="text-xs font-bold text-muted-foreground">
                                   원천 설정집
                                 </p>
                               </div>
@@ -5224,7 +5224,7 @@ function CreateIPExpansionDialog({
                               <Zap className="w-3.5 h-3.5" />
                             </div>
                             <div className="overflow-hidden">
-                              <p className="text-[10px] font-bold text-muted-foreground mb-0.5">
+                              <p className="text-xs font-bold text-muted-foreground mb-0.5">
                                 기획 방향
                               </p>
                               <p className="text-xs font-bold text-foreground truncate">
@@ -5244,7 +5244,7 @@ function CreateIPExpansionDialog({
                               <Sparkles className="w-3.5 h-3.5" />
                             </div>
                             <div className="overflow-hidden">
-                              <p className="text-[10px] font-bold text-muted-foreground mb-0.5">
+                              <p className="text-xs font-bold text-muted-foreground mb-0.5">
                                 AI 생성 규칙
                               </p>
                               <p className="text-xs font-bold text-foreground truncate">
@@ -5267,7 +5267,7 @@ function CreateIPExpansionDialog({
                                   <AlertTriangle className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="overflow-hidden w-full">
-                                  <p className="text-[10px] font-bold text-muted-foreground mb-0.5">
+                                  <p className="text-xs font-bold text-muted-foreground mb-0.5">
                                     설정 충돌 해결
                                   </p>
                                   <div className="space-y-1">
@@ -5760,7 +5760,7 @@ function CreateIPExpansionDialog({
                                   <item.icon className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="overflow-hidden">
-                                  <p className="text-[10px] font-bold text-muted-foreground mb-0.5">
+                                  <p className="text-xs font-bold text-muted-foreground mb-0.5">
                                     {item.label}
                                   </p>
                                   <p className="text-xs font-bold text-foreground truncate">

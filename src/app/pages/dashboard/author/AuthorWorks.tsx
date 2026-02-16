@@ -374,11 +374,54 @@ const normalizeAnalysisData = (data: PublishAnalysisResponseDto): any => {
 
       const newSettings =
         item['신규설정'] ||
+        item['설정결합'] ||
         (nameKey && item[nameKey] !== analysisStr ? item[nameKey] : null);
       // For original, first try explicit '기존설정', then fall back to existing map lookup
       let oldSettings = item['기존설정'];
 
-      if (!oldSettings && existingSettingsMap && entityName) {
+      // Handle nested JSON string in 'setting' field of oldSettings
+      if (
+        oldSettings &&
+        typeof oldSettings === 'object' &&
+        oldSettings.setting &&
+        typeof oldSettings.setting === 'string'
+      ) {
+        try {
+          const parsed = JSON.parse(oldSettings.setting);
+          if (parsed && typeof parsed === 'object') {
+            const keys = Object.keys(parsed);
+            if (keys.length === 1) {
+              const key = keys[0];
+              const content = parsed[key];
+              // Merge content into oldSettings, prioritizing content fields
+              oldSettings = {
+                name: key, // Use the key as the default name
+                ...oldSettings,
+                ...content,
+                // Ensure description is accessible
+                description:
+                  content.description ||
+                  content.background ||
+                  content.summary ||
+                  oldSettings.description,
+              };
+            } else if (keys.length > 0) {
+              // If not a single key wrapper, assume the parsed object is the settings
+              oldSettings = { ...oldSettings, ...parsed };
+            }
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+
+      // If oldSettings is undefined/null or an empty object, try fallback
+      const isEmptyOldSettings =
+        !oldSettings ||
+        (typeof oldSettings === 'object' &&
+          Object.keys(oldSettings).length === 0);
+
+      if (isEmptyOldSettings && existingSettingsMap && entityName) {
         const existing = existingSettingsMap[entityName];
         if (existing) {
           oldSettings = existing.description || existing;
@@ -416,8 +459,40 @@ const normalizeAnalysisData = (data: PublishAnalysisResponseDto): any => {
     let description = item.description || item.setting;
     const category = item.category || defaultCategory;
 
+    // Special handling for 'setting' field which might be a JSON string containing name: content
+    if (item.setting && typeof item.setting === 'string') {
+      try {
+        const parsed = JSON.parse(item.setting);
+        if (parsed && typeof parsed === 'object') {
+          const keys = Object.keys(parsed);
+          // If it looks like a wrapper { "Keyword": { ... } }
+          if (keys.length === 1) {
+            const key = keys[0];
+            // If name is missing, OR if the key matches the name, use the inner content
+            if (!name || name === key) {
+              name = key;
+              description = parsed[name];
+            }
+          } else if (keys.length > 0 && !name) {
+            // Fallback: take first key if name is missing
+            name = keys[0];
+            description = parsed[name];
+          }
+        }
+      } catch (e) {
+        // ignore error
+      }
+    }
+
     if (!name) {
-      const reservedKeys = ['ep_num', 'category', 'id', 'original', 'new'];
+      const reservedKeys = [
+        'ep_num',
+        'category',
+        'id',
+        'original',
+        'new',
+        'setting',
+      ];
       const contentEntry = Object.entries(item).find(
         ([key]) => !reservedKeys.includes(key),
       );
@@ -1024,7 +1099,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
       toast.success('작품이 삭제되었습니다.');
       setIsDeleteAlertOpen(false);
       setDeletingWorkId(null);
-      
+
       // If deleted work was selected, deselect it
       if (selectedWorkId === deletingWorkId) {
         setSelectedWorkId(null);
@@ -1147,10 +1222,46 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
     mutationFn: async (data: WorkCreateRequestDto) => {
       await authorService.createWork(data);
     },
-    onSuccess: () => {
-      toast.success('작품이 생성되었습니다.');
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({ queryKey: ['author', 'works'] });
+      const previousWorks = queryClient.getQueryData(['author', 'works']);
+
+      const tempWork = {
+        id: Date.now(),
+        title: newData.title,
+        synopsis: newData.synopsis,
+        genre: newData.genre,
+        coverImageUrl: newData.coverImageUrl,
+        status: 'NEW',
+        updatedAt: new Date().toISOString(),
+        primaryAuthorId: integrationId,
+      };
+
+      queryClient.setQueryData(['author', 'works'], (old: any) => {
+        if (!old) return [tempWork];
+        return [tempWork, ...old];
+      });
+
       setIsCreateWorkOpen(false);
       setNewWorkTitle('');
+      setNewWorkSynopsis('');
+      setNewWorkGenre('');
+      setNewWorkCover('');
+      toast.info('작품을 생성하는 중입니다...');
+
+      return { previousWorks };
+    },
+    onSuccess: () => {
+      toast.success('작품이 생성되었습니다.');
+      // Keep invalidation to sync real ID
+    },
+    onError: (err, newTodo, context) => {
+      if (context?.previousWorks) {
+        queryClient.setQueryData(['author', 'works'], context.previousWorks);
+      }
+      toast.error('작품 생성에 실패했습니다.');
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['author', 'works'] });
     },
   });
@@ -1176,11 +1287,40 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
         txt,
       });
     },
-    onSuccess: async (_, variables) => {
-      toast.success('원문이 등록되었습니다.');
+    onMutate: async (vars) => {
+      const work = works?.find((w) => w.id === vars.workId);
+      if (!work) return;
+
+      const queryKey = ['author', 'manuscript', integrationId, work.title];
+      await queryClient.cancelQueries({ queryKey });
+      const previousManuscripts = queryClient.getQueryData(queryKey);
+
+      const tempManuscript = {
+        id: Date.now(),
+        subtitle: vars.subtitle,
+        episode: vars.episode,
+        workId: vars.workId,
+        txt: vars.txt,
+        updatedAt: new Date().toISOString(),
+      };
+
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (!old) return [tempManuscript];
+        if (Array.isArray(old)) return [tempManuscript, ...old];
+        if (old && Array.isArray(old.content))
+          return { ...old, content: [tempManuscript, ...old.content] };
+        return [tempManuscript]; // Fallback
+      });
+
       setIsUploadManuscriptOpen(false);
       setNewManuscriptSubtitle('');
       setNewManuscriptEpisode(1);
+      toast.info('원문을 등록하는 중입니다...');
+
+      return { previousManuscripts, queryKey };
+    },
+    onSuccess: async (_, variables) => {
+      toast.success('원문이 등록되었습니다.');
       const work = works?.find((w) => w.id === variables.workId);
       if (work) {
         // Automatically update status to ONGOING if it is NEW
@@ -1191,19 +1331,26 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
             console.error('Failed to auto-update work status', e);
           }
         }
-
-        queryClient.invalidateQueries({
-          queryKey: ['author', 'manuscript', integrationId, work.title],
-        });
-        queryClient.invalidateQueries({ queryKey: ['author', 'works'] });
       }
     },
-    onError: (error: any) => {
+    onError: (error: any, vars, context) => {
+      if (context?.previousManuscripts) {
+        queryClient.setQueryData(context.queryKey, context.previousManuscripts);
+      }
       const message = error?.response?.data?.message || '';
       if (message.includes('분석이 완료되지 않아')) {
         toast.error('이전 원고의 분석을 먼저 수행해주세요.');
       } else {
         toast.error('원문 등록에 실패했습니다.');
+      }
+    },
+    onSettled: (_, __, variables) => {
+      const work = works?.find((w) => w.id === variables.workId);
+      if (work) {
+        queryClient.invalidateQueries({
+          queryKey: ['author', 'manuscript', integrationId, work.title],
+        });
+        queryClient.invalidateQueries({ queryKey: ['author', 'works'] });
       }
     },
   });
@@ -1225,21 +1372,48 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
         manuscriptId,
       );
     },
+    onMutate: async (vars) => {
+      const work = works?.find((w) => w.id === vars.workId);
+      if (!work) return;
+
+      const queryKey = ['author', 'manuscript', integrationId, work.title];
+      await queryClient.cancelQueries({ queryKey });
+      const previousManuscripts = queryClient.getQueryData(queryKey);
+
+      queryClient.setQueryData(queryKey, (old: any) => {
+        if (Array.isArray(old))
+          return old.filter((m: any) => m.id !== vars.manuscriptId);
+        if (old && Array.isArray(old.content))
+          return {
+            ...old,
+            content: old.content.filter((m: any) => m.id !== vars.manuscriptId),
+          };
+        return old;
+      });
+
+      toast.info('원문을 삭제하는 중입니다...');
+      return { previousManuscripts, queryKey };
+    },
     onSuccess: (_, variables) => {
       toast.success('원문이 삭제되었습니다.');
+      if (selectedManuscript?.id === variables.manuscriptId) {
+        setSelectedManuscript(null);
+        setEditorContent('');
+      }
+    },
+    onError: (err, vars, context) => {
+      if (context?.previousManuscripts) {
+        queryClient.setQueryData(context.queryKey, context.previousManuscripts);
+      }
+      toast.error('원문 삭제에 실패했습니다.');
+    },
+    onSettled: (_, __, variables) => {
       const work = works?.find((w) => w.id === variables.workId);
       if (work) {
         queryClient.invalidateQueries({
           queryKey: ['author', 'manuscript', integrationId, work.title],
         });
       }
-      if (selectedManuscript?.id === variables.manuscriptId) {
-        setSelectedManuscript(null);
-        setEditorContent('');
-      }
-    },
-    onError: () => {
-      toast.error('원문 삭제에 실패했습니다.');
     },
   });
 
@@ -1919,6 +2093,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                 value={newWorkTitle}
                 onChange={(e) => setNewWorkTitle(e.target.value)}
                 placeholder="나의 멋진 소설"
+                autoFocus
               />
             </div>
             <div className="space-y-2">
@@ -1947,6 +2122,9 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                 placeholder="https://example.com/cover.jpg"
               />
             </div>
+            <p className="text-xs text-muted-foreground">
+              * 모든 항목은 필수 입력 사항입니다.
+            </p>
           </div>
           <DialogFooter>
             <Button
@@ -1982,30 +2160,39 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                 value={newManuscriptSubtitle}
                 onChange={(e) => setNewManuscriptSubtitle(e.target.value)}
                 placeholder="예: 새로운 시작"
+                autoFocus
               />
             </div>
             {/* Content field removed as requested */}
+            <p className="text-xs text-muted-foreground">
+              * 모든 항목은 필수 입력 사항입니다.
+            </p>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsUploadManuscriptOpen(false)}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={handleSubmitUploadManuscript}
-              disabled={uploadManuscriptMutation.isPending}
-            >
-              {uploadManuscriptMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  등록 중...
-                </>
-              ) : (
-                '등록'
-              )}
-            </Button>
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <p className="text-xs text-muted-foreground w-full text-right mb-2">
+              * 모든 항목은 필수 입력 사항입니다.
+            </p>
+            <div className="flex justify-end gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setIsUploadManuscriptOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleSubmitUploadManuscript}
+                disabled={uploadManuscriptMutation.isPending}
+              >
+                {uploadManuscriptMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    등록 중...
+                  </>
+                ) : (
+                  '등록'
+                )}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2202,6 +2389,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                   onChange={(e) => setEditMetadataSynopsis(e.target.value)}
                   placeholder="시놉시스를 입력하세요."
                   className="min-h-[100px]"
+                  autoFocus
                 />
               </div>
               <div className="space-y-2">
@@ -2230,6 +2418,9 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                   </SelectContent>
                 </Select>
               </div>
+              <p className="text-xs text-muted-foreground">
+                * 모든 항목은 필수 입력 사항입니다.
+              </p>
             </div>
           )}
           <DialogFooter>
@@ -2699,7 +2890,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                     (c: any) => !resolvedConflicts.has(c.id),
                   ).length || 0) === 0 && (
                     <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-700 flex items-start gap-2">
-                      <div className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5">
+                      <div className="bg-blue-600 text-white text-xs font-bold px-1.5 py-0.5 rounded mt-0.5">
                         TIP
                       </div>
                       <p>
@@ -2771,6 +2962,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
               value={renameTitle}
               onChange={(e) => setRenameTitle(e.target.value)}
               placeholder="작품 이름"
+              autoFocus
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   renameWorkMutation.mutate();
@@ -2778,16 +2970,21 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
               }}
             />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRenameOpen(false)}>
-              취소
-            </Button>
-            <Button
-              onClick={() => renameWorkMutation.mutate()}
-              disabled={renameWorkMutation.isPending || !renameTitle.trim()}
-            >
-              {renameWorkMutation.isPending ? '변경 중...' : '변경'}
-            </Button>
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <p className="text-xs text-muted-foreground w-full text-right mb-2">
+              * 모든 항목은 필수 입력 사항입니다.
+            </p>
+            <div className="flex justify-end gap-2 w-full">
+              <Button variant="outline" onClick={() => setIsRenameOpen(false)}>
+                취소
+              </Button>
+              <Button
+                onClick={() => renameWorkMutation.mutate()}
+                disabled={renameWorkMutation.isPending || !renameTitle.trim()}
+              >
+                {renameWorkMutation.isPending ? '변경 중...' : '변경'}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2809,7 +3006,11 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                 value={newManuscriptSubtitle}
                 onChange={(e) => setNewManuscriptSubtitle(e.target.value)}
                 placeholder="예: 새로운 시작"
+                autoFocus
               />
+              <p className="text-xs text-muted-foreground">
+                * 모든 항목은 필수 입력 사항입니다.
+              </p>
             </div>
           </div>
           <DialogFooter>
@@ -2855,6 +3056,7 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
                 value={editManuscriptSubtitle}
                 onChange={(e) => setEditManuscriptSubtitle(e.target.value)}
                 placeholder="원문 이름(부제)"
+                autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     editManuscriptMutation.mutate();
@@ -2863,22 +3065,27 @@ export function AuthorWorks({ integrationId }: AuthorWorksProps) {
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditManuscriptOpen(false)}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={() => editManuscriptMutation.mutate()}
-              disabled={
-                editManuscriptMutation.isPending ||
-                !editManuscriptSubtitle.trim()
-              }
-            >
-              {editManuscriptMutation.isPending ? '수정 중...' : '수정'}
-            </Button>
+          <DialogFooter className="flex-col sm:flex-col gap-2">
+            <p className="text-xs text-muted-foreground w-full text-right mb-2">
+              * 모든 항목은 필수 입력 사항입니다.
+            </p>
+            <div className="flex justify-end gap-2 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditManuscriptOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                onClick={() => editManuscriptMutation.mutate()}
+                disabled={
+                  editManuscriptMutation.isPending ||
+                  !editManuscriptSubtitle.trim()
+                }
+              >
+                {editManuscriptMutation.isPending ? '수정 중...' : '수정'}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -537,6 +537,9 @@ export function AdminNotices({ readOnly = false }: AdminNoticesProps) {
                     )}
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  * 모든 항목은 필수 입력 사항입니다.
+                </p>
               </>
             )}
           </div>

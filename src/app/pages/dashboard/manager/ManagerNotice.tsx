@@ -465,6 +465,7 @@ export function ManagerNotice({ readOnly = false }: ManagerNoticeProps) {
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="공지 제목"
+                    autoFocus
                   />
                 </div>
                 <div className="space-y-2">
@@ -524,6 +525,9 @@ export function ManagerNotice({ readOnly = false }: ManagerNoticeProps) {
                     )}
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  * 모든 항목은 필수 입력 사항입니다.
+                </p>
               </>
             )}
           </div>

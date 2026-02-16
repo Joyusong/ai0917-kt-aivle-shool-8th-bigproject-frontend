@@ -37,6 +37,7 @@ import { adminService } from '../../services/adminService';
 import { authService } from '../../services/authService';
 import { format } from 'date-fns';
 import { Logo } from '../../components/common/Logo';
+import { cn } from '../../components/ui/utils';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -46,7 +47,7 @@ interface AdminDashboardProps {
 export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
   const [activeMenu, setActiveMenu] = useState('home');
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
   const [visibleCount, setVisibleCount] = useState(4);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
@@ -192,19 +193,13 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
       data-role="admin"
     >
       {/* Sidebar Open Button (when closed) */}
-      {!sidebarOpen && (
-        <Button
-          onClick={() => setSidebarOpen(true)}
-          size="icon"
-          className="fixed top-4 left-4 z-50 bg-card shadow-lg border border-border text-muted-foreground hover:bg-accent"
-        >
-          <Menu className="w-5 h-5" />
-        </Button>
-      )}
 
       {/* Sidebar */}
       <aside
-        className={`${sidebarOpen ? 'w-full md:w-64' : 'w-0'} bg-sidebar border-r border-sidebar-border flex flex-col overflow-hidden fixed md:relative h-full z-40`}
+        className={cn(
+          'bg-sidebar border-r border-sidebar-border flex flex-col fixed md:relative h-full z-40 transition-all duration-300 ease-in-out',
+          sidebarOpen ? 'w-full md:w-56' : 'w-0 md:w-16',
+        )}
       >
         {/* Close Button */}
         {sidebarOpen && (
@@ -212,7 +207,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
             onClick={() => setSidebarOpen(false)}
             variant="ghost"
             size="icon"
-            className="absolute top-4 right-3 z-10 text-muted-foreground hover:text-foreground hover:bg-sidebar-accent"
+            className="absolute top-4 right-3 z-10 text-muted-foreground hover:text-foreground hover:bg-muted md:flex hidden"
           >
             <ChevronsLeft className="w-5 h-5" />
           </Button>
@@ -220,64 +215,100 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
 
         {/* Logo */}
         <div
-          className="h-16 flex items-center px-6 border-b border-sidebar-border mb-4 cursor-pointer"
-          onClick={() => handleMenuClick('home')}
+          className={cn(
+            'h-16 flex items-center border-b border-sidebar-border cursor-pointer transition-all duration-300',
+            sidebarOpen ? 'px-6' : 'justify-center px-0',
+          )}
+          onClick={() => {
+            if (!sidebarOpen) setSidebarOpen(true);
+            else handleMenuClick('home');
+          }}
         >
-          <Logo role="Admin" />
+          <Logo role="Admin" collapsed={!sidebarOpen} />
         </div>
 
         {/* Navigation Menu */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-2 space-y-1 overflow-y-auto overflow-x-hidden">
           {/* Home - Hidden on mobile */}
           <button
             onClick={() => handleMenuClick('home')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative',
+              sidebarOpen ? 'px-4 py-3' : 'justify-center py-3 px-0',
               activeMenu === 'home'
-                ? 'text-white'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
+                ? 'text-primary-foreground'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent',
+            )}
             style={
               activeMenu === 'home'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
+            title={!sidebarOpen ? '홈' : undefined}
           >
-            <LayoutDashboard className="w-5 h-5" />
-            <span className="text-sm font-medium">홈</span>
+            <LayoutDashboard className="w-5 h-5 shrink-0" />
+            <span
+              className={cn(
+                'text-sm font-medium whitespace-nowrap transition-all duration-200',
+                !sidebarOpen && 'hidden opacity-0 w-0',
+              )}
+            >
+              홈
+            </span>
           </button>
 
           <button
             onClick={() => handleMenuClick('permissions')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative',
+              sidebarOpen ? 'px-4 py-3' : 'justify-center py-3 px-0',
               activeMenu === 'permissions'
-                ? 'text-white'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
+                ? 'text-primary-foreground'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent',
+            )}
             style={
               activeMenu === 'permissions'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
+            title={!sidebarOpen ? '권한' : undefined}
           >
-            <Shield className="w-5 h-5" />
-            <span className="text-sm font-medium">권한</span>
+            <Shield className="w-5 h-5 shrink-0" />
+            <span
+              className={cn(
+                'text-sm font-medium whitespace-nowrap transition-all duration-200',
+                !sidebarOpen && 'hidden opacity-0 w-0',
+              )}
+            >
+              권한
+            </span>
           </button>
 
           <button
             onClick={() => handleMenuClick('notices')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative',
+              sidebarOpen ? 'px-4 py-3' : 'justify-center py-3 px-0',
               activeMenu === 'notices'
-                ? 'text-white'
-                : 'text-sidebar-foreground hover:bg-sidebar-accent'
-            }`}
+                ? 'text-primary-foreground'
+                : 'text-sidebar-foreground hover:bg-sidebar-accent',
+            )}
             style={
               activeMenu === 'notices'
                 ? { backgroundColor: 'var(--role-primary)' }
                 : {}
             }
+            title={!sidebarOpen ? '공지사항' : undefined}
           >
-            <Megaphone className="w-5 h-5" />
-            <span className="text-sm font-medium">공지사항</span>
+            <Megaphone className="w-5 h-5 shrink-0" />
+            <span
+              className={cn(
+                'text-sm font-medium whitespace-nowrap transition-all duration-200',
+                !sidebarOpen && 'hidden opacity-0 w-0',
+              )}
+            >
+              공지사항
+            </span>
           </button>
         </nav>
 
@@ -290,28 +321,48 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
           <div className="hidden md:block relative">
             <button
               onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-              className="w-full flex items-center gap-3 p-3 bg-sidebar-accent hover:bg-muted transition-colors"
+              className={cn(
+                'w-full flex items-center gap-3 hover:bg-muted transition-colors',
+                sidebarOpen ? 'p-3' : 'justify-center p-3',
+              )}
             >
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-primary-foreground text-sm font-semibold"
-                style={{ backgroundColor: 'var(--role-primary)' }}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-primary-foreground text-xs font-semibold shrink-0"
+                style={{
+                  backgroundColor: 'var(--role-primary)',
+                }}
               >
                 {userName.charAt(0)}
               </div>
-              <div className="flex-1 text-left">
-                <div className="text-sm font-medium text-sidebar-foreground">
-                  {maskName(userName)}
-                </div>
-                <div className="text-xs text-muted-foreground">관리자</div>
-              </div>
-              <ChevronDown
-                className={`w-4 h-4 text-muted-foreground transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`}
-              />
+
+              {sidebarOpen && (
+                <>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="text-sm font-medium text-sidebar-foreground truncate">
+                      {maskName(userName)}
+                    </div>
+                    <div className="text-xs text-muted-foreground">관리자</div>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      'w-4 h-4 text-muted-foreground transition-transform shrink-0',
+                      showProfileDropdown ? 'rotate-180' : '',
+                    )}
+                  />
+                </>
+              )}
             </button>
 
             {/* Dropdown Menu */}
             {showProfileDropdown && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 bg-card border border-border shadow-lg py-1 z-50">
+              <div
+                className={cn(
+                  'absolute bg-card border border-border shadow-lg py-1 z-50 rounded-md',
+                  sidebarOpen
+                    ? 'bottom-full left-4 right-4 mb-2'
+                    : 'bottom-0 left-full ml-2 w-56 mb-4',
+                )}
+              >
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground text-destructive flex items-center gap-2"
@@ -363,30 +414,37 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <header
-          className={`h-16 bg-card border-b border-border px-4 md:px-8 flex items-center transition-[padding] duration-300 ease-in-out ${
-            !sidebarOpen ? 'pl-16 md:pl-24' : ''
-          }`}
+          className={cn(
+            'h-16 bg-card border-b border-border px-4 md:px-8 flex items-center transition-[padding] duration-300 ease-in-out',
+            !sidebarOpen && 'pl-16',
+          )}
         >
           <div className="w-full flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* Breadcrumb */}
-              <div className="flex items-center gap-2 text-sm">
-                <button
-                  onClick={() => handleMenuClick('home')}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  홈
-                </button>
-                {activeMenu !== 'home' && (
-                  <>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-foreground">
-                      {activeMenu === 'notices' && '공지사항'}
-                      {activeMenu === 'permissions' && '권한'}
-                    </span>
-                  </>
-                )}
-              </div>
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      onClick={() => handleMenuClick('home')}
+                      className="cursor-pointer"
+                    >
+                      홈
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  {activeMenu !== 'home' && (
+                    <>
+                      <BreadcrumbSeparator />
+                      <BreadcrumbItem>
+                        <BreadcrumbPage>
+                          {activeMenu === 'notices' && '공지사항'}
+                          {activeMenu === 'permissions' && '권한'}
+                        </BreadcrumbPage>
+                      </BreadcrumbItem>
+                    </>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
             </div>
 
             <div className="flex items-center gap-2">
@@ -447,7 +505,7 @@ export function AdminDashboard({ onLogout, onHome }: AdminDashboardProps) {
                                     <div className="flex items-center gap-2 mb-1">
                                       <Badge
                                         variant="outline"
-                                        className={`text-[10px] px-1 py-0 ${
+                                        className={`text-xs px-1 py-0 ${
                                           notice.level === 'ERROR'
                                             ? 'border-red-500 text-red-500'
                                             : notice.level === 'WARNING'

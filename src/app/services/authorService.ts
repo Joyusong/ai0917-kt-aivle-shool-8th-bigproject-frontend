@@ -151,14 +151,6 @@ export const authorService = {
     return response.data;
   },
 
-  getWorkAnalysis: async (workId: number) => {
-    const response = await apiClient.get<{
-      relationship: string;
-      timeline: string;
-    }>(`/api/v1/ai/author/works/${workId}/analysis`);
-    return response.data;
-  },
-
   // Analysis - Relationship
   analyzeRelationship: async (
     workId: number,

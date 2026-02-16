@@ -191,7 +191,7 @@ export function SignupPage({
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Email Verification Group */}
           <div className="space-y-3">
-            <Label className="text-[13px] font-semibold text-foreground ml-1">
+            <Label className="text-sm font-semibold text-foreground ml-1">
               이메일 주소
             </Label>
             <div className="flex gap-2">
@@ -258,7 +258,7 @@ export function SignupPage({
             )}
 
             {isEmailVerified && (
-              <p className="text-[11px] text-primary font-bold flex items-center gap-1.5 ml-1 animate-in fade-in duration-300">
+              <p className="text-xs text-primary font-bold flex items-center gap-1.5 ml-1 animate-in fade-in duration-300">
                 <ShieldCheck className="w-3.5 h-3.5" /> 이메일 인증이 성공적으로
                 완료되었습니다.
               </p>
@@ -268,12 +268,12 @@ export function SignupPage({
           {/* Password Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between ml-1">
-              <Label className="text-[13px] font-semibold text-foreground">
+              <Label className="text-sm font-semibold text-foreground">
                 비밀번호 설정
               </Label>
               {formData.sitePwd.length > 0 && (
                 <span
-                  className={`text-[11px] font-bold ${
+                  className={`text-xs font-bold ${
                     strengthScore <= 2
                       ? 'text-destructive'
                       : strengthScore === 3
@@ -420,7 +420,7 @@ export function SignupPage({
 function ValidationItem({ isValid, text }: { isValid: boolean; text: string }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${
+      className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
         isValid ? 'text-primary' : 'text-muted-foreground'
       }`}
     >
@@ -452,7 +452,7 @@ function AgreementRow({ id, label, checked, onCheckedChange, url }: any) {
         />
         <Label
           htmlFor={id}
-          className="text-[13px] text-muted-foreground font-bold cursor-pointer group-hover:text-foreground"
+          className="text-sm text-muted-foreground font-bold cursor-pointer group-hover:text-foreground"
         >
           {label}
         </Label>
@@ -461,7 +461,7 @@ function AgreementRow({ id, label, checked, onCheckedChange, url }: any) {
         <DialogTrigger asChild>
           <button
             type="button"
-            className="text-[11px] font-bold text-muted-foreground hover:text-foreground underline underline-offset-4 px-2 py-1"
+            className="text-xs font-bold text-muted-foreground hover:text-foreground underline underline-offset-4 px-2 py-1"
           >
             보기
           </button>

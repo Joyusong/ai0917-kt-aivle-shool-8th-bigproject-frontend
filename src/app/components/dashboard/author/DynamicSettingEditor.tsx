@@ -29,6 +29,11 @@ export function DynamicSettingEditor({
         parsed = { description: data }; // Fallback
       }
     }
+    // Ensure name/title fallback
+    if (parsed) {
+        if (!parsed.name && parsed.title) parsed.name = parsed.title;
+        if (!parsed.name && parsed.keyword) parsed.name = parsed.keyword;
+    }
     setFormData(parsed || {});
   }, [data]);
 
@@ -78,9 +83,16 @@ export function DynamicSettingEditor({
           <>
             <Field
               label="설정집명 (키워드)"
-              value={formData['name'] || formData['keyword'] || ''}
+              value={
+                formData['name'] ||
+                formData['title'] ||
+                formData['keyword'] ||
+                ''
+              }
               onChange={(v) => handleChange('name', v)}
               required
+              autoFocus
+              placeholder="예: 홍길동"
             />
             <Field
               label="별명"
@@ -218,6 +230,8 @@ export function DynamicSettingEditor({
               value={formData['name'] || formData['keyword'] || ''}
               onChange={(v) => handleChange('name', v)}
               required
+              autoFocus
+              placeholder="예: 마법 세계"
             />
             <Field
               label="부제/별칭"
@@ -285,9 +299,16 @@ export function DynamicSettingEditor({
           <>
             <Field
               label="설정집명 (키워드)"
-              value={formData['name'] || formData['keyword'] || ''}
+              value={
+                formData['name'] ||
+                formData['title'] ||
+                formData['keyword'] ||
+                ''
+              }
               onChange={(v) => handleChange('name', v)}
               required
+              autoFocus
+              placeholder="예: 왕궁"
             />
             <Field
               label="부제/별칭"
@@ -356,9 +377,16 @@ export function DynamicSettingEditor({
           <>
             <Field
               label="설정집명 (키워드)"
-              value={formData['name'] || formData['keyword'] || ''}
+              value={
+                formData['name'] ||
+                formData['title'] ||
+                formData['keyword'] ||
+                ''
+              }
               onChange={(v) => handleChange('name', v)}
               required
+              autoFocus
+              placeholder="예: 왕위 계승 전쟁"
             />
             <Field
               label="부제/별칭"
@@ -409,7 +437,9 @@ export function DynamicSettingEditor({
               value={formData['participants'] || []}
               isArray
               onChange={(v) => handleChange('participants', v)}
-              onArrayChange={(idx, v) => handleArrayChange('participants', idx, v)}
+              onArrayChange={(idx, v) =>
+                handleArrayChange('participants', idx, v)
+              }
               onAdd={() => handleAddArrayItem('participants')}
               onRemove={(idx) => handleRemoveArrayItem('participants', idx)}
             />
@@ -426,9 +456,16 @@ export function DynamicSettingEditor({
           <>
             <Field
               label="설정집명 (키워드)"
-              value={formData['name'] || formData['keyword'] || formData['title'] || ''}
+              value={
+                formData['name'] ||
+                formData['keyword'] ||
+                formData['title'] ||
+                ''
+              }
               onChange={(v) => handleChange('name', v)}
               required
+              autoFocus
+              placeholder="예: 전설의 검"
             />
             <Field
               label="부제/별칭"
@@ -485,9 +522,16 @@ export function DynamicSettingEditor({
           <>
             <Field
               label="설정집명 (키워드)"
-              value={formData['name'] || formData['keyword'] || formData['title'] || ''}
+              value={
+                formData['name'] ||
+                formData['keyword'] ||
+                formData['title'] ||
+                ''
+              }
               onChange={(v) => handleChange('name', v)}
               required
+              autoFocus
+              placeholder="예: 제국 기사단"
             />
             <Field
               label="부제/별칭"
@@ -632,6 +676,9 @@ export function DynamicSettingEditor({
               isTextarea
             />
           )}
+          <p className="text-xs text-muted-foreground mt-4">
+            * 모든 항목은 필수 입력 사항입니다.
+          </p>
         </div>
       )}
     </div>
@@ -651,6 +698,8 @@ interface FieldProps {
   objectFields?: { key: string; label: string }[];
   onObjectArrayChange?: (index: number, field: string, val: string) => void;
   required?: boolean;
+  autoFocus?: boolean;
+  placeholder?: string;
 }
 
 function Field({
@@ -666,6 +715,8 @@ function Field({
   objectFields,
   onObjectArrayChange,
   required,
+  autoFocus,
+  placeholder,
 }: FieldProps) {
   return (
     <div className="space-y-1.5">
@@ -719,8 +770,11 @@ function Field({
           {(Array.isArray(value)
             ? value
             : typeof value === 'string'
-            ? value.split(',').map((s) => s.trim()).filter(Boolean)
-            : []
+              ? value
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              : []
           ).map((item: string, idx: number) => (
             <div key={idx} className="flex gap-2">
               <Input
@@ -759,6 +813,8 @@ function Field({
           }
           className="min-h-[80px] text-sm resize-none"
           required={required}
+          autoFocus={autoFocus}
+          placeholder={placeholder}
         />
       ) : (
         <Input
@@ -768,6 +824,8 @@ function Field({
           }
           className="h-9 text-sm"
           required={required}
+          autoFocus={autoFocus}
+          placeholder={placeholder}
         />
       )}
     </div>

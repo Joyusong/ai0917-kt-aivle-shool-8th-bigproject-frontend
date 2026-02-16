@@ -242,7 +242,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
           <div className="w-full flex justify-between items-center">
             <button
               onClick={onBack}
-              className="group flex items-center gap-2 text-[13px] font-bold text-muted-foreground hover:text-foreground transition-all"
+              className="group flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground transition-all"
             >
               <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
               <span>돌아가기</span>
@@ -264,12 +264,12 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
           {/* 네이버 로그인 */}
           <section className="p-8 pb-7 space-y-5">
             <div className="flex justify-start">
-              <span className="text-[11px] font-extrabold text-primary bg-primary/5 dark:bg-primary/20 px-2.5 py-1 rounded-full tracking-tighter">
+              <span className="text-xs font-extrabold text-primary bg-primary/5 dark:bg-primary/20 px-2.5 py-1 rounded-full tracking-tighter">
                 처음 오셨나요?
               </span>
             </div>
             <NaverLogin />
-            <p className="text-[12px] text-muted-foreground text-center font-semibold tracking-tight">
+            <p className="text-xs text-muted-foreground text-center font-semibold tracking-tight">
               네이버로 가입 신청을 시작하세요.
             </p>
           </section>
@@ -280,7 +280,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
               <div className="space-y-2">
                 <Label
                   htmlFor="email"
-                  className="text-[11px] font-black text-muted-foreground ml-1 uppercase tracking-wider"
+                  className="text-xs font-black text-muted-foreground ml-1 uppercase tracking-wider"
                 >
                   이메일
                 </Label>
@@ -290,7 +290,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     id="email"
                     type="email"
                     placeholder="name@example.com"
-                    className="pl-11 h-12 bg-background border-border rounded-xl focus-visible:ring-primary/10 text-[14px] placeholder:text-muted-foreground/50"
+                    className="pl-11 h-12 bg-background border-border rounded-xl focus-visible:ring-primary/10 text-sm placeholder:text-muted-foreground/50"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -301,7 +301,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
               <div className="space-y-2">
                 <Label
                   htmlFor="password"
-                  className="text-[11px] font-black text-muted-foreground ml-1 uppercase tracking-wider"
+                  className="text-xs font-black text-muted-foreground ml-1 uppercase tracking-wider"
                 >
                   비밀번호
                 </Label>
@@ -311,7 +311,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     id="password"
                     type={showLoginPwd ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-11 pr-10 h-12 bg-background border-border rounded-xl focus-visible:ring-primary/10 text-[14px] placeholder:text-muted-foreground/50"
+                    className="pl-11 pr-10 h-12 bg-background border-border rounded-xl focus-visible:ring-primary/10 text-sm placeholder:text-muted-foreground/50"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -333,7 +333,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
               <div className="space-y-2">
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-xl font-bold text-[14px] shadow-lg shadow-primary/10 transition-all active:scale-[0.97]"
+                  className="w-full h-12 rounded-xl font-bold text-sm shadow-lg shadow-primary/10 transition-all active:scale-[0.97]"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -347,7 +347,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                   <button
                     type="button"
                     onClick={() => setIsResetOpen(true)}
-                    className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                    className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
                   >
                     <HelpCircle className="w-3 h-3" />
                     계정 접근에 문제가 있나요?
@@ -360,7 +360,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
 
         <div className="w-full bg-muted/40 border border-border/50 rounded-2xl p-4 flex items-center justify-center gap-3 shadow-sm transition-colors">
           <ShieldCheck className="w-4 h-4 text-muted-foreground shrink-0" />
-          <p className="text-[11px] text-muted-foreground font-bold leading-tight tracking-tight">
+          <p className="text-xs text-muted-foreground font-bold leading-tight tracking-tight">
             관리자 승인 후{' '}
             <span className="text-primary font-black underline underline-offset-4 decoration-primary/30">
               이메일 로그인
@@ -496,7 +496,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
                     </Label>
                     {resetData.newPassword.length > 0 && (
                       <span
-                        className={`text-[10px] font-bold ${
+                        className={`text-xs font-bold ${
                           strengthScore <= 2
                             ? 'text-destructive dark:text-red-400'
                             : strengthScore === 3
@@ -654,7 +654,7 @@ export function LoginPage({ onLogin, onBack }: LoginPageProps) {
 function ValidationItem({ isValid, text }: { isValid: boolean; text: string }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-[11px] font-bold transition-colors ${
+      className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${
         isValid ? 'text-blue-600' : 'text-slate-300'
       }`}
     >

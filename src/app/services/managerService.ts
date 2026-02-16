@@ -42,10 +42,13 @@ export const managerService = {
     return response.data;
   },
 
-  getIPTrendList: async (page = 0, size = 10) => {
+  getIPTrendList: async (page = 0, size = 10, year?: string) => {
+    const params: any = { page, size };
+    if (year) params.year = year;
+
     const response = await apiClient.get<PageResponse<IPTrendReportDto>>(
       '/api/v1/manager/iptrend/list',
-      { params: { page, size } },
+      { params },
     );
     return response.data;
   },

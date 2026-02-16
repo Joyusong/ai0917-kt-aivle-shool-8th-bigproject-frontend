@@ -8,6 +8,7 @@ import {
 } from '../../../components/ui/dialog';
 import { Button } from '../../../components/ui/button';
 import { Checkbox } from '../../../components/ui/checkbox';
+import { Input } from '../../../components/ui/input';
 import { ScrollArea } from '../../../components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -32,6 +33,7 @@ export function EpisodeSelectionModal({
   onConfirm,
 }: EpisodeSelectionModalProps) {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch all manuscripts (limit 1000 for now)
   const { data: manuscriptsPage, isLoading } = useQuery({
@@ -43,14 +45,11 @@ export function EpisodeSelectionModal({
 
   const manuscripts = manuscriptsPage?.content || [];
 
-  // Initialize selection when data loads
-  useEffect(() => {
-    if (manuscripts.length > 0 && selectedIds.length === 0) {
-      // Optional: Select all by default? Or none?
-      // User said "전체선택 허용" (Allow Select All), implies maybe not default.
-      // But usually easier if empty.
-    }
-  }, [manuscripts]);
+  const filteredManuscripts = manuscripts.filter(
+    (m) =>
+      m.episode.toString().includes(searchQuery) ||
+      (m.subtitle || '').toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const handleToggle = (id: number) => {
     setSelectedIds((prev) =>
@@ -59,10 +58,24 @@ export function EpisodeSelectionModal({
   };
 
   const handleSelectAll = () => {
-    if (selectedIds.length === manuscripts.length) {
-      setSelectedIds([]);
+    const allFilteredSelected = filteredManuscripts.every((m) =>
+      selectedIds.includes(m.id),
+    );
+
+    if (allFilteredSelected) {
+      // Deselect all FILTERED items
+      setSelectedIds((prev) =>
+        prev.filter((id) => !filteredManuscripts.find((m) => m.id === id)),
+      );
     } else {
-      setSelectedIds(manuscripts.map((m) => m.id));
+      // Select all FILTERED items
+      const newIds = [...selectedIds];
+      filteredManuscripts.forEach((m) => {
+        if (!newIds.includes(m.id)) {
+          newIds.push(m.id);
+        }
+      });
+      setSelectedIds(newIds);
     }
   };
 
@@ -73,21 +86,30 @@ export function EpisodeSelectionModal({
           <DialogTitle>회차 선택</DialogTitle>
         </DialogHeader>
 
-        <div className="flex items-center space-x-2 py-4">
-          <Checkbox
-            id="select-all"
-            checked={
-              manuscripts.length > 0 &&
-              selectedIds.length === manuscripts.length
-            }
-            onCheckedChange={handleSelectAll}
+        <div className="space-y-4 py-4">
+          <Input
+            placeholder="예: 1화, 프롤로그, 주요 사건 등..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="h-9"
+            autoFocus
           />
-          <label
-            htmlFor="select-all"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            전체 선택 ({manuscripts.length}개)
-          </label>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="select-all"
+              checked={
+                filteredManuscripts.length > 0 &&
+                filteredManuscripts.every((m) => selectedIds.includes(m.id))
+              }
+              onCheckedChange={handleSelectAll}
+            />
+            <label
+              htmlFor="select-all"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              전체 선택 ({filteredManuscripts.length}개)
+            </label>
+          </div>
         </div>
 
         <ScrollArea className="h-[300px] border rounded-md p-4">
@@ -97,7 +119,7 @@ export function EpisodeSelectionModal({
             </div>
           ) : (
             <div className="space-y-3">
-              {manuscripts.map((m) => (
+              {filteredManuscripts.map((m) => (
                 <div key={m.id} className="flex items-center space-x-2">
                   <Checkbox
                     id={`ep-${m.id}`}
@@ -124,19 +146,24 @@ export function EpisodeSelectionModal({
           )}
         </ScrollArea>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            취소
-          </Button>
-          <Button
-            onClick={() => {
-              onConfirm(selectedIds);
-              onClose();
-            }}
-            disabled={selectedIds.length === 0}
-          >
-            분석 시작 ({selectedIds.length}개)
-          </Button>
+        <DialogFooter className="flex-col sm:flex-col gap-2">
+          <p className="text-xs text-muted-foreground w-full text-right mb-2">
+            * 최소 1개 이상의 회차를 선택해야 합니다.
+          </p>
+          <div className="flex justify-end gap-2 w-full">
+            <Button variant="outline" onClick={onClose}>
+              취소
+            </Button>
+            <Button
+              onClick={() => {
+                onConfirm(selectedIds);
+                onClose();
+              }}
+              disabled={selectedIds.length === 0}
+            >
+              분석 시작 ({selectedIds.length}개)
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

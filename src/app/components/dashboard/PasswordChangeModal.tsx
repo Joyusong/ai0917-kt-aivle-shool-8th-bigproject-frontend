@@ -142,6 +142,8 @@ export function PasswordChangeModal({
                     currentPassword: e.target.value,
                   })
                 }
+                autoFocus
+                placeholder="현재 비밀번호를 입력하세요"
               />
               <Button
                 type="button"
@@ -173,6 +175,7 @@ export function PasswordChangeModal({
                     newPassword: e.target.value,
                   })
                 }
+                placeholder="새 비밀번호 (8자 이상, 특수문자 포함)"
               />
               <Button
                 type="button"
@@ -224,6 +227,7 @@ export function PasswordChangeModal({
                     newPasswordRetype: e.target.value,
                   })
                 }
+                placeholder="새 비밀번호를 다시 입력하세요"
               />
               <Button
                 type="button"
@@ -246,6 +250,9 @@ export function PasswordChangeModal({
                 </p>
               )}
           </div>
+          <p className="text-xs text-muted-foreground">
+            * 모든 항목은 필수 입력 사항입니다.
+          </p>
         </div>
         <DialogFooter>
           <Button

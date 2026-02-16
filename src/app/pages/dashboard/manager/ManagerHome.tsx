@@ -196,7 +196,7 @@ export function ManagerHome({ onNavigate }: ManagerHomeProps) {
                       <p className="text-sm font-medium leading-none group-hover:text-primary truncate transition-colors">
                         {notice.title}
                       </p>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>{notice.writer}</span>
                         <span>•</span>
                         <span>

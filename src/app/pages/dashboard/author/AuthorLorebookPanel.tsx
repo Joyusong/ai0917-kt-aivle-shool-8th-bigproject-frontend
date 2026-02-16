@@ -274,19 +274,76 @@ export function AuthorLorebookPanel({
         payload,
       );
     },
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({
+        queryKey: ['author', 'lorebook', userId, work?.title, activeCategory],
+      });
+
+      const previousLorebooks = queryClient.getQueryData([
+        'author',
+        'lorebook',
+        userId,
+        work?.title,
+        activeCategory,
+      ]);
+
+      const { name, title, description, subtitle, episode, ...rest } = newData;
+      const lorebookTitle = name || title;
+      const settingObj = {
+        [lorebookTitle]: {
+          description: description,
+          ...rest,
+        },
+      };
+
+      const newItem = {
+        id: Date.now(),
+        category: activeCategory === 'all' ? '미분류' : activeCategory,
+        keyword: lorebookTitle,
+        subtitle: subtitle || '',
+        setting: settingObj,
+        episode: episode,
+        name: lorebookTitle,
+        title: lorebookTitle,
+        description: description,
+        ...rest,
+      };
+
+      queryClient.setQueryData(
+        ['author', 'lorebook', userId, work?.title, activeCategory],
+        (old: any) => {
+          if (!old) return [newItem];
+          if (Array.isArray(old)) return [newItem, ...old];
+          if (old.content && Array.isArray(old.content)) {
+            return { ...old, content: [newItem, ...old.content] };
+          }
+          return [newItem, ...old]; // Fallback
+        },
+      );
+
+      setIsEditOpen(false); // Close modal immediately
+      toast.info('설정집을 생성하는 중입니다...');
+
+      return { previousLorebooks };
+    },
     onSuccess: () => {
       toast.success('설정집이 생성되었습니다.');
-      setIsEditOpen(false);
+      // Invalidate to get real ID and server-side data
       queryClient.invalidateQueries({
         queryKey: ['author', 'lorebook', userId, work?.title, activeCategory],
       });
-      // Also invalidate 'all' for counts
       queryClient.invalidateQueries({
         queryKey: ['author', 'lorebook', userId, work?.title, 'all'],
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, newTodo, context) => {
       console.error(error);
+      if (context?.previousLorebooks) {
+        queryClient.setQueryData(
+          ['author', 'lorebook', userId, work?.title, activeCategory],
+          context.previousLorebooks,
+        );
+      }
       const msg = error?.response?.data?.message || '생성에 실패했습니다.';
       toast.error(msg);
     },
@@ -329,18 +386,78 @@ export function AuthorLorebookPanel({
         payload,
       );
     },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({
+        queryKey: ['author', 'lorebook', userId, work?.title, activeCategory],
+      });
+
+      const previousLorebooks = queryClient.getQueryData([
+        'author',
+        'lorebook',
+        userId,
+        work?.title,
+        activeCategory,
+      ]);
+
+      const { name, title, description, subtitle, episode, ...rest } = data;
+      const lorebookTitle = name || title;
+      const settingObj = {
+        [lorebookTitle]: {
+          description: description,
+          ...rest,
+        },
+      };
+
+      // Optimistically update the item
+      queryClient.setQueryData(
+        ['author', 'lorebook', userId, work?.title, activeCategory],
+        (old: any) => {
+          const updateItem = (item: any) =>
+            item.id === id
+              ? {
+                  ...item,
+                  keyword: lorebookTitle,
+                  subtitle: subtitle || '',
+                  setting: settingObj,
+                  episode: episode,
+                  name: lorebookTitle,
+                  title: lorebookTitle,
+                  description: description,
+                  ...rest,
+                }
+              : item;
+
+          if (Array.isArray(old)) return old.map(updateItem);
+          if (old?.content && Array.isArray(old.content)) {
+            return { ...old, content: old.content.map(updateItem) };
+          }
+          return old;
+        },
+      );
+
+      setIsEditOpen(false);
+      toast.info('설정집을 수정하는 중입니다...');
+
+      return { previousLorebooks };
+    },
     onSuccess: () => {
       toast.success('설정집이 수정되었습니다.');
-      setIsEditOpen(false);
       queryClient.invalidateQueries({
         queryKey: ['author', 'lorebook', userId, work?.title, activeCategory],
       });
-      // Also invalidate 'all' for counts
       queryClient.invalidateQueries({
         queryKey: ['author', 'lorebook', userId, work?.title, 'all'],
       });
     },
-    onError: () => toast.error('수정에 실패했습니다.'),
+    onError: (err, newTodo, context) => {
+      if (context?.previousLorebooks) {
+        queryClient.setQueryData(
+          ['author', 'lorebook', userId, work?.title, activeCategory],
+          context.previousLorebooks,
+        );
+      }
+      toast.error('수정에 실패했습니다.');
+    },
   });
 
   const handleCreateClick = () => {
@@ -913,7 +1030,7 @@ export function AuthorLorebookPanel({
                 onClick={() => setActiveCategory(cat.id)}
               >
                 <span className="text-xs font-medium">{cat.label}</span>
-                <span className="text-[10px] ml-1 opacity-70">
+                <span className="text-xs text-muted-foreground ml-2">
                   ({categoryCounts[cat.id] || 0})
                 </span>
               </Button>
@@ -941,7 +1058,18 @@ export function AuthorLorebookPanel({
       </div>
 
       {/* Search Dialog */}
-      <Dialog open={isSearchOpen} onOpenChange={setIsSearchOpen}>
+      <Dialog
+        open={isSearchOpen}
+        onOpenChange={(open) => {
+          setIsSearchOpen(open);
+          if (!open) {
+            // Reset state when closing to ensure it's clean on next open
+            setSearchQuery('');
+            setSearchCategory('all');
+            setSearchResults([]);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-[90vw] lg:max-w-[1000px] h-[80vh] flex flex-col gap-6 p-6">
           <DialogHeader className="px-0 pt-0 pb-2 border-b shrink-0">
             <DialogTitle className="text-lg font-semibold">
@@ -975,6 +1103,7 @@ export function AuthorLorebookPanel({
                 placeholder="찾고 싶은 내용을 문장으로 설명해주세요..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSearch(e);
                 }}
@@ -1084,7 +1213,7 @@ export function AuthorLorebookPanel({
                       <CardHeader className="py-3">
                         <CardTitle className="text-sm font-medium flex items-center gap-2">
                           {keyword || '제목 없음'}
-                          <Badge variant="outline" className="text-[10px]">
+                          <Badge variant="outline" className="text-xs">
                             {result.category}
                           </Badge>
                         </CardTitle>
@@ -1134,8 +1263,8 @@ export function AuthorLorebookPanel({
 
       {/* Edit/Create Dialog */}
       <Dialog open={isEditOpen} onOpenChange={handleEditOpenChange}>
-        <DialogContent className="sm:max-w-[90vw] lg:max-w-[1200px] h-[80vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="px-6 py-4 border-b shrink-0">
+        <DialogContent className="max-w-xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
             <DialogTitle>
               {editingItem?.id ? '설정집 수정' : '설정집 생성'}
             </DialogTitle>
@@ -1147,15 +1276,22 @@ export function AuthorLorebookPanel({
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {renderFormFields()}
             </div>
-            <DialogFooter className="p-4 border-t bg-muted/20 shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleEditOpenChange(false)}
-              >
-                취소
-              </Button>
-              <Button type="submit">{editingItem?.id ? '수정' : '생성'}</Button>
+            <DialogFooter className="p-4 border-t bg-muted/20 shrink-0 flex-col sm:flex-col gap-2">
+              <p className="text-xs text-muted-foreground w-full text-right mb-2">
+                * 모든 항목은 필수 입력 사항입니다.
+              </p>
+              <div className="flex justify-end gap-2 w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleEditOpenChange(false)}
+                >
+                  취소
+                </Button>
+                <Button type="submit">
+                  {editingItem?.id ? '수정' : '생성'}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </DialogContent>

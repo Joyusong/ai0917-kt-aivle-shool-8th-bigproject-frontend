@@ -159,7 +159,7 @@ export function AuthorWritingEditor({
               placeholder="제목 없는 작품"
             />
             <div className="text-xs text-muted-foreground flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] h-4 px-1">
+              <Badge variant="outline" className="text-xs h-4 px-1">
                 Novel
               </Badge>
               {isSaving ? (
@@ -281,7 +281,7 @@ export function AuthorWritingEditor({
                               {char.name}
                               <Badge
                                 variant="secondary"
-                                className="text-[10px] h-5"
+                                className="text-xs h-5"
                               >
                                 {char.role}
                               </Badge>
@@ -319,7 +319,7 @@ export function AuthorWritingEditor({
                               {item.name}
                               <Badge
                                 variant="outline"
-                                className="text-[10px] h-5"
+                                className="text-xs h-5"
                               >
                                 {item.type}
                               </Badge>
@@ -357,7 +357,7 @@ export function AuthorWritingEditor({
                               {item.name}
                               <Badge
                                 variant="outline"
-                                className="text-[10px] h-5"
+                                className="text-xs h-5"
                               >
                                 {item.type}
                               </Badge>
