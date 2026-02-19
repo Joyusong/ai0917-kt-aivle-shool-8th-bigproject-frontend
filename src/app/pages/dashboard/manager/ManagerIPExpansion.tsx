@@ -1601,7 +1601,7 @@ function ProjectDetailModal({
                             label: '게임 장르',
                             value:
                               (project.mediaDetail || project.mediaDetails)
-                                ?.genre || '미지정',
+                                ?.gameGenre || '미지정',
                             icon: Gamepad2,
                             color: 'text-purple-600 dark:text-purple-400',
                             bg: 'bg-purple-50 dark:bg-purple-900/20',
@@ -5685,13 +5685,6 @@ function CreateIPExpansionDialog({
                               bg: 'bg-purple-50',
                             },
                             {
-                              label: '핵심 재미요소',
-                              value: mediaDetails.coreLoop || '미지정',
-                              icon: Zap,
-                              color: 'text-yellow-600',
-                              bg: 'bg-yellow-50',
-                            },
-                            {
                               label: '비즈니스 모델',
                               value: mediaDetails.bmStrategy || '미지정',
                               icon: BarChart,
@@ -5943,75 +5936,6 @@ function CreateIPExpansionDialog({
                         </span>{' '}
                         {lorebook.workTitle}
                       </div>
-                    </div>
-                    <div className="bg-muted p-3 rounded text-sm text-muted-foreground whitespace-pre-wrap">
-                      {(() => {
-                        let content = lorebook.description;
-
-                        // Try to parse if it's a JSON string
-                        if (
-                          typeof content === 'string' &&
-                          (content.startsWith('{') || content.startsWith('['))
-                        ) {
-                          try {
-                            const parsed = JSON.parse(content);
-                            // If it's an object, try to extract content excluding the keyword
-                            if (typeof parsed === 'object' && parsed !== null) {
-                              // If it has a specific key matching the keyword, exclude it
-                              const filteredEntries = Object.entries(
-                                parsed,
-                              ).filter(
-                                ([key]) =>
-                                  key !== lorebook.keyword &&
-                                  key !== '이름' &&
-                                  key !== 'name' &&
-                                  key !== '설정집명',
-                              );
-
-                              if (filteredEntries.length > 0) {
-                                content = filteredEntries
-                                  .map(([_, value]) => value)
-                                  .join('\n\n');
-                              } else {
-                                // Fallback: if all keys were filtered or empty, show values
-                                content = Object.values(parsed).join('\n\n');
-                              }
-                            }
-                          } catch (e) {
-                            // Keep original string if parsing fails
-                          }
-                        } else if (!content && lorebook.setting) {
-                          // Fallback to setting if description is empty
-                          try {
-                            const settingObj =
-                              typeof lorebook.setting === 'string'
-                                ? JSON.parse(lorebook.setting)
-                                : lorebook.setting;
-
-                            if (settingObj) {
-                              content =
-                                settingObj.description ||
-                                settingObj.summary ||
-                                Object.entries(settingObj)
-                                  .filter(
-                                    ([k]) =>
-                                      ![
-                                        'id',
-                                        'image',
-                                        lorebook.keyword,
-                                        '이름',
-                                        'name',
-                                        '설정집명',
-                                      ].includes(k),
-                                  )
-                                  .map(([_, v]) => v)
-                                  .join('\n\n');
-                            }
-                          } catch (e) {}
-                        }
-
-                        return content || '내용 없음';
-                      })()}
                     </div>
                   </div>
                 ))}
