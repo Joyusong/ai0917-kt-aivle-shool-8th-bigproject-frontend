@@ -210,7 +210,7 @@ const formats = [
     color: 'amber',
   },
   {
-    id: 'commercial',
+    id: 'commercial_image',
     title: '상업 이미지',
     icon: ImageIcon,
     desc: '광고 및 브랜드 콜라보레이션 이미지',
@@ -530,7 +530,7 @@ function getContentStrategy(formatId: string | null) {
           sub: '굿즈화 연계 가능성이 높은 아이템/캐릭터 선정 및 팝업스토어 기획.',
         },
       };
-    case 'commercial':
+    case 'commercial_image':
       return {
         ...common,
         visual: {
@@ -2260,7 +2260,8 @@ function CreateIPExpansionDialog({
         const part = badge.tooltip.split('추천 확장:')[1];
         if (part) {
           if (part.includes('스핀오프')) recommended.add('spinoff');
-          if (part.includes('상업적 이미지')) recommended.add('commercial');
+          if (part.includes('상업적 이미지'))
+            recommended.add('commercial_image');
           if (part.includes('게임')) recommended.add('game');
           if (part.includes('영화')) recommended.add('movie');
           if (part.includes('드라마')) recommended.add('drama');
@@ -2817,7 +2818,7 @@ function CreateIPExpansionDialog({
     // Step 5 Validation
     if (currentStep === 5) {
       if (
-        !['commercial'].includes(selectedFormat || '') &&
+        !['commercial_image'].includes(selectedFormat || '') &&
         selectedGenres.length === 0
       ) {
         toast.error(
@@ -2872,7 +2873,7 @@ function CreateIPExpansionDialog({
         return;
       }
       if (
-        selectedFormat === 'commercial' &&
+        selectedFormat === 'commercial_image' &&
         (!mediaDetails.visualFormat ||
           !mediaDetails.usagePurpose ||
           !mediaDetails.targetProduct)
@@ -4159,7 +4160,9 @@ function CreateIPExpansionDialog({
                       {/* Genre & Universe Section */}
                       <div className="space-y-6">
                         {/* Conditional Genre Selection */}
-                        {!['commercial'].includes(selectedFormat || '') && (
+                        {!['commercial_image'].includes(
+                          selectedFormat || '',
+                        ) && (
                           <>
                             <div className="flex items-center justify-between">
                               <Label className="text-base font-bold text-foreground flex items-center gap-2">
@@ -5005,7 +5008,7 @@ function CreateIPExpansionDialog({
                         </div>
                       )}
 
-                      {selectedFormat === 'commercial' && (
+                      {selectedFormat === 'commercial_image' && (
                         <div className="space-y-6">
                           <div className="space-y-3">
                             <Label className="text-sm font-bold text-foreground flex items-center gap-2">
@@ -5638,7 +5641,7 @@ function CreateIPExpansionDialog({
                                   },
                                 ]
                               : []),
-                            ...(selectedFormat === 'commercial'
+                            ...(selectedFormat === 'commercial_image'
                               ? [
                                   {
                                     label: '비주얼 포맷',
